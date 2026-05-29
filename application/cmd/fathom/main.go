@@ -4,18 +4,21 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
+	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/charmbracelet/fang"
-	"github.com/charmbracelet/huh"
-	configutils "github.com/egot3/fathom/internal/configUtils"
+	"github.com/egot3/fathom/internal/config"
+	"github.com/egot3/fathom/internal/tui"
+	"github.com/egot3/fathom/server"
+	"github.com/go-chi/chi/v5"
+	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
 var verbose bool
+var pathToConfig = "../../internal/config/config.yaml"
 
 var rootCmd = &cobra.Command{
 	Use:   "fampls",
@@ -36,9 +39,21 @@ var serveCmd = &cobra.Command{
 	There is really nothing more to it.`,
 	Args: cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		// running the server
+		i := do.New()
 
-		fmt.Println("running")
+		cfg := config.Config{}
+		data, _ := os.ReadFile(pathToConfig)
+		if err := yaml.Unmarshal(data, &cfg); err != nil {
+			log.Printf("couldn't read config data: %v", err)
+			os.Exit(1)
+		}
+
+		do.Provide(i, server.ChiServer)
+
+		if err := http.ListenAndServe(":"+cfg.Server.Port, do.MustInvoke[chi.Router](i)); err != nil {
+			log.Printf("Server execution finished: %v", err)
+			os.Exit(0)
+		}
 	},
 }
 
@@ -46,91 +61,49 @@ var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Helps configuring fathom project",
 	Long: `Starts an interactive TUI for configuring
-	fathom project with pizzazis`,
+	fathom project with pizzazis. If config is corrupted
+	run "fampls config regenerate"`,
 	Args: cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg := configutils.Config{}
-		pathToConfig := "../../internal/config/config.yaml"
+		cfg := config.Config{}
 		data, _ := os.ReadFile(pathToConfig)
 		if err := yaml.Unmarshal(data, &cfg); err != nil {
 			log.Printf("couldn't read config data: %v", err)
 			os.Exit(1)
 		}
 
-		database := ""
-		form := huh.NewForm(
-
-			huh.NewGroup(huh.NewNote().
-				Title("Configuration").
-				Description("Welcome to Configuration tool.").
-				Next(true).
-				NextLabel("Next"),
-			),
-
-			huh.NewGroup(
-				huh.NewSelect[string]().
-					Title("Choose db").
-					Options(
-						huh.NewOption("Postgres(heavy)", "postgres"),
-						huh.NewOption("Sqlite(light)", "sqlite"),
-					).Value(&database),
-			),
-
-			huh.NewGroup(
-				huh.NewInput().
-					Title("Path to db").
-					Value(&cfg.Database.Sqlite.Path),
-			).WithHideFunc(func() bool {
-				return database != "sqlite"
-			}),
-			huh.NewGroup(
-				huh.NewInput().
-					Title("user").Value(&cfg.Database.Postgres.User),
-				huh.NewInput().
-					Title("password").Value(&cfg.Database.Postgres.Password),
-				huh.NewInput().
-					Title("host").Value(&cfg.Database.Postgres.Host),
-				huh.NewInput().
-					Title("port").Value(&cfg.Database.Postgres.Port),
-				huh.NewInput().
-					Title("database name").Value(&cfg.Database.Postgres.DbName),
-			).WithHideFunc(func() bool {
-				return database != "postgres"
-			}),
-			huh.NewGroup(
-				huh.NewInput().Title("server port").Value(&cfg.Server.Port).
-					Validate(func(s string) error {
-						port, err := strconv.Atoi(s)
-						if err != nil {
-							return fmt.Errorf("Port %v is not a number", s)
-						}
-						if port <= 1023 {
-							return fmt.Errorf("Please, use another port(0-1023 are system reserved)")
-						}
-						ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-						if err != nil {
-							return fmt.Errorf("Port is already in use/restricted")
-						}
-						ln.Close()
-						return nil
-					}),
-			),
-		)
-
-		if err := form.Run(); err != nil {
+		err := tui.ConfigForm(&cfg)
+		if err != nil {
 			os.Exit(1)
 		}
 
-		switch database {
-		case "postgres":
-			cfg.Database.Postgres.Used = true
-			cfg.Database.Sqlite.Used = false
-		case "sqlite":
-			cfg.Database.Sqlite.Used = true
-			cfg.Database.Postgres.Used = false
+		out, err := yaml.Marshal(cfg)
+		if err != nil {
+			os.Exit(1)
 		}
 
-		log.Print(cfg)
+		if err := os.WriteFile(pathToConfig, out, 0644); err != nil {
+			os.Exit(1)
+		}
+	},
+}
+
+var configRegenerateCmd = &cobra.Command{
+	Use:   "regenerate",
+	Short: "Regenerates broken config",
+	Long: `sets everything do default values and overwrites
+		everything in this file, so be aware`,
+	Args: cobra.MaximumNArgs(0),
+	Run: func(cmd *cobra.Command, args []string) {
+		cfg := config.Config{}
+		cfg.Database.Sqlite.Used = true
+		cfg.Database.Sqlite.Path = "../data/fathom.db"
+		cfg.Database.Postgres.Used = false
+
+		cfg.Server.Port = "8081"
+		cfg.Server.Logging.Logger = []string{"slog", "charmLog"}
+		cfg.Server.Logging.Level = "info"
+
 		out, err := yaml.Marshal(cfg)
 		if err != nil {
 			os.Exit(1)
@@ -148,6 +121,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 
 	rootCmd.AddCommand(configCmd)
+	configCmd.AddCommand(configRegenerateCmd)
 }
 
 func main() {
