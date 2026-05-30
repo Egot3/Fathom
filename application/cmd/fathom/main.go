@@ -48,6 +48,7 @@ var serveCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		do.ProvideValue(i, cfg)
 		do.Provide(i, server.ChiServer)
 
 		if err := http.ListenAndServe(":"+cfg.Server.Port, do.MustInvoke[chi.Router](i)); err != nil {
