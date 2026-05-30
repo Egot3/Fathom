@@ -1,0 +1,29 @@
+package quizparser
+
+type AnswerInput struct {
+	Input string `json:"input"`
+}
+
+type AnswerRadio struct {
+	Choice Choice `json:"chosen"`
+}
+
+type AnswerCheck struct {
+	Choices []Choice `json:"chosen"`
+}
+
+type AnswerAccordance struct {
+	Accordance []int `json:"accorded"`
+}
+
+type AnswerOrder struct {
+	ItemIdxs []int `json:"item_indexes"`
+}
+
+type QuizAnswers struct {
+	Radio      *AnswerRadio      `json:"radio,omitempty"`
+	Check      *AnswerCheck      `json:"check,omitempty"`
+	Accordance *AnswerAccordance `json:"accordance,omitempty"`
+	Order      *AnswerOrder      `json:"order,omitempty"`
+	Input      *AnswerInput      `json:"input,omitempty"`
+}

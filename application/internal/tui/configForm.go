@@ -74,7 +74,8 @@ func ConfigForm(cfg *config.Config) error {
 					huh.NewOption("charm's log", "charmLog").Selected(slices.Contains(cfg.Server.Logging.Logger, "charmLog")),
 					huh.NewOption("structured log", "slog").Selected(slices.Contains(cfg.Server.Logging.Logger, "slog")),
 				).Title("Logging").
-				Description("charm is human-readable, structured is machine parsable").
+				Description(`charm is human-readable, structured is machine parsable,
+					disable all if you don't read logs`).
 				Value(&cfg.Server.Logging.Logger),
 		),
 	)
