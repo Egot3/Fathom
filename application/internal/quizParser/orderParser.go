@@ -15,13 +15,17 @@ func OrderParser(reader *bufio.Scanner, quiz *Quiz) error {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
 
-		if strings.HasPrefix(trimmedLine, "- ") {
-			item := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- "))
+		if after, ok := strings.CutPrefix(trimmedLine, "- "); ok {
+			item := strings.TrimSpace(after)
 			if slices.Contains(ordered, item) {
 				return fmt.Errorf("can't have multiple of the same value in order")
 			}
 			ordered = append(ordered, item)
 		}
+	}
+
+	if len(ordered) < 2 {
+		return fmt.Errorf("can't have less than 2 options for order")
 	}
 
 	shuffled := make([]string, len(ordered))
@@ -38,7 +42,7 @@ func OrderParser(reader *bufio.Scanner, quiz *Quiz) error {
 		answers[i] = slices.Index(shuffled, ord)
 	}
 
-	quiz.Options.Order.Items = shuffled
-	quiz.Answer.Order.ItemIdxs = answers
+	quiz.Options.Order = &OptionsOrder{Items: shuffled}
+	quiz.Answer.Order = &AnswerOrder{ItemIdxs: answers}
 	return nil
 }

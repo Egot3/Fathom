@@ -3,6 +3,7 @@ package quizparser
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	"strings"
 )
@@ -58,11 +59,19 @@ func ParseQuizByPath(path string) (*Quiz, error) {
 			return nil, err
 		}
 	case "radio":
-		RadioParser(reader, &quiz)
+		if err := RadioParser(reader, &quiz); err != nil {
+			return nil, err
+		}
 	case "order":
-		OrderParser(reader, &quiz)
+		if err := OrderParser(reader, &quiz); err != nil {
+			return nil, err
+		}
 	case "accordance":
-		AccordanceParser(reader, &quiz)
+		if err := AccordanceParser(reader, &quiz); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("Unsupported kind")
 	}
 
 	return &quiz, nil

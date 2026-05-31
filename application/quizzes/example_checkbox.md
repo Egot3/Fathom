@@ -1,5 +1,5 @@
 ---
-kind: checkbox
+kind: check
 randomized: true
 score: 4
 ---
