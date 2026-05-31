@@ -33,6 +33,9 @@ func parseFrontmatter(source []byte) (Frontmatter, []byte, error) {
 	if fm.Kind == "" {
 		return fm, nil, fmt.Errorf("mising entry in frontmatter: kind")
 	}
+	if fm.Score == 0 {
+		return fm, nil, fmt.Errorf("missing score/set to zero in frontmatter")
+	}
 
 	return fm, bytes.Join(lines[end+1:], []byte("\n")), nil
 }

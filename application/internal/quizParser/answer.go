@@ -5,11 +5,11 @@ type AnswerInput struct {
 }
 
 type AnswerRadio struct {
-	Choice Choice `json:"chosen"`
+	ChoiceIdx int `json:"chosen"`
 }
 
 type AnswerCheck struct {
-	Choices []Choice `json:"chosen"`
+	ChoiceIdxs []int `json:"chosen"`
 }
 
 type AnswerAccordance struct {

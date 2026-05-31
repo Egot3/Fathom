@@ -18,8 +18,8 @@ func AccordanceParser(reader *bufio.Scanner, quiz *Quiz) error {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
 
-		if strings.HasPrefix(trimmedLine, "- ") {
-			corelation := strings.Split(strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- ")), "|")
+		if after, ok := strings.CutPrefix(trimmedLine, "- "); ok {
+			corelation := strings.Split(strings.TrimSpace(after), "|")
 			if len(corelation) != 2 {
 				return fmt.Errorf("can't have not a 'key | value' corelations")
 			}
@@ -35,6 +35,10 @@ func AccordanceParser(reader *bufio.Scanner, quiz *Quiz) error {
 			keys = append(keys, key)
 			vals = append(vals, val)
 		}
+	}
+
+	if len(keys) < 2 {
+		return fmt.Errorf("can't have less than 2 options for accordance")
 	}
 
 	if quiz.Meta.Randomized {
@@ -55,9 +59,8 @@ func AccordanceParser(reader *bufio.Scanner, quiz *Quiz) error {
 		answers[i] = slices.Index(shuffled, ord)
 	}
 
-	quiz.Options.Accordance.Static = keys
-	quiz.Options.Accordance.Dynamic = shuffled
-	quiz.Answer.Accordance.Accordance = answers
+	quiz.Options.Accordance = &OptionsAccordance{Static: keys, Dynamic: shuffled}
+	quiz.Answer.Accordance = &AnswerAccordance{Accordance: answers}
 
 	return nil
 }
