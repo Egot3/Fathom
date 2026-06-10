@@ -18,6 +18,7 @@ type Frontmatter struct {
 type Quiz struct {
 	Meta    Frontmatter
 	Title   string
+	Body    string
 	Options QuizOptions
 	Answer  QuizAnswers
 }
@@ -46,6 +47,20 @@ func ParseQuizByPath(path string) (*Quiz, error) {
 			quiz.Title = strings.TrimSpace(strings.TrimPrefix(line, "# "))
 			break
 		}
+	}
+
+	for reader.Scan() {
+		line := reader.Text()
+		trimmedLine := strings.TrimSpace(line)
+
+		if regex.MatchString(trimmedLine) {
+			break
+		}
+		if strings.HasPrefix(trimmedLine, "- ") {
+			break
+		}
+
+		quiz.Body += line + " "
 	}
 
 	// each quiz has 1 typeof question
