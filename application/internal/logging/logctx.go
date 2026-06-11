@@ -3,11 +3,17 @@ package logging
 import (
 	"context"
 	"log/slog"
+	"os"
 )
 
 type key struct{}
 
-var fallback = NewLogger([]string{"charmLog"}, "info")
+var fallback = func() *slog.Logger {
+	jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	})
+	return slog.New(jsonHandler)
+}()
 
 func WithLogger(ctx context.Context, logger *slog.Logger) context.Context {
 	return context.WithValue(ctx, key{}, logger)

@@ -1,20 +1,25 @@
 package logging
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"slices"
 
 	charmlog "github.com/charmbracelet/log"
 	"github.com/charmbracelet/x/term"
+	"github.com/egot3/fathom/internal/config"
+	"github.com/samber/do/v2"
 	slogmulti "github.com/samber/slog-multi"
 )
 
-func NewLogger(loggers []string, levelStr string) *slog.Logger {
+// loggers []string, levelStr string
+func NewLogger(i do.Injector) (*slog.Logger, error) {
 	handlers := []slog.Handler{}
+	cfg := do.MustInvoke[config.Config](i)
 
 	var level slog.Level
-	switch levelStr {
+	switch cfg.Server.Logging.Level {
 	case "debug":
 		level = slog.LevelDebug
 	case "info":
@@ -23,15 +28,20 @@ func NewLogger(loggers []string, levelStr string) *slog.Logger {
 		level = slog.LevelWarn
 	case "error":
 		level = slog.LevelError
+	default:
+		return nil, fmt.Errorf("no Log level")
 	}
 
-	if slices.Contains(loggers, "slog") {
+	if len(cfg.Server.Logging.Loggers) > 2 {
+		return nil, fmt.Errorf("Can't have other loggers than slog and charm")
+	}
+	if slices.Contains(cfg.Server.Logging.Loggers, "slog") {
 		jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: level,
 		})
 		handlers = append(handlers, jsonHandler)
 	}
-	if slices.Contains(loggers, "charmLog") {
+	if slices.Contains(cfg.Server.Logging.Loggers, "charmLog") {
 		if term.IsTerminal(os.Stderr.Fd()) {
 			charmHandler := charmlog.New(os.Stderr)
 			charmHandler.SetLevel(charmlog.Level(level))
@@ -39,5 +49,5 @@ func NewLogger(loggers []string, levelStr string) *slog.Logger {
 		}
 	}
 
-	return slog.New(slogmulti.Fanout(handlers...))
+	return slog.New(slogmulti.Fanout(handlers...)), nil
 }

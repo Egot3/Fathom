@@ -20,8 +20,7 @@ CREATE TABLE IF NOT EXISTS "groups_users" (
 
 -- Create table "quizes"
 CREATE TABLE IF NOT EXISTS "quizes" (
-    "uuid" UUID PRIMARY KEY,
-    "path" TEXT UNIQUE
+    "path" TEXT PRIMARY KEY
 );
 
 -- Create table "tests"

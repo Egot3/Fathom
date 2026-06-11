@@ -71,12 +71,12 @@ func ConfigForm(cfg *config.Config) error {
 				}),
 			huh.NewMultiSelect[string]().
 				Options(
-					huh.NewOption("charm's log", "charmLog").Selected(slices.Contains(cfg.Server.Logging.Logger, "charmLog")),
-					huh.NewOption("structured log", "slog").Selected(slices.Contains(cfg.Server.Logging.Logger, "slog")),
+					huh.NewOption("charm's log", "charmLog").Selected(slices.Contains(cfg.Server.Logging.Loggers, "charmLog")),
+					huh.NewOption("structured log", "slog").Selected(slices.Contains(cfg.Server.Logging.Loggers, "slog")),
 				).Title("Logging").
 				Description(`charm is human-readable, structured is machine parsable,
 					disable all if you don't read logs`).
-				Value(&cfg.Server.Logging.Logger),
+				Value(&cfg.Server.Logging.Loggers),
 		),
 	)
 

@@ -18,8 +18,8 @@ type Config struct {
 	Server struct {
 		Port    string `yaml:"port"`
 		Logging struct {
-			Logger []string `yaml:"loggers"`
-			Level  string   `yaml:"level"`
+			Loggers []string `yaml:"loggers"`
+			Level   string   `yaml:"level"`
 		} `yaml:"logging"`
 	} `yaml:"server"`
 }
