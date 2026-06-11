@@ -17,6 +17,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 
 	r.Method("GET", "/health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("healthy"))
+		w.WriteHeader(http.StatusOK)
 	}))
 
 	return r, nil

@@ -9,6 +9,23 @@ import (
 	"github.com/google/uuid"
 )
 
+type responseWriterInterceptor struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rwi *responseWriterInterceptor) WriteHeader(statusCode int) {
+	rwi.statusCode = statusCode
+	rwi.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (rwi *responseWriterInterceptor) Write(b []byte) (int, error) {
+	if rwi.statusCode == 0 {
+		rwi.statusCode = http.StatusOK
+	}
+	return rwi.ResponseWriter.Write(b)
+}
+
 func TraceAttacher(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rctx := r.Context()
@@ -24,9 +41,14 @@ func TraceAttacher(next http.Handler) http.Handler {
 		)
 		ctx := logging.WithLogger(rctx, logger)
 
-		next.ServeHTTP(w, r.WithContext(ctx))
+		interceptor := &responseWriterInterceptor{
+			ResponseWriter: w,
+			statusCode:     http.StatusOK,
+		}
 
-		code := r.Response.StatusCode
+		next.ServeHTTP(interceptor, r.WithContext(ctx))
+
+		code := interceptor.statusCode
 		elapsed := time.Since(start)
 		logger.InfoContext(ctx, "done",
 			slog.Duration("elapsed", elapsed),

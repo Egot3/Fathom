@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/fang"
 	"github.com/egot3/fathom/internal/config"
+	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/tui"
 	"github.com/egot3/fathom/server"
 	"github.com/go-chi/chi/v5"
@@ -49,8 +50,10 @@ var serveCmd = &cobra.Command{
 		}
 
 		do.ProvideValue(i, cfg)
+		do.Provide(i, logging.NewLogger)
 		do.Provide(i, server.ChiServer)
 
+		log.Printf("running on %v", cfg.Server.Port)
 		if err := http.ListenAndServe(":"+cfg.Server.Port, do.MustInvoke[chi.Router](i)); err != nil {
 			log.Printf("Server execution finished: %v", err)
 			os.Exit(0)
@@ -66,14 +69,20 @@ var configCmd = &cobra.Command{
 	run "fampls config regenerate"`,
 	Args: cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+
 		cfg := config.Config{}
-		data, _ := os.ReadFile(pathToConfig)
+		data, err := os.ReadFile(pathToConfig)
+		if err != nil {
+			log.Println(err)
+			os.Exit(2)
+		}
+
 		if err := yaml.Unmarshal(data, &cfg); err != nil {
 			log.Printf("couldn't read config data: %v", err)
 			os.Exit(1)
 		}
 
-		err := tui.ConfigForm(&cfg)
+		err = tui.ConfigForm(&cfg)
 		if err != nil {
 			os.Exit(1)
 		}
@@ -102,7 +111,7 @@ var configRegenerateCmd = &cobra.Command{
 		cfg.Database.Postgres.Used = false
 
 		cfg.Server.Port = "8081"
-		cfg.Server.Logging.Logger = []string{"slog", "charmLog"}
+		cfg.Server.Logging.Loggers = []string{"slog", "charmLog"}
 		cfg.Server.Logging.Level = "info"
 
 		out, err := yaml.Marshal(cfg)
