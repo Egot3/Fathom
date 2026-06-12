@@ -18,7 +18,7 @@ func NewQuizRepository(i do.Injector) (QuizRepository, error) {
 	return &bunQuizRepository{db: db}, nil
 }
 
-func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string) error {
+func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, checksum []byte) error {
 	_, err := r.db.NewInsert().Model(&models.Quiz{Path: path}).Exec(ctx)
 	return err
 }
@@ -36,4 +36,12 @@ func (r *bunQuizRepository) ListQuizzes(ctx context.Context, page, size int) ([]
 	}
 
 	return lo.Map(quizzes, func(quiz models.Quiz, _ int) string { return quiz.Path }), total, nil
+}
+
+func (r *bunQuizRepository) CheckRegistered(ctx context.Context, path string) (bool, error) {
+	return r.db.NewSelect().Model(&models.Quiz{Path: path}).WherePK().Exists(ctx)
+}
+
+func (r *bunQuizRepository) CheckIntegrity(ctx context.Context, path string, checksum []byte) (bool, error) {
+	return r.db.NewSelect().Model(&models.Quiz{Path: path}).WherePK().Where("checksum = ?", checksum).Exists(ctx)
 }

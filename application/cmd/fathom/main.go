@@ -18,7 +18,7 @@ import (
 	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 	"github.com/uptrace/bun"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 var verbose bool

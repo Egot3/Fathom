@@ -11,6 +11,6 @@ type TestsQuzzies struct {
 	TestUUID uuid.UUID `bun:"test_uuid,pk"`
 	Test     *Test     `bun:"rel:belongs-to,join:test_uuid=uuid"`
 
-	QuizUUID uuid.UUID `bun:"quiz_uuid,pk"`
-	Quiz     *Quiz     `bun:"rel:belongs-to,join:quiz_uuid=uuid"`
+	QuizPath string `bun:"quiz_path,pk"`
+	Quiz     *Quiz  `bun:"rel:belongs-to,join:quiz_path=path"`
 }
