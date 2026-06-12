@@ -13,6 +13,7 @@ type User struct {
 	UUID         uuid.UUID `bun:"uuid,pk"`
 	Nickname     string    `bun:"nickname,notnull,unique"`
 	PasswordHash []byte    `bun:"password_hash,notnull"`
+	IsTeacher    bool      `bun:"is_teacher,default:false"`
 }
 
 var _ bun.BeforeAppendModelHook = (*User)(nil)

@@ -5,7 +5,7 @@ import (
 )
 
 type Quiz struct {
-	bun.BaseModel `bun:"table:quizes,alias:q"`
+	bun.BaseModel `bun:"table:quizzes,alias:q"`
 
 	Path string `bun:"path,unique"`
 }
