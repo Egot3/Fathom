@@ -9,12 +9,15 @@ import (
 
 	"github.com/charmbracelet/fang"
 	"github.com/egot3/fathom/internal/config"
+	"github.com/egot3/fathom/internal/database"
 	"github.com/egot3/fathom/internal/logging"
+	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/tui"
 	"github.com/egot3/fathom/server"
 	"github.com/go-chi/chi/v5"
 	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
+	"github.com/uptrace/bun"
 	"gopkg.in/yaml.v3"
 )
 
@@ -50,6 +53,15 @@ var serveCmd = &cobra.Command{
 		}
 
 		do.ProvideValue(i, cfg)
+
+		do.Provide(i, database.InitDB)
+		db := do.MustInvoke[*bun.DB](i)
+		if err := database.RunMigrations(context.Background(), db); err != nil {
+			log.Fatalf("Fatal migration error: %v", err)
+		}
+		db.RegisterModel((*models.GroupsUsers)(nil))
+		db.RegisterModel((*models.UserGroupsTests)(nil))
+
 		do.Provide(i, logging.NewLogger)
 		do.Provide(i, server.ChiServer)
 

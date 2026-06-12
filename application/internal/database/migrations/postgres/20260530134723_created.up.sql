@@ -2,7 +2,8 @@
 CREATE TABLE IF NOT EXISTS "users" (
     "uuid" UUID PRIMARY KEY,
     "nickname" VARCHAR(255) UNIQUE NOT NULL,
-    "password_hash" CHAR(60) NOT NULL
+    "password_hash" CHAR(60) NOT NULL,
+    "is_teacher" BOOLEAN DEFAULT FALSE
 );
 
 -- Create table "groups" 
@@ -18,8 +19,8 @@ CREATE TABLE IF NOT EXISTS "groups_users" (
     PRIMARY KEY("group_uuid","user_uuid")
 );
 
--- Create table "quizes"
-CREATE TABLE IF NOT EXISTS "quizes" (
+-- Create table "quizzes"
+CREATE TABLE IF NOT EXISTS "quizzes" (
     "path" TEXT PRIMARY KEY
 );
 
@@ -30,10 +31,10 @@ CREATE TABLE IF NOT EXISTS "tests" (
     "max_score" SMALLINT NOT NULL
 );
 
--- Create table "tests_quizes"
-CREATE TABLE IF NOT EXISTS "tests_quizes" (
+-- Create table "tests_quizzes"
+CREATE TABLE IF NOT EXISTS "tests_quizzes" (
     "test_uuid" UUID REFERENCES tests(uuid) ON DELETE CASCADE,
-    "quiz_uuid" UUID REFERENCES quizes(uuid) ON DELETE CASCADE,
+    "quiz_uuid" UUID REFERENCES quizzes(uuid) ON DELETE CASCADE,
     PRIMARY KEY("test_uuid","quiz_uuid")
 );
 
