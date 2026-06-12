@@ -7,5 +7,6 @@ import (
 type Quiz struct {
 	bun.BaseModel `bun:"table:quizzes,alias:q"`
 
-	Path string `bun:"path,unique"`
+	Path     string `bun:"path,pk"`
+	Checksum []byte `bun:"checksum,notnull"`
 }

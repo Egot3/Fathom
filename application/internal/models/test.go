@@ -13,6 +13,8 @@ type Test struct {
 	UUID     uuid.UUID `bun:"uuid,pk"`
 	Name     string    `bun:"name"`
 	MaxScore string    `bun:"name"` //computed
+
+	Quizzes []Quiz `bun:"m2m:tests_quizzes,join:Test=Quiz"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Test)(nil)

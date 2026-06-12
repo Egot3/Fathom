@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS "groups_users" (
 
 -- Create table "quizzes"
 CREATE TABLE IF NOT EXISTS "quizzes" (
-    "path" TEXT PRIMARY KEY
+    "path" TEXT PRIMARY KEY,
+    "checksum" CHAR(32) NOT NULL --de-facto for "is cached" check
 );
 
 -- Create table "tests"
@@ -34,7 +35,7 @@ CREATE TABLE IF NOT EXISTS "tests" (
 -- Create table "tests_quizzes"
 CREATE TABLE IF NOT EXISTS "tests_quizzes" (
     "test_uuid" UUID REFERENCES tests(uuid) ON DELETE CASCADE,
-    "quiz_uuid" UUID REFERENCES quizzes(uuid) ON DELETE CASCADE,
+    "quiz_path" TEXT REFERENCES quizzes("path") ON DELETE CASCADE,
     PRIMARY KEY("test_uuid","quiz_uuid")
 );
 
