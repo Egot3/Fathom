@@ -14,4 +14,5 @@ type UserRepository interface {
 	Exists(ctx context.Context, uuid uuid.UUID) (bool, error)
 	Login(ctx context.Context, uuid uuid.UUID, passwordHash []byte) (success bool, err error)
 	Register(ctx context.Context, name string, passwordHash []byte) error
+	User(ctx context.Context, uuid uuid.UUID) (*models.User, error)
 }

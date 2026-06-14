@@ -12,6 +12,8 @@ type Group struct {
 
 	UUID uuid.UUID `bun:"uuid,pk"`
 	Name string    `bun:"name,unique"`
+
+	Users []User `bun:"m2m:groups_users,join:Group=User"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Group)(nil)
