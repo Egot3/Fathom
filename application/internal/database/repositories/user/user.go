@@ -44,6 +44,21 @@ func (r *bunUserRepository) IsTeacher(ctx context.Context, uuid uuid.UUID) (bool
 	return is, err
 }
 
+func (r *bunUserRepository) User(ctx context.Context, uuid uuid.UUID) (*models.User, error) {
+	user := models.User{UUID: uuid}
+	err := r.db.NewSelect().Model(&user).WherePK().Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.User{
+		Nickname:     user.Nickname,
+		UUID:         user.UUID,
+		IsTeacher:    user.IsTeacher,
+		PasswordHash: nil, //safety
+	}, nil
+}
+
 func (r *bunUserRepository) UpdateUser(ctx context.Context, patchedUser models.PatchUser) error {
 	query := r.db.NewUpdate().Model(&models.User{UUID: patchedUser.UUID}).WherePK()
 	if patchedUser.Nickname != nil {
