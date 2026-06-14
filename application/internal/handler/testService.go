@@ -1,5 +1,6 @@
 package handler
 
-type TestService struct {
+/* type TestService struct {
 	repo
 }
+*/

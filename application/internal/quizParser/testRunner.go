@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"path/filepath"
+	"slices"
 	"sync"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -21,11 +19,11 @@ var (
 )
 
 type NotCachedError struct {
-	Uuids uuid.UUIDs
+	Ids []int
 }
 
 func (e *NotCachedError) Error() string {
-	return fmt.Sprintf("%d quizzes not cached in runner", len(e.Uuids))
+	return fmt.Sprintf("%d quizzes not cached in runner", len(e.Ids))
 }
 
 func (e *NotCachedError) Is(target error) bool {
@@ -34,7 +32,7 @@ func (e *NotCachedError) Is(target error) bool {
 
 type TestRunner struct {
 	mu         sync.RWMutex
-	quizzes    map[uuid.UUID]*Quiz
+	quizzes    []*Quiz
 	generation uint64
 	cancel     context.CancelFunc
 	timer      *time.Timer
@@ -44,9 +42,9 @@ type TestRunner struct {
 }
 
 // Ctx must explicitly hold the lifetime of test
-func (tr *TestRunner) Start(ctx context.Context, duration time.Duration, quizPathsWithUUIDs map[uuid.UUID]string) error {
-	quizzes := make(map[uuid.UUID]*Quiz, len(quizPathsWithUUIDs))
-	for quizUUID, path := range quizPathsWithUUIDs {
+func (tr *TestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string) error {
+	quizzes := make([]*Quiz, len(quizPaths))
+	for i, path := range quizPaths {
 		if !filepath.IsLocal(path) {
 			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
 		}
@@ -54,7 +52,7 @@ func (tr *TestRunner) Start(ctx context.Context, duration time.Duration, quizPat
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
-		quizzes[quizUUID] = quiz
+		quizzes[i] = quiz
 
 	}
 
@@ -106,17 +104,18 @@ func (tr *TestRunner) cleanup(gen uint64) {
 	}
 }
 
-func (tr *TestRunner) Get(uuid uuid.UUID) (*Quiz, error) {
+func (tr *TestRunner) Get(id int) (*Quiz, error) {
 	tr.mu.RLock()
 	defer tr.mu.RUnlock()
 
 	if tr.cancel == nil {
 		return nil, ErrRunnerInactive
 	}
-	q, ok := tr.quizzes[uuid]
-	if !ok {
+
+	if ok := len(tr.quizzes) > id; !ok {
 		return nil, ErrQuizNotCached
 	}
+	q := tr.quizzes[id]
 
 	return q, nil
 }
@@ -134,9 +133,9 @@ func (tr *TestRunner) Stop() {
 	tr.quizzes = nil
 }
 
-// acquire uuid-path quiz pairs from db via uuid
+// acquire path quiz pairs from db via uuid
 // called upsert as maps.Copy overwrites dest on collision
-func (tr *TestRunner) UpsertQuiz(quizPathsWithUUIDs map[uuid.UUID]string) error {
+func (tr *TestRunner) UpsertQuiz(quizPaths []string) error {
 	tr.mu.RLock()
 	if tr.cancel == nil { // reading a bunch of files might fry the potato
 		tr.mu.RUnlock()
@@ -144,8 +143,8 @@ func (tr *TestRunner) UpsertQuiz(quizPathsWithUUIDs map[uuid.UUID]string) error 
 	}
 	tr.mu.RUnlock()
 
-	quizzes := make(map[uuid.UUID]*Quiz, len(quizPathsWithUUIDs))
-	for quizUUID, path := range quizPathsWithUUIDs {
+	quizzes := make([]*Quiz, len(quizPaths))
+	for i, path := range quizPaths {
 		if !filepath.IsLocal(path) {
 			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
 		}
@@ -153,7 +152,7 @@ func (tr *TestRunner) UpsertQuiz(quizPathsWithUUIDs map[uuid.UUID]string) error 
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
-		quizzes[quizUUID] = quiz
+		quizzes[i] = quiz
 
 	}
 
@@ -162,13 +161,13 @@ func (tr *TestRunner) UpsertQuiz(quizPathsWithUUIDs map[uuid.UUID]string) error 
 	if tr.cancel == nil { //TOCTOU
 		return ErrRunnerInactive
 	}
-	maps.Copy(tr.quizzes, quizzes)
+	tr.quizzes = slices.Clone(quizzes)
 
 	return nil
 }
 
 // remember: parioal deletion, return 200 207 OR 404
-func (tr *TestRunner) RemoveQuiz(quizUUIDs uuid.UUIDs) error {
+func (tr *TestRunner) RemoveQuiz(ids []int) error {
 	tr.mu.RLock()
 	if tr.cancel == nil {
 		tr.mu.RUnlock()
@@ -176,22 +175,23 @@ func (tr *TestRunner) RemoveQuiz(quizUUIDs uuid.UUIDs) error {
 	}
 	tr.mu.RUnlock() //just to keep up with upsert
 
-	notFound := make(uuid.UUIDs, 0)
+	notFound := make([]int, 0)
 	tr.mu.Lock()
 	if tr.cancel == nil {
 		return ErrRunnerInactive
 	}
-	for _, quizUUID := range quizUUIDs {
-		if _, ok := tr.quizzes[quizUUID]; !ok {
-			notFound = append(notFound, quizUUID)
+	for _, id := range ids {
+		if ok := len(tr.quizzes) > id; !ok {
+			notFound = append(notFound, id)
 			continue
 		}
-		delete(tr.quizzes, quizUUID)
+
+		tr.quizzes = append(tr.quizzes[:id], tr.quizzes[id+1:]...)
 	}
 	tr.mu.Unlock()
 
 	if len(notFound) != 0 {
-		return &NotCachedError{Uuids: notFound}
+		return &NotCachedError{Ids: notFound}
 	}
 
 	return nil
