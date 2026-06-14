@@ -3,7 +3,11 @@ CREATE TABLE IF NOT EXISTS "users" (
     "uuid" UUID PRIMARY KEY,
     "nickname" VARCHAR(255) UNIQUE NOT NULL,
     "password_hash" CHAR(60) NOT NULL,
-    "is_teacher" BOOLEAN DEFAULT FALSE
+    "is_teacher" BOOLEAN DEFAULT FALSE,
+
+    "deleted_at" TIMESTAMPTZ DEFAULT NULL.
+    "updated_at" TIMESTAMPTZ,
+    "created_at" TIMESTAMPTZ
 );
 
 -- Create table "groups" 
@@ -29,7 +33,8 @@ CREATE TABLE IF NOT EXISTS "quizzes" (
 CREATE TABLE IF NOT EXISTS "tests" (
     "uuid" UUID         PRIMARY KEY,
     "name" VARCHAR(255) NOT NULL UNIQUE,
-    "max_score" SMALLINT NOT NULL
+    "created_at" TIMESTAMPTZ NOT NULL,
+    "updated_at" TIMESTAMPTZ NOT NULL
 );
 
 -- Create table "tests_quizzes"
@@ -47,4 +52,17 @@ CREATE TABLE IF NOT EXISTS "users_groups_tests" (
     "score"      SMALLINT NOT NULL,
     
     PRIMARY KEY("test_uuid","group_uuid","user_uuid")
+);
+
+-- Create table "users_groups_tests_answers"
+CREATE TABLE IF NOT EXISTS "users_groups_tests_quiz_answers" (
+    "test_uuid"  UUID REFERENCES tests(uuid) ON DELETE CASCADE,
+    "group_uuid" UUID REFERENCES groups(uuid) ON DELETE CASCADE,
+    "user_uuid"  UUID REFERENCES users(uuid) ON DELETE CASCADE,
+    "quiz_path"  TEXT REFERENCES quizzes(path) ON DELETE CASCADE,
+    "score"      SMALLINT NOT NULL,
+
+    "answered_at" TIMESTAMPTZ NOT NULL,
+
+    PRIMARY KEY("test_uuid","group_uuid","user_uuid","quiz_path")
 );

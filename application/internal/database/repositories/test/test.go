@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/egot3/fathom/internal/models"
@@ -10,6 +11,20 @@ import (
 	"github.com/samber/do/v2"
 	"github.com/uptrace/bun"
 )
+
+var ErrQuizNotInTest = errors.New("quiz is not in the runner")
+
+type NotInTestError struct {
+	Pathes []string
+}
+
+func (e *NotInTestError) Error() string {
+	return fmt.Sprintf("%d quizzes are not in test", len(e.Pathes))
+}
+
+func (e *NotInTestError) Is(target error) bool {
+	return target == ErrQuizNotInTest
+}
 
 type bunTestRepository struct {
 	db *bun.DB
@@ -28,7 +43,7 @@ func (r *bunTestRepository) CreateTest(ctx context.Context, name string) error {
 func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		for _, path := range pathes {
-			_, err := tx.NewInsert().Model(&models.TestsQuzzies{TestUUID: testUUID, QuizPath: path}).Exec(ctx)
+			_, err := tx.NewInsert().Model(&models.TestsQuizzies{TestUUID: testUUID, QuizPath: path}).Exec(ctx)
 			if err != nil {
 				return err
 			}
@@ -39,7 +54,29 @@ func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uu
 }
 
 func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
-	return fmt.Errorf("unimplemented") // add partial pruning with errors
+	notFound := make([]string, 0)
+	err := r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		for _, path := range pathes {
+			_, err := tx.NewDelete().Model(&models.TestsQuizzies{QuizPath: path, TestUUID: testUUID}).WherePK().Exec(ctx)
+			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					notFound = append(notFound, path)
+				}
+				return err
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if len(notFound) > 0 {
+		return &NotInTestError{Pathes: notFound}
+	}
+
+	return nil
 }
 
 func (r *bunTestRepository) Test(ctx context.Context, UUID uuid.UUID) (*models.Test, error) {
@@ -54,5 +91,10 @@ func (r *bunTestRepository) Test(ctx context.Context, UUID uuid.UUID) (*models.T
 
 func (r *bunTestRepository) DeleteTest(ctx context.Context, UUID uuid.UUID) error {
 	_, err := r.db.NewDelete().Model(&models.Test{UUID: UUID}).WherePK().Exec(ctx)
+	return err
+}
+
+func (r *bunTestRepository) UpdateTest(ctx context.Context, UUID uuid.UUID, name string) error {
+	_, err := r.db.NewUpdate().Model(&models.Test{UUID: UUID, Name: name}).WherePK().Exec(ctx)
 	return err
 }
