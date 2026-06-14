@@ -18,8 +18,8 @@ func NewQuizRepository(i do.Injector) (QuizRepository, error) {
 	return &bunQuizRepository{db: db}, nil
 }
 
-func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, checksum []byte) error {
-	_, err := r.db.NewInsert().Model(&models.Quiz{Path: path}).Exec(ctx)
+func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, checksum []byte, score int) error {
+	_, err := r.db.NewInsert().Model(&models.Quiz{Path: path, Checksum: checksum, Score: score}).Exec(ctx)
 	return err
 }
 
