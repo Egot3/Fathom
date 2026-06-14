@@ -9,4 +9,5 @@ type Quiz struct {
 
 	Path     string `bun:"path,pk"`
 	Checksum []byte `bun:"checksum,notnull"`
+	Score    int    `bun:"score,notnull"`
 }

@@ -23,7 +23,7 @@ type Answer struct {
 	QuizPath string `bun:"quiz_path,pk"`
 	Quiz     *Quiz  `bun:"rel:belongs-to,join:quiz_path=path"`
 
-	AnsweredAt time.Time `bun:"answered_at,notnull"`
+	AnsweredAt time.Time `bun:"answered_at,pk"`
 
 	Score uint64 `bun:"score"`
 }
