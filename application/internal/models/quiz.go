@@ -1,6 +1,10 @@
 package models
 
 import (
+	"context"
+	"path/filepath"
+
+	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/uptrace/bun"
 )
 
@@ -10,4 +14,19 @@ type Quiz struct {
 	Path     string `bun:"path,pk"`
 	Checksum []byte `bun:"checksum,notnull"`
 	Score    int    `bun:"score,notnull"`
+}
+
+var _ bun.BeforeAppendModelHook = (*Quiz)(nil)
+
+func (q *Quiz) BeforeAppendModel(ctx context.Context, query bun.Query) error {
+	switch query.(type) {
+	case *bun.InsertQuery:
+		if !filepath.IsAbs(q.Path) {
+			return carefulness.ErrAbsoluteRequired
+		}
+		if filepath.Ext(q.Path) != ".md" {
+			return carefulness.PlainMarkdownRequired
+		}
+	}
+	return nil
 }

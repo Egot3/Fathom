@@ -2,6 +2,7 @@ package quiz
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/egot3/fathom/internal/models"
 	"github.com/samber/do/v2"
@@ -24,8 +25,20 @@ func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, check
 }
 
 func (r *bunQuizRepository) DeallocateQuiz(ctx context.Context, path string) error {
-	_, err := r.db.NewDelete().Model(&models.Quiz{Path: path}).WherePK().Exec(ctx)
-	return err
+	res, err := r.db.NewDelete().Model(&models.Quiz{Path: path}).WherePK().Exec(ctx)
+	if err != nil {
+		return err
+	}
+	c, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if c == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
 
 func (r *bunQuizRepository) ListQuizzes(ctx context.Context, page, size int) ([]string, int, error) {

@@ -1,0 +1,71 @@
+PRAGMA foreign_keys = ON;
+
+-- Create table "users"
+CREATE TABLE IF NOT EXISTS "users" (
+    "uuid"         TEXT PRIMARY KEY,
+    "nickname"     TEXT UNIQUE NOT NULL,
+    "password_hash" TEXT NOT NULL,
+    "is_teacher"   INTEGER DEFAULT 0,
+
+    "deleted_at"   TEXT DEFAULT NULL,
+    "updated_at"   TEXT,
+    "created_at"   TEXT
+);
+
+-- Create table "groups"
+CREATE TABLE IF NOT EXISTS "groups" (
+    "uuid" TEXT PRIMARY KEY,
+    "name" TEXT UNIQUE
+);
+
+-- Create table "groups_users"
+CREATE TABLE IF NOT EXISTS "groups_users" (
+    "group_uuid" TEXT REFERENCES groups(uuid) ON DELETE CASCADE,
+    "user_uuid"  TEXT REFERENCES users(uuid) ON DELETE CASCADE,
+    PRIMARY KEY ("group_uuid", "user_uuid")
+);
+
+-- Create table "quizzes"
+CREATE TABLE IF NOT EXISTS "quizzes" (
+    "path"     TEXT PRIMARY KEY,
+    "checksum" TEXT NOT NULL,          
+    "score"    INTEGER NOT NULL        
+);
+
+-- Create table "tests"
+CREATE TABLE IF NOT EXISTS "tests" (
+    "uuid"       TEXT PRIMARY KEY,
+    "name"       TEXT NOT NULL UNIQUE,
+    "created_at" TEXT NOT NULL,
+    "updated_at" TEXT NOT NULL
+);
+
+-- Create table "tests_quizzes"
+CREATE TABLE IF NOT EXISTS "tests_quizzes" (
+    "test_uuid" TEXT REFERENCES tests(uuid) ON DELETE CASCADE,
+    "quiz_path" TEXT REFERENCES quizzes("path") ON DELETE CASCADE,
+    PRIMARY KEY ("test_uuid", "quiz_path")
+);
+
+-- Create table "users_groups_tests"
+CREATE TABLE IF NOT EXISTS "users_groups_tests" (
+    "test_uuid"  TEXT REFERENCES tests(uuid) ON DELETE CASCADE,
+    "group_uuid" TEXT REFERENCES groups(uuid) ON DELETE CASCADE,
+    "user_uuid"  TEXT REFERENCES users(uuid) ON DELETE CASCADE,
+    "score"      INTEGER NOT NULL,
+
+    PRIMARY KEY ("test_uuid", "group_uuid", "user_uuid")
+);
+
+-- Create table "users_groups_tests_quiz_answers"
+CREATE TABLE IF NOT EXISTS "users_groups_tests_quiz_answers" (
+    "test_uuid"   TEXT REFERENCES tests(uuid) ON DELETE CASCADE,
+    "group_uuid"  TEXT REFERENCES groups(uuid) ON DELETE CASCADE,
+    "user_uuid"   TEXT REFERENCES users(uuid) ON DELETE CASCADE,
+    "quiz_path"   TEXT REFERENCES quizzes(path) ON DELETE CASCADE,
+    "score"       INTEGER NOT NULL,
+
+    "answered_at" TEXT NOT NULL,
+
+    PRIMARY KEY ("test_uuid", "group_uuid", "user_uuid", "quiz_path", "answered_at")
+);
