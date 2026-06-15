@@ -1,7 +1,8 @@
-package repositories
+package user
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
@@ -19,13 +20,27 @@ func NewUserRepository(i do.Injector) (UserRepository, error) {
 	return &bunUserRepository{db: db}, nil
 }
 
-func (r *bunUserRepository) Register(ctx context.Context, name string, passwordHash []byte) error {
-	_, err := r.db.NewInsert().Model(&models.User{Nickname: name, PasswordHash: passwordHash}).Exec(ctx)
-	return err
+func (r *bunUserRepository) Register(ctx context.Context, name string, passwordHash []byte) (*models.User, error) {
+	bakedUser := models.User{Nickname: name, PasswordHash: passwordHash}
+	err := r.db.NewInsert().Model(&bakedUser).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.User{
+		UUID:      bakedUser.UUID,
+		Nickname:  bakedUser.Nickname,
+		CreatedAt: bakedUser.CreatedAt,
+		UpdatedAt: bakedUser.UpdatedAt,
+		DeletedAt: bakedUser.DeletedAt,
+		IsTeacher: bakedUser.IsTeacher,
+	}, nil
 }
 
-func (r *bunUserRepository) Login(ctx context.Context, uuid uuid.UUID, passwordHash []byte) (success bool, err error) {
-	success, err = r.db.NewSelect().Model(&models.User{UUID: uuid}).WherePK().Where("password_hash = ?", passwordHash).Exists(ctx)
+func (r *bunUserRepository) Login(ctx context.Context, nickname string, passwordHash []byte) (success bool, err error) {
+	success, err = r.db.NewSelect().Model((*models.User)(nil)).
+		Where("password_hash = ?", passwordHash).Where("nickname = ?", nickname).
+		Exists(ctx)
 	return success, err // on err success is false(by bun's code)
 }
 
@@ -35,8 +50,20 @@ func (r *bunUserRepository) Exists(ctx context.Context, uuid uuid.UUID) (bool, e
 }
 
 func (r *bunUserRepository) DeleteUser(ctx context.Context, uuid uuid.UUID) error {
-	_, err := r.db.NewDelete().Model(&models.User{UUID: uuid}).WherePK().Exec(ctx)
-	return err
+	res, err := r.db.NewDelete().Model(&models.User{UUID: uuid}).WherePK().Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	c, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if c == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 func (r *bunUserRepository) IsTeacher(ctx context.Context, uuid uuid.UUID) (bool, error) {

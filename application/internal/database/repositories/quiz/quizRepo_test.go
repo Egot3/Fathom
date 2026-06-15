@@ -1,0 +1,243 @@
+package quiz_test
+
+import (
+	"context"
+	"crypto/rand"
+	"database/sql"
+	"fmt"
+	mrand "math/rand/v2"
+	"testing"
+
+	"github.com/egot3/fathom/internal/carefulness"
+	"github.com/egot3/fathom/internal/database/repositories/quiz"
+	"github.com/egot3/fathom/internal/models"
+	"github.com/egot3/fathom/internal/testutils"
+	"github.com/samber/do/v2"
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
+)
+
+func NewInjectorWithQuizRepo(t *testing.T) do.Injector {
+	t.Helper()
+
+	i := testutils.NewTestInjector(t)
+
+	do.Provide(i, quiz.NewQuizRepository)
+
+	return i
+}
+
+func TestQuiz_Register(t *testing.T) {
+	t.Parallel()
+
+	i := NewInjectorWithQuizRepo(t)
+
+	r := do.MustInvoke[quiz.QuizRepository](i)
+	db := do.MustInvoke[*bun.DB](i)
+
+	t.Run("Valid quiz", func(t *testing.T) {
+		t.Parallel()
+
+		path := "/usr/path/to/quiz.md"
+		err := r.RegisterQuiz(t.Context(), path, []byte{}, 1)
+		require.NoError(t, err)
+
+		quiz := models.Quiz{Path: path}
+		err = db.NewSelect().Model(&quiz).WherePK().Scan(t.Context())
+		require.NoError(t, err)
+
+		require.Equal(t, quiz, models.Quiz{
+			Path:     path,
+			Checksum: []byte{},
+			Score:    1,
+		})
+	})
+	t.Run("Not abs path", func(t *testing.T) {
+		t.Parallel()
+
+		err := r.RegisterQuiz(t.Context(), "path.md", []byte{}, 1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, carefulness.ErrAbsoluteRequired)
+	})
+	t.Run("Not md", func(t *testing.T) {
+		t.Parallel()
+
+		err := r.RegisterQuiz(t.Context(), "/usr/path/to/cooler_quiz.mdx", []byte{}, 1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, carefulness.PlainMarkdownRequired)
+	})
+}
+
+func TestQuiz_Deallocate(t *testing.T) {
+	t.Parallel()
+
+	i := NewInjectorWithQuizRepo(t)
+
+	r := do.MustInvoke[quiz.QuizRepository](i)
+	db := do.MustInvoke[*bun.DB](i)
+
+	path := "/usr/path/to/quiz.md"
+	_, err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: []byte{}, Score: 2}).Exec(t.Context())
+	require.NoError(t, err)
+
+	testCases := []struct {
+		desc           string
+		path           string
+		expectNotFound bool
+	}{
+		{
+			desc:           "Valid deallocation",
+			path:           path,
+			expectNotFound: false,
+		},
+		{
+			desc:           "Invalid deallocation",
+			path:           "",
+			expectNotFound: true,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			err = r.DeallocateQuiz(context.Background(), tC.path)
+			if tC.expectNotFound {
+				require.ErrorIs(t, err, sql.ErrNoRows)
+				return
+			}
+			require.NoError(t, err)
+
+			f, err := db.NewSelect().Model(&models.Quiz{Path: path}).WherePK().Exists(t.Context())
+			require.NoError(t, err)
+			require.False(t, f)
+		})
+	}
+}
+
+func TestQuiz_Check_registered(t *testing.T) {
+	t.Parallel()
+
+	i := NewInjectorWithQuizRepo(t)
+
+	r := do.MustInvoke[quiz.QuizRepository](i)
+	db := do.MustInvoke[*bun.DB](i)
+
+	path := "/usr/path/to/quiz.md"
+	_, err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: []byte{}, Score: 2}).Exec(t.Context())
+	require.NoError(t, err)
+
+	testCases := []struct {
+		desc               string
+		path               string
+		expectUnregistered bool
+	}{
+		{
+			desc:               "Registered",
+			path:               path,
+			expectUnregistered: false,
+		},
+		{
+			desc:               "Unregistered",
+			path:               "",
+			expectUnregistered: true,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			is, err := r.CheckRegistered(context.Background(), tC.path)
+			require.NoError(t, err)
+			if tC.expectUnregistered {
+				require.False(t, is)
+			} else {
+				require.True(t, is)
+			}
+		})
+	}
+}
+
+func TestQuiz_Check_integrity(t *testing.T) {
+	t.Parallel()
+
+	i := NewInjectorWithQuizRepo(t)
+
+	r := do.MustInvoke[quiz.QuizRepository](i)
+	db := do.MustInvoke[*bun.DB](i)
+
+	path := "/usr/path/to/quiz.md"
+	randomBytes := make([]byte, 16)
+	rand.Read(randomBytes)
+
+	_, err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: randomBytes, Score: 2}).Exec(t.Context())
+	require.NoError(t, err)
+
+	testCases := []struct {
+		desc               string
+		path               string
+		checksum           []byte
+		expectUnintegrated bool
+	}{
+		{
+			desc:               "Integrated",
+			path:               path,
+			checksum:           randomBytes,
+			expectUnintegrated: false,
+		},
+		{
+			desc:               "Unintegrated, registered",
+			path:               path,
+			checksum:           []byte{},
+			expectUnintegrated: true,
+		},
+		{
+			desc:               "Unintegrated, unregistered",
+			path:               "",
+			checksum:           []byte{},
+			expectUnintegrated: true,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			is, err := r.CheckIntegrity(context.Background(), tC.path, tC.checksum)
+			require.NoError(t, err)
+			if tC.expectUnintegrated {
+				require.False(t, is)
+			} else {
+				require.True(t, is)
+			}
+		})
+	}
+}
+
+func TestQuiz_List(t *testing.T) {
+	t.Parallel()
+
+	i := NewInjectorWithQuizRepo(t)
+
+	r := do.MustInvoke[quiz.QuizRepository](i)
+	db := do.MustInvoke[*bun.DB](i)
+
+	var quizzes []string
+
+	for i := 0; i < 5; i++ {
+		path := fmt.Sprintf("/usr/path/to/%v.md", rand.Text())
+		randomBytes := make([]byte, 16)
+		rand.Read(randomBytes)
+
+		quiz := models.Quiz{Path: path, Checksum: randomBytes, Score: mrand.Int()}
+		_, err := db.NewInsert().Model(&quiz).Exec(t.Context())
+		require.NoError(t, err)
+
+		quizzes = append(quizzes, quiz.Path)
+	}
+
+	pathes, total, err := r.ListQuizzes(t.Context(), 0, len(quizzes))
+	require.NoError(t, err)
+	require.Equal(t, len(quizzes), total)
+	require.ElementsMatch(t, pathes, quizzes)
+	require.Condition(t, func() (success bool) {
+		return lo.EveryBy(lo.Window(pathes, 2), func(item []string) bool {
+			return item[0] > item[1]
+		})
+	})
+}

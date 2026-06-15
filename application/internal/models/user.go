@@ -14,7 +14,7 @@ type User struct {
 	UUID         uuid.UUID `bun:"uuid,pk"`
 	Nickname     string    `bun:"nickname,notnull,unique"`
 	PasswordHash []byte    `bun:"password_hash,notnull"`
-	IsTeacher    bool      `bun:"is_teacher,default:false"`
+	IsTeacher    bool      `bun:"is_teacher,default:false,type:boolean"`
 
 	DeletedAt *time.Time `bun:"deleted_at,soft_delete"`
 	CreatedAt time.Time  `bun:"created_at"`

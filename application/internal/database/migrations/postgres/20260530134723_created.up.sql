@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "password_hash" CHAR(60) NOT NULL,
     "is_teacher" BOOLEAN DEFAULT FALSE,
 
-    "deleted_at" TIMESTAMPTZ DEFAULT NULL.
+    "deleted_at" TIMESTAMPTZ DEFAULT NULL,
     "updated_at" TIMESTAMPTZ,
     "created_at" TIMESTAMPTZ
 );
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS "tests" (
 CREATE TABLE IF NOT EXISTS "tests_quizzes" (
     "test_uuid" UUID REFERENCES tests(uuid) ON DELETE CASCADE,
     "quiz_path" TEXT REFERENCES quizzes("path") ON DELETE CASCADE,
-    PRIMARY KEY("test_uuid","quiz_uuid")
+    PRIMARY KEY("test_uuid","quiz_path")
 );
 
 -- Create table "users_groups_tests"
