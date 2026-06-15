@@ -67,3 +67,8 @@ func (r *bunGroupRepository) RemoveUsers(ctx context.Context, groupUUID uuid.UUI
 		return nil
 	})
 }
+
+func (r *bunGroupRepository) IsInGroup(ctx context.Context, groupUUID, userUUID uuid.UUID) (bool, error) {
+	return r.db.NewSelect().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).
+		WherePK().Exists(ctx)
+}

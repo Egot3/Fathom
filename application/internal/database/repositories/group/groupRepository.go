@@ -14,4 +14,5 @@ type GroupRepository interface {
 	UpdateGroup(ctx context.Context, uuid uuid.UUID, name string) error
 	AppendUsers(ctx context.Context, groupUUID uuid.UUID, userUUIDs uuid.UUIDs) error
 	RemoveUsers(ctx context.Context, groupUUID uuid.UUID, userUUIDs uuid.UUIDs) error
+	IsInGroup(ctx context.Context, groupUUID, userUUID uuid.UUID) (bool, error)
 }

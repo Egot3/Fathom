@@ -87,11 +87,46 @@ func (r *bunAnswerRepository) AnswerScore(ctx context.Context, userUUID, testUUI
 	return score, nil
 }
 
-func (r *bunAnswerRepository) Totals(ctx context.Context, userUUID, testUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+func (r *bunAnswerRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) ([]models.UserGroupsTests, error) {
 	var totals []models.UserGroupsTests
 	err := r.db.NewSelect().Model(&totals).
 		Where("test_uuid = ?", testUUID).
+		Where("user_uuid = ?", userUUID).
+		Where("group_uuid = ?", groupUUID).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return totals, nil
+}
+
+func (r *bunAnswerRepository) AllTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+	var totals []models.UserGroupsTests
+	err := r.db.NewSelect().Model(&totals).
 		Where("user_uuid = ?", userUUID).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return totals, nil
+}
+
+func (r *bunAnswerRepository) TestTotals(ctx context.Context, testUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+	var totals []models.UserGroupsTests
+	err := r.db.NewSelect().Model(&totals).
+		Where("test_uuid = ?", testUUID).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return totals, nil
+}
+
+func (r *bunAnswerRepository) GroupTestTotals(ctx context.Context, testUUID, groupUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+	var totals []models.UserGroupsTests
+	err := r.db.NewSelect().Model(&totals).
+		Where("test_uuid = ?", testUUID).
+		Where("group_uuid = ?", groupUUID).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
