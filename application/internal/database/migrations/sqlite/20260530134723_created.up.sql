@@ -44,7 +44,9 @@ CREATE TABLE IF NOT EXISTS "tests" (
 CREATE TABLE IF NOT EXISTS "tests_quizzes" (
     "test_uuid" TEXT REFERENCES tests(uuid) ON DELETE CASCADE,
     "quiz_path" TEXT REFERENCES quizzes("path") ON DELETE CASCADE,
-    PRIMARY KEY ("test_uuid", "quiz_path")
+    "position" INTEGER NOT NULL,
+
+    PRIMARY KEY ("test_uuid", "quiz_path", "position")
 );
 
 -- Create table "users_groups_tests"

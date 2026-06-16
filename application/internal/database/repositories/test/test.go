@@ -15,11 +15,11 @@ import (
 var ErrQuizNotInTest = errors.New("quiz is not in the runner")
 
 type NotInTestError struct {
-	Pathes []string
+	Count int
 }
 
 func (e *NotInTestError) Error() string {
-	return fmt.Sprintf("%d quizzes are not in test", len(e.Pathes))
+	return fmt.Sprintf("%d quizzes are not in test", e.Count)
 }
 
 func (e *NotInTestError) Is(target error) bool {
@@ -40,20 +40,37 @@ func (r *bunTestRepository) CreateTest(ctx context.Context, name string) error {
 	return err
 }
 
+/* func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
+	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		var testQuizzes []models.TestsQuizzies = lo.Map(pathes, func(path string, pos int) models.TestsQuizzies {
+			return models.TestsQuizzies{TestUUID: testUUID, Position: pos, QuizPath: path}
+		})
+		_, err := tx.NewInsert().Model(&testQuizzes).Exec(ctx)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+} */
+
 func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		for _, path := range pathes {
-			_, err := tx.NewInsert().Model(&models.TestsQuizzies{TestUUID: testUUID, QuizPath: path}).Exec(ctx)
-			if err != nil {
-				return err
-			}
+		var testQuizzes []models.TestsQuizzies
+		for pos, path := range pathes {
+			testQuizzes = append(testQuizzes, models.TestsQuizzies{Position: pos, QuizPath: path, TestUUID: testUUID})
+		}
+		_, err := tx.NewInsert().Model(&testQuizzes).Exec(ctx)
+		if err != nil {
+			return err
 		}
 
 		return nil
 	})
 }
 
-func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
+// old
+/* func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
 	notFound := make([]string, 0)
 	err := r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		for _, path := range pathes {
@@ -73,28 +90,74 @@ func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID u
 	}
 
 	if len(notFound) > 0 {
-		return &NotInTestError{Pathes: notFound}
+		return &NotInTestError{Count: len(notFound)}
+	}
+
+	return nil
+} */
+
+// new(alpha)
+func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
+	notFound := 0
+	err := r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		res, err := tx.NewDelete().Model((*models.TestsQuizzies)(nil)).
+			Where("test_uuid = ?", testUUID).Where("quiz_path IN (?)", bun.List(pathes)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+		c, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		notFound = int(c)
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if notFound > 0 {
+		return &NotInTestError{Count: notFound}
 	}
 
 	return nil
 }
 
 func (r *bunTestRepository) Test(ctx context.Context, UUID uuid.UUID) (*models.Test, error) {
-	var test = &models.Test{UUID: UUID}
-	err := r.db.NewSelect().Model(&test).WherePK().Relation("Quiz").Scan(ctx)
+	var test = models.Test{UUID: UUID}
+	err := r.db.NewSelect().Model(&test).WherePK().Relation("Quizzes").Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return test, nil
+	return &test, nil
 }
 
 func (r *bunTestRepository) DeleteTest(ctx context.Context, UUID uuid.UUID) error {
-	_, err := r.db.NewDelete().Model(&models.Test{UUID: UUID}).WherePK().Exec(ctx)
-	return err
+	res, err := r.db.NewDelete().Model(&models.Test{UUID: UUID}).WherePK().Exec(ctx)
+
+	c, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if c == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 func (r *bunTestRepository) UpdateTest(ctx context.Context, UUID uuid.UUID, name string) error {
-	_, err := r.db.NewUpdate().Model(&models.Test{UUID: UUID, Name: name}).WherePK().Exec(ctx)
-	return err
+	res, err := r.db.NewUpdate().Model(&models.Test{UUID: UUID, Name: name}).WherePK().Exec(ctx)
+
+	c, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if c == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
