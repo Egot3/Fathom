@@ -43,6 +43,7 @@ var serveCmd = &cobra.Command{
 		}
 		db.RegisterModel((*models.GroupsUsers)(nil))
 		db.RegisterModel((*models.UserGroupsTests)(nil))
+		db.RegisterModel((*models.GroupsUsers)(nil))
 
 		do.Provide(i, logging.NewLogger)
 		do.Provide(i, server.ChiServer)
