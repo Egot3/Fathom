@@ -13,4 +13,6 @@ type TestsQuizzies struct {
 
 	QuizPath string `bun:"quiz_path,pk"`
 	Quiz     *Quiz  `bun:"rel:belongs-to,join:quiz_path=path"`
+
+	Position int `bun:"position,notnull,unique"`
 }
