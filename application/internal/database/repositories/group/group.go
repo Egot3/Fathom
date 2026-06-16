@@ -26,7 +26,7 @@ func (r *bunGroupRepository) NewGroup(ctx context.Context, name string) error {
 
 func (r *bunGroupRepository) Group(ctx context.Context, uuid uuid.UUID) (*models.Group, error) {
 	group := models.Group{UUID: uuid}
-	err := r.db.NewSelect().Model(&group).WherePK().Relation("User").Scan(ctx)
+	err := r.db.NewSelect().Model(&group).WherePK().Relation("Users").Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -35,35 +35,73 @@ func (r *bunGroupRepository) Group(ctx context.Context, uuid uuid.UUID) (*models
 }
 
 func (r *bunGroupRepository) DeleteGroup(ctx context.Context, uuid uuid.UUID) error {
-	_, err := r.db.NewDelete().Model(&models.Group{UUID: uuid}).WherePK().Exec(ctx)
-	return err
+	res, err := r.db.NewDelete().Model(&models.Group{UUID: uuid}).WherePK().Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	c, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if c == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
 
 func (r *bunGroupRepository) UpdateGroup(ctx context.Context, uuid uuid.UUID, name string) error {
-	_, err := r.db.NewUpdate().Model(&models.Group{UUID: uuid, Name: name}).WherePK().Exec(ctx)
-	return err
+	res, err := r.db.NewUpdate().Model(&models.Group{UUID: uuid, Name: name}).WherePK().Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	c, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if c == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
+// updated ver
 func (r *bunGroupRepository) AppendUsers(ctx context.Context, groupUUID uuid.UUID, userUUIDs uuid.UUIDs) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		var groupUsers []models.GroupsUsers
 		for _, userUUID := range userUUIDs {
-			if _, err := tx.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(ctx); err != nil {
-				return err
-			}
+			groupUsers = append(groupUsers, models.GroupsUsers{UserUUID: userUUID, GroupUUID: groupUUID})
+		}
+		if _, err := tx.NewInsert().Model(&groupUsers).Exec(ctx); err != nil {
+			return err
 		}
 
 		return nil
 	})
 }
 
+// updated after append
 func (r *bunGroupRepository) RemoveUsers(ctx context.Context, groupUUID uuid.UUID, userUUIDs uuid.UUIDs) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		var groupUsers []models.GroupsUsers
 		for _, userUUID := range userUUIDs {
-			if _, err := tx.NewDelete().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).WherePK().Exec(ctx); err != nil {
-				return err
-			}
+			groupUsers = append(groupUsers, models.GroupsUsers{UserUUID: userUUID, GroupUUID: groupUUID})
 		}
 
+		res, err := tx.NewDelete().Model(&groupUsers).WherePK().Exec(ctx)
+		if err != nil {
+			return err
+		}
+
+		c, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if int(c) < len(userUUIDs) {
+			return sql.ErrNoRows
+		}
 		return nil
 	})
 }

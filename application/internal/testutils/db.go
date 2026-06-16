@@ -11,25 +11,25 @@ import (
 	"github.com/uptrace/bun/driver/sqliteshim"
 )
 
-func NewTestInjector(t *testing.T) do.Injector {
-	t.Helper()
+func NewTestInjector(tb testing.TB) do.Injector {
+	tb.Helper()
 
 	dsn := "file::memory:?cache=private"
 
 	sqldb, err := sql.Open(sqliteshim.ShimName, dsn)
-	require.NoError(t, err)
+	require.NoError(tb, err)
 
 	sqldb.SetMaxOpenConns(1)
 
 	db := bun.NewDB(sqldb, sqlitedialect.New())
 
-	err = RunMigrations(t.Context(), db)
-	require.NoError(t, err)
+	err = RunMigrations(tb.Context(), db)
+	require.NoError(tb, err)
 
-	t.Cleanup(func() {
+	tb.Cleanup(func() {
 		err := db.Close()
 		if err != nil {
-			t.Logf("failed to close test db(memory leaks go brrr): %v", err)
+			tb.Logf("failed to close test db(memory leaks go brrr): %v", err)
 		}
 	})
 
