@@ -9,10 +9,11 @@ import (
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
+	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 )
 
-var ErrQuizNotInTest = errors.New("quiz is not in the runner")
+var ErrQuizNotInTest = errors.New("quiz is not in the test")
 
 type NotInTestError struct {
 	Count int
@@ -40,7 +41,7 @@ func (r *bunTestRepository) CreateTest(ctx context.Context, name string) error {
 	return err
 }
 
-/* func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
+func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		var testQuizzes []models.TestsQuizzies = lo.Map(pathes, func(path string, pos int) models.TestsQuizzies {
 			return models.TestsQuizzies{TestUUID: testUUID, Position: pos, QuizPath: path}
@@ -52,13 +53,13 @@ func (r *bunTestRepository) CreateTest(ctx context.Context, name string) error {
 
 		return nil
 	})
-} */
+}
 
-func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
+/* func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		var testQuizzes []models.TestsQuizzies
+		var testQuizzes []models.TestsQuizzies = make([]models.TestsQuizzies, len(pathes))
 		for pos, path := range pathes {
-			testQuizzes = append(testQuizzes, models.TestsQuizzies{Position: pos, QuizPath: path, TestUUID: testUUID})
+			testQuizzes[pos] = models.TestsQuizzies{Position: pos, TestUUID: testUUID, QuizPath: path}
 		}
 		_, err := tx.NewInsert().Model(&testQuizzes).Exec(ctx)
 		if err != nil {
@@ -67,7 +68,7 @@ func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uu
 
 		return nil
 	})
-}
+} */
 
 // old
 /* func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
@@ -99,25 +100,22 @@ func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uu
 // new(alpha)
 func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
 	notFound := 0
-	err := r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		res, err := tx.NewDelete().Model((*models.TestsQuizzies)(nil)).
-			Where("test_uuid = ?", testUUID).Where("quiz_path IN (?)", bun.List(pathes)).
-			Exec(ctx)
-		if err != nil {
-			return err
-		}
-		c, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		notFound = int(c)
 
-		return nil
-	})
-
+	res, err := r.db.NewDelete().Model((*models.TestsQuizzies)(nil)).
+		Where("test_uuid = ?", testUUID).Where("quiz_path IN (?)", bun.List(pathes)).
+		Exec(ctx)
 	if err != nil {
 		return err
 	}
+	c, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if c == 0 {
+		return sql.ErrNoRows
+	}
+
+	notFound = len(pathes) - int(c)
 
 	if notFound > 0 {
 		return &NotInTestError{Count: notFound}
