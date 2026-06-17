@@ -19,9 +19,34 @@ func NewAnswerRepository(i do.Injector) (AnswerRepository, error) {
 	return &bunAnswerRepository{db: db}, nil
 } //created all of it just to live a good life in tests
 
-func (r *bunAnswerRepository) SetAnswer(ctx context.Context, answer models.Answer) error {
-	_, err := r.db.NewInsert().Model(&answer).Exec(ctx)
+func (r *bunAnswerRepository) SetAnswer(ctx context.Context, testUUID, groupUUID, userUUID uuid.UUID, quizPath, answerValue string, score int) error {
+	_, err := r.db.NewInsert().On("CONFLICT DO UPDATE").Model(&models.Answer{
+		TestUUID:    testUUID,
+		UserUUID:    userUUID,
+		QuizPath:    quizPath,
+		GroupUUID:   groupUUID,
+		AnswerValue: answerValue,
+		Score:       score,
+	}).Exec(ctx)
 	return err
+}
+
+func (r *bunAnswerRepository) Answer(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, quizPath string) (string, error) {
+	var answer string
+	err := r.db.NewSelect().
+		Model((*models.Answer)(nil)).
+		Where("test_uuid = ?", testUUID).
+		Where("group_uuid = ?", groupUUID).
+		Where("user_uuid = ?", userUUID).
+		Where("quiz_path = ?", quizPath).
+		OrderBy("answered_at", bun.OrderDesc).
+		Limit(1).
+		Column("answer_value").Scan(ctx, &answer)
+	if err != nil {
+		return "", err
+	}
+
+	return answer, nil
 }
 
 func (r *bunAnswerRepository) Totalize(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) error {

@@ -61,11 +61,12 @@ CREATE TABLE IF NOT EXISTS "users_groups_tests" (
 
 -- Create table "users_groups_tests_quiz_answers"
 CREATE TABLE IF NOT EXISTS "users_groups_tests_quiz_answers" (
-    "test_uuid"   TEXT REFERENCES tests(uuid) ON DELETE CASCADE,
-    "group_uuid"  TEXT REFERENCES groups(uuid) ON DELETE CASCADE,
-    "user_uuid"   TEXT REFERENCES users(uuid) ON DELETE CASCADE,
-    "quiz_path"   TEXT REFERENCES quizzes(path) ON DELETE CASCADE,
-    "score"       INTEGER NOT NULL,
+    "test_uuid"    TEXT REFERENCES tests(uuid) ON DELETE CASCADE,
+    "group_uuid"   TEXT REFERENCES groups(uuid) ON DELETE CASCADE,
+    "user_uuid"    TEXT REFERENCES users(uuid) ON DELETE CASCADE,
+    "quiz_path"    TEXT REFERENCES quizzes(path) ON DELETE CASCADE,
+    "score"        INTEGER NOT NULL,
+    "answer_value" TEXT NOT NULL,
 
     "answered_at" TEXT NOT NULL,
 
