@@ -70,9 +70,9 @@ func (r *bunGroupRepository) UpdateGroup(ctx context.Context, uuid uuid.UUID, na
 // updated ver
 func (r *bunGroupRepository) AppendUsers(ctx context.Context, groupUUID uuid.UUID, userUUIDs uuid.UUIDs) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		var groupUsers []models.GroupsUsers
-		for _, userUUID := range userUUIDs {
-			groupUsers = append(groupUsers, models.GroupsUsers{UserUUID: userUUID, GroupUUID: groupUUID})
+		var groupUsers []models.GroupsUsers = make([]models.GroupsUsers, len(userUUIDs)) // updated after test
+		for i, userUUID := range userUUIDs {
+			groupUsers[i] = models.GroupsUsers{UserUUID: userUUID, GroupUUID: groupUUID}
 		}
 		if _, err := tx.NewInsert().Model(&groupUsers).Exec(ctx); err != nil {
 			return err
@@ -85,9 +85,9 @@ func (r *bunGroupRepository) AppendUsers(ctx context.Context, groupUUID uuid.UUI
 // updated after append
 func (r *bunGroupRepository) RemoveUsers(ctx context.Context, groupUUID uuid.UUID, userUUIDs uuid.UUIDs) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		var groupUsers []models.GroupsUsers
-		for _, userUUID := range userUUIDs {
-			groupUsers = append(groupUsers, models.GroupsUsers{UserUUID: userUUID, GroupUUID: groupUUID})
+		var groupUsers []models.GroupsUsers = make([]models.GroupsUsers, len(userUUIDs))
+		for i, userUUID := range userUUIDs {
+			groupUsers[i] = models.GroupsUsers{UserUUID: userUUID, GroupUUID: groupUUID}
 		}
 
 		res, err := tx.NewDelete().Model(&groupUsers).WherePK().Exec(ctx)
