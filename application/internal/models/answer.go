@@ -23,9 +23,10 @@ type Answer struct {
 	QuizPath string `bun:"quiz_path,pk"`
 	Quiz     *Quiz  `bun:"rel:belongs-to,join:quiz_path=path"`
 
-	AnsweredAt time.Time `bun:"answered_at,pk"`
+	AnswerValue string    `bun:"answer_value"`
+	AnsweredAt  time.Time `bun:"answered_at,pk"`
 
-	Score uint64 `bun:"score"`
+	Score int `bun:"score"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Answer)(nil)
