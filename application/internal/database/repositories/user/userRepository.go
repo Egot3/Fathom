@@ -12,7 +12,8 @@ type UserRepository interface {
 	IsTeacher(ctx context.Context, uuid uuid.UUID) (bool, error)
 	DeleteUser(ctx context.Context, uuid uuid.UUID) error
 	Exists(ctx context.Context, uuid uuid.UUID) (bool, error)
-	Login(ctx context.Context, nickname string, passwordHash []byte) (success bool, err error)
+	Login(ctx context.Context, nickname string, passwordHash []byte) (*models.User, error)
 	Register(ctx context.Context, name string, passwordHash []byte) (*models.User, error)
 	User(ctx context.Context, uuid uuid.UUID) (*models.User, error)
+	List(ctx context.Context, page, size int) ([]models.User, int, error)
 }
