@@ -11,14 +11,14 @@ import (
 type User struct {
 	bun.BaseModel `bun:"table:users,alias:u"`
 
-	UUID         uuid.UUID `bun:"uuid,pk"`
-	Nickname     string    `bun:"nickname,notnull,unique"`
+	UUID         uuid.UUID `bun:"uuid,pk" json:"uuid"`
+	Nickname     string    `bun:"nickname,notnull,unique" json:"nickname"`
 	PasswordHash []byte    `bun:"password_hash,notnull"`
-	IsTeacher    bool      `bun:"is_teacher,default:false,type:boolean"`
+	IsTeacher    bool      `bun:"is_teacher,default:false,type:boolean" json:"is_teacher"`
 
 	DeletedAt *time.Time `bun:"deleted_at,soft_delete"`
-	CreatedAt time.Time  `bun:"created_at"`
-	UpdatedAt time.Time  `bun:"updated_at"`
+	CreatedAt time.Time  `bun:"created_at" json:"created_at"`
+	UpdatedAt time.Time  `bun:"updated_at" json:"updated_at"`
 }
 
 var _ bun.BeforeAppendModelHook = (*User)(nil)

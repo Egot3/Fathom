@@ -62,9 +62,10 @@ func TestUser_Login(t *testing.T) {
 	require.NoError(t, err)
 	name := rand.Text()
 
-	_, err = db.NewInsert().
-		Model(&models.User{Nickname: name, PasswordHash: passwordHash}).
-		Exec(t.Context())
+	var origUser models.User = models.User{Nickname: name, PasswordHash: passwordHash}
+	err = db.NewInsert().
+		Model(&origUser).
+		Scan(t.Context())
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -96,13 +97,14 @@ func TestUser_Login(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			success, err := r.Login(t.Context(), tC.nickname, tC.passwordHash)
-			require.NoError(t, err)
+			user, err := r.Login(t.Context(), tC.nickname, tC.passwordHash)
 
 			if tC.ExpectFail {
-				require.False(t, success)
+				require.Nil(t, user)
+				require.Error(t, err)
+				require.ErrorIs(t, err, sql.ErrNoRows)
 			} else {
-				require.True(t, success)
+				require.Equal(t, origUser.UUID, user.UUID)
 			}
 		})
 	}
