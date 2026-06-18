@@ -50,7 +50,7 @@ func (r *bunAnswerRepository) Answer(ctx context.Context, userUUID, testUUID, gr
 }
 
 func (r *bunAnswerRepository) Totalize(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) error {
-	var userTotal uint64
+	var userTotal int
 	var quizPathes []string
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		err := tx.NewSelect().TableExpr("tests_quizzes AS tq").
@@ -112,9 +112,9 @@ func (r *bunAnswerRepository) AnswerScore(ctx context.Context, userUUID, testUUI
 	return score, nil
 }
 
-func (r *bunAnswerRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) ([]models.UserGroupsTests, error) {
-	var totals []models.UserGroupsTests
-	err := r.db.NewSelect().Model(&totals).
+func (r *bunAnswerRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (*models.UserGroupsTests, error) {
+	var total models.UserGroupsTests
+	err := r.db.NewSelect().Model(&total).
 		Where("test_uuid = ?", testUUID).
 		Where("user_uuid = ?", userUUID).
 		Where("group_uuid = ?", groupUUID).Scan(ctx)
@@ -122,15 +122,39 @@ func (r *bunAnswerRepository) Total(ctx context.Context, userUUID, testUUID, gro
 		return nil, err
 	}
 
-	return totals, nil
+	return &total, nil
 }
 
+// those unholy twins are ABSOLUTLY THE SAME
+// even after 100 tests they get the same results
+// But because alpha introduces c(another allocant) will stick to beta
+// alpha
+/* func (r *bunAnswerRepository) AllTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+	var totals []models.UserGroupsTests
+	c, err := r.db.NewSelect().Model(&totals).
+		Where("user_uuid = ?", userUUID).ScanAndCount(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if c == 0 {
+		return nil, sql.ErrNoRows
+	}
+
+	return totals, nil
+} */
+
+// beta
 func (r *bunAnswerRepository) AllTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error) {
 	var totals []models.UserGroupsTests
 	err := r.db.NewSelect().Model(&totals).
 		Where("user_uuid = ?", userUUID).Scan(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(totals) == 0 {
+		return nil, sql.ErrNoRows
 	}
 
 	return totals, nil
@@ -144,6 +168,10 @@ func (r *bunAnswerRepository) TestTotals(ctx context.Context, testUUID uuid.UUID
 		return nil, err
 	}
 
+	if len(totals) == 0 {
+		return nil, sql.ErrNoRows
+	}
+
 	return totals, nil
 }
 
@@ -154,6 +182,9 @@ func (r *bunAnswerRepository) GroupTestTotals(ctx context.Context, testUUID, gro
 		Where("group_uuid = ?", groupUUID).Scan(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if len(totals) == 0 {
+		return nil, sql.ErrNoRows
 	}
 
 	return totals, nil
