@@ -3,6 +3,7 @@ package answer_test
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"fmt"
 	mrand "math/rand/v2"
 	"testing"
@@ -390,5 +391,206 @@ func TestAnswer_Totalization(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, score+scoreN, scoreR2)
+	})
+}
+
+func TestAnswer_Totals(t *testing.T) {
+	i := NewInjectorWithTestRepo(t)
+	r := do.MustInvoke[answer.AnswerRepository](i)
+	db := do.MustInvoke[*bun.DB](i)
+
+	RegisterModels(db)
+
+	testM := models.Test{Name: rand.Text()}
+	err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
+	require.NoError(t, err)
+
+	var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}, Score: 1}
+	err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
+	require.NoError(t, err)
+
+	_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizPath: quiz.Path}).Exec(t.Context())
+	require.NoError(t, err)
+
+	name := rand.Text()
+	groupUUID := uuid.UUID{}
+	err = db.NewInsert().Model(&models.Group{Name: name}).Returning("uuid").Scan(t.Context(), &groupUUID)
+	require.NoError(t, err)
+
+	var userUUID uuid.UUID
+
+	err = db.NewInsert().Model(&models.User{Nickname: rand.Text(), PasswordHash: []byte{}}).
+		Returning("uuid").
+		Scan(t.Context(), &userUUID)
+	require.NoError(t, err)
+	require.NotEmpty(t, userUUID)
+
+	_, err = db.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(t.Context())
+
+	score := mrand.IntN(256)
+	_, err = db.NewInsert().Model(&models.UserGroupsTests{
+		TestUUID:  testM.UUID,
+		GroupUUID: groupUUID,
+		UserUUID:  userUUID,
+		Score:     score,
+	}).Exec(t.Context())
+	require.NoError(t, err)
+
+	t.Run("User total", func(t *testing.T) {
+		t.Parallel()
+		t.Run("Valid", func(t *testing.T) {
+			t.Parallel()
+			total, err := r.Total(t.Context(), userUUID, testM.UUID, groupUUID)
+			require.NoError(t, err)
+			require.Equal(t, score, total.Score)
+		})
+
+		errTestCases := []struct {
+			desc      string
+			userUUID  uuid.UUID
+			groupUUID uuid.UUID
+			testUUID  uuid.UUID
+		}{
+			{
+				desc:      "No user UUID",
+				userUUID:  uuid.Nil,
+				groupUUID: groupUUID,
+				testUUID:  testM.UUID,
+			},
+			{
+				desc:      "No test UUID",
+				userUUID:  userUUID,
+				groupUUID: groupUUID,
+				testUUID:  uuid.Nil,
+			},
+			{
+				desc:      "No group UUID",
+				userUUID:  userUUID,
+				groupUUID: uuid.Nil,
+				testUUID:  testM.UUID,
+			},
+			{
+				desc:      "No user&group UUID",
+				userUUID:  uuid.Nil,
+				groupUUID: uuid.Nil,
+				testUUID:  testM.UUID,
+			},
+			{
+				desc:      "No user&test UUID",
+				userUUID:  uuid.Nil,
+				groupUUID: groupUUID,
+				testUUID:  uuid.Nil,
+			},
+			{
+				desc:      "No group&test UUID",
+				userUUID:  userUUID,
+				groupUUID: uuid.Nil,
+				testUUID:  uuid.Nil,
+			},
+			{
+				desc:      "No user&test&group UUID",
+				userUUID:  uuid.Nil,
+				groupUUID: uuid.Nil,
+				testUUID:  uuid.Nil,
+			},
+		}
+		for _, etc := range errTestCases {
+			t.Run(etc.desc, func(t *testing.T) {
+				t.Parallel()
+				retrieved, err := r.Total(t.Context(), etc.userUUID, etc.testUUID, etc.groupUUID)
+				require.Error(t, err)
+				require.ErrorIs(t, err, sql.ErrNoRows)
+				require.Nil(t, retrieved)
+			})
+		}
+	})
+
+	t.Run("Group totals", func(t *testing.T) {
+		t.Parallel()
+		t.Run("Valid", func(t *testing.T) {
+			t.Parallel()
+			totals, err := r.GroupTestTotals(t.Context(), testM.UUID, groupUUID)
+			require.NoError(t, err)
+			require.Len(t, totals, 1)
+			require.Equal(t, totals[0].Score, score)
+		})
+
+		errTestCases := []struct {
+			desc      string
+			groupUUID uuid.UUID
+			testUUID  uuid.UUID
+		}{
+			{
+				desc:      "No test UUID",
+				groupUUID: groupUUID,
+				testUUID:  uuid.Nil,
+			},
+			{
+				desc:      "No group UUID",
+				groupUUID: uuid.Nil,
+				testUUID:  testM.UUID,
+			},
+			{
+				desc:      "No group&test UUID",
+				groupUUID: uuid.Nil,
+				testUUID:  uuid.Nil,
+			},
+		}
+		for _, etc := range errTestCases {
+			t.Run(etc.desc, func(t *testing.T) {
+				t.Parallel()
+				retrieved, err := r.GroupTestTotals(t.Context(), etc.testUUID, etc.groupUUID)
+				require.Error(t, err)
+				require.ErrorIs(t, err, sql.ErrNoRows)
+				require.Nil(t, retrieved)
+			})
+		}
+	})
+
+	t.Run("Test totals", func(t *testing.T) {
+		t.Parallel()
+		t.Run("Valid", func(t *testing.T) {
+			t.Parallel()
+			totals, err := r.TestTotals(t.Context(), testM.UUID)
+			require.NoError(t, err)
+			require.Len(t, totals, 1)
+			require.Equal(t, totals[0].Score, score)
+		})
+		t.Run("Invalid", func(t *testing.T) {
+			t.Parallel()
+			totals, err := r.TestTotals(t.Context(), uuid.Nil)
+			require.Error(t, err)
+			require.Nil(t, totals)
+		})
+	})
+
+	t.Run("User totals", func(t *testing.T) {
+		t.Parallel()
+		t.Run("Valid", func(t *testing.T) {
+			t.Parallel()
+			totals, err := r.AllTotals(t.Context(), userUUID)
+			require.NoError(t, err)
+			require.Len(t, totals, 1)
+			require.Equal(t, totals[0].Score, score)
+		})
+		t.Run("Invalid", func(t *testing.T) {
+			t.Parallel()
+			totals, err := r.AllTotals(t.Context(), uuid.Nil)
+			require.Error(t, err)
+			require.Nil(t, totals)
+		})
+	})
+}
+
+func BenchmarkTotals_Errors(b *testing.B) {
+	i := NewInjectorWithTestRepo(b)
+	r := do.MustInvoke[answer.AnswerRepository](i)
+	db := do.MustInvoke[*bun.DB](i)
+
+	RegisterModels(db)
+	b.Run("Not found", func(b *testing.B) {
+		for b.Loop() {
+			r.AllTotals(b.Context(), uuid.Nil)
+		}
 	})
 }
