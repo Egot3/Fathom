@@ -1,11 +1,9 @@
 package migrations
 
 import (
-	"context"
 	"embed"
-	"log"
+	"fmt"
 
-	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/migrate"
 )
@@ -13,49 +11,24 @@ import (
 //go:embed sqlite/*.sql
 var sqliteMigrations embed.FS
 
-//go:ember postgres/*.sql
+//go:embed postgres/*.sql
 var postgresMigrations embed.FS
 
-var Migrations = migrate.NewMigrations()
+func New(dialectName dialect.Name) (*migrate.Migrations, error) {
+	migrations := migrate.NewMigrations()
 
-func init() {
+	var fsys embed.FS
+	switch dialectName {
+	case dialect.PG:
+		fsys = postgresMigrations
+	case dialect.SQLite:
+		fsys = sqliteMigrations
+	default:
+		return nil, fmt.Errorf("invalid dialect: %v", dialectName)
+	}
 
-	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
-		switch db.Dialect().Name() {
-		case dialect.PG:
-			entries, err := postgresMigrations.ReadDir("./postgres")
-			if err != nil {
-				panic(err)
-			}
-			log.Println("Embedded files:")
-			for _, e := range entries {
-				log.Printf("- %s", e.Name())
-			}
-
-			if err := Migrations.Discover(postgresMigrations); err != nil {
-				panic(err)
-			}
-		case dialect.SQLite:
-			entries, err := sqliteMigrations.ReadDir("./sqlite")
-			if err != nil {
-				panic(err)
-			}
-			log.Println("Embedded files:")
-			for _, e := range entries {
-				log.Printf("- %s", e.Name())
-			}
-
-			if err := Migrations.Discover(sqliteMigrations); err != nil {
-				panic(err)
-			}
-		default:
-			panic("Invalid db type")
-		}
-
-		return nil
-	}, func(ctx context.Context, db *bun.DB) error {
-		return nil
-	})
-
-	log.Printf("Discovered %d migration groups", len(Migrations.Sorted()))
+	if err := migrations.Discover(fsys); err != nil {
+		return nil, err
+	}
+	return migrations, nil
 }

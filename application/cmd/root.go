@@ -14,7 +14,7 @@ import (
 
 var verbose bool
 
-var PathToConfig = "../../internal/config/config.yaml"
+var PathToConfig = "/home/ETS/.config/fathom/config.yaml"
 
 var rootCmd = &cobra.Command{
 	Use:   "fampls",

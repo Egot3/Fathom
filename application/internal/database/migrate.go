@@ -11,15 +11,19 @@ import (
 )
 
 func RunMigrations(ctx context.Context, db *bun.DB) error {
-	migrator := migrate.NewMigrator(db, migrations.Migrations)
+	migrations, err := migrations.New(db.Dialect().Name())
+	if err != nil {
+		return fmt.Errorf("build migrations: %w", err)
+	}
 
+	migrator := migrate.NewMigrator(db, migrations)
 	if err := migrator.Init(ctx); err != nil {
 		return fmt.Errorf("Migration init failed")
 	}
 
 	for {
-		log.Printf("All migrations: %d", len(migrations.Migrations.Sorted()))
-		log.Printf("Unaplied migrations: %d", len(migrations.Migrations.Sorted().Unapplied()))
+		log.Printf("All migrations: %d", len(migrations.Sorted()))
+		log.Printf("Unaplied migrations: %d", len(migrations.Sorted().Unapplied()))
 		group, err := migrator.Migrate(ctx)
 		if err != nil {
 			return fmt.Errorf("migration failed: %v", err)
