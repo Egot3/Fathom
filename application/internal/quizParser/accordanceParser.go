@@ -6,9 +6,11 @@ import (
 	"math/rand/v2"
 	"slices"
 	"strings"
+
+	"github.com/egot3/fathom/internal/quiz"
 )
 
-func AccordanceParser(reader *bufio.Scanner, quiz *Quiz) error {
+func AccordanceParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 	var keys []string
 	var vals []string
 	// Q: why not map[string]string?
@@ -41,7 +43,7 @@ func AccordanceParser(reader *bufio.Scanner, quiz *Quiz) error {
 		return fmt.Errorf("can't have less than 2 options for accordance")
 	}
 
-	if quiz.Meta.Randomized {
+	if quizP.Meta.Randomized {
 		rand.Shuffle(len(keys), func(i, j int) {
 			vals[i], vals[j] = vals[j], vals[i]
 			keys[i], keys[j] = keys[j], keys[i] //both are shuffled as they are order dependant
@@ -59,8 +61,8 @@ func AccordanceParser(reader *bufio.Scanner, quiz *Quiz) error {
 		answers[i] = slices.Index(shuffled, ord)
 	}
 
-	quiz.Options.Accordance = &OptionsAccordance{Static: keys, Dynamic: shuffled}
-	quiz.Answer.Accordance = &AnswerAccordance{Accordance: answers}
+	quizP.Options.Accordance = &quiz.OptionsAccordance{Static: keys, Dynamic: shuffled}
+	quizP.Answer.Accordance = &quiz.AnswerAccordance{Accordance: answers}
 
 	return nil
 }

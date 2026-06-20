@@ -6,9 +6,11 @@ import (
 	"math/rand/v2"
 	"slices"
 	"strings"
+
+	"github.com/egot3/fathom/internal/quiz"
 )
 
-func OrderParser(reader *bufio.Scanner, quiz *Quiz) error {
+func OrderParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 	var ordered []string
 
 	for reader.Scan() {
@@ -42,7 +44,7 @@ func OrderParser(reader *bufio.Scanner, quiz *Quiz) error {
 		answers[i] = slices.Index(shuffled, ord)
 	}
 
-	quiz.Options.Order = &OptionsOrder{Items: shuffled}
-	quiz.Answer.Order = &AnswerOrder{ItemIdxs: answers}
+	quizP.Options.Order = &quiz.OptionsOrder{Items: shuffled}
+	quizP.Answer.Order = &quiz.AnswerOrder{ItemIdxs: answers}
 	return nil
 }

@@ -1,17 +1,17 @@
 database:
-    sqlite:
-        used: true
-        path: ../store/fathom.db
-    postgres:
-        used: false
-        user: ""
-        password: ""
-        host: ""
-        port: ""
-        dbName: ""
+  sqlite:
+    used: false
+    path: ../store/fathom.db
+  postgres:
+    used: false
+    user: ""
+    password: ""
+    host: ""
+    port: ""
+    dbName: ""
 server:
-    port: "8082"
-    logging:
-        loggers:
-            - charmLog
-        level: info
+  port: "8082"
+  logging:
+    loggers:
+      - charmLog
+    level: info

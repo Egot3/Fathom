@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "uuid"         TEXT PRIMARY KEY,
     "nickname"     TEXT UNIQUE NOT NULL,
     "password_hash" TEXT NOT NULL,
-    "is_teacher"   INTEGER DEFAULT 0,
+    "is_teacher"   INTEGER NOT NULL DEFAULT 0,
 
     "deleted_at"   TEXT DEFAULT NULL,
     "updated_at"   TEXT,

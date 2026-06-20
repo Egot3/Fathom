@@ -17,8 +17,8 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 	r.Use(middleware.BodySizer)
 
 	r.Method("GET", "/health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("healthy"))
 		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("healthy"))
 	}))
 
 	r.Route("/api/v1", func(r chi.Router) {
@@ -29,7 +29,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 
 			r.Group(func(r chi.Router) {
 				r.With(middleware.ParseUUID).Get("/{uuid}", svc.GetUser)
-				r.Get("", svc.ListUsers)
+				r.Get("/", svc.ListUsers)
 			})
 
 			r.Group(func(r chi.Router) {

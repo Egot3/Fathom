@@ -1,4 +1,4 @@
-package quizparser
+package quiz
 
 type OptionsRadioAndCheck struct {
 	Choices []Choice `json:"choices"`

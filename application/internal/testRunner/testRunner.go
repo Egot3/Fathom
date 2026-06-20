@@ -1,4 +1,4 @@
-package quizparser
+package testrunner
 
 import (
 	"context"
@@ -8,6 +8,10 @@ import (
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/egot3/fathom/internal/quiz"
+	quizparser "github.com/egot3/fathom/internal/quizParser"
+	"github.com/samber/do/v2"
 )
 
 var (
@@ -30,9 +34,9 @@ func (e *NotCachedError) Is(target error) bool {
 	return target == ErrQuizNotCached
 }
 
-type TestRunner struct {
+type concreteTestRunner struct {
 	mu         sync.RWMutex
-	quizzes    []*Quiz
+	quizzes    []*quiz.Quiz
 	generation uint64
 	cancel     context.CancelFunc
 	timer      *time.Timer
@@ -41,14 +45,20 @@ type TestRunner struct {
 	pausedAt   time.Time
 }
 
+func NewTestRunner(i do.Injector) (TestRunner, error) {
+	return &concreteTestRunner{
+		generation: 0,
+	}, nil
+}
+
 // Ctx must explicitly hold the lifetime of test
-func (tr *TestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string) error {
-	quizzes := make([]*Quiz, len(quizPaths))
+func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string) error {
+	quizzes := make([]*quiz.Quiz, len(quizPaths))
 	for i, path := range quizPaths {
 		if !filepath.IsLocal(path) {
 			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
 		}
-		quiz, err := ParseQuizByPath(path) //no reason to hold the lock when I/O and not writing to tr
+		quiz, err := quizparser.ParseQuizByPath(path) //no reason to hold the lock when I/O and not writing to tr
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
@@ -92,7 +102,7 @@ func (tr *TestRunner) Start(ctx context.Context, duration time.Duration, quizPat
 	return nil
 }
 
-func (tr *TestRunner) cleanup(gen uint64) {
+func (tr *concreteTestRunner) cleanup(gen uint64) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 	if tr.generation == gen {
@@ -104,7 +114,7 @@ func (tr *TestRunner) cleanup(gen uint64) {
 	}
 }
 
-func (tr *TestRunner) Get(id int) (*Quiz, error) {
+func (tr *concreteTestRunner) Get(id int) (*quiz.Quiz, error) {
 	tr.mu.RLock()
 	defer tr.mu.RUnlock()
 
@@ -120,7 +130,7 @@ func (tr *TestRunner) Get(id int) (*Quiz, error) {
 	return q, nil
 }
 
-func (tr *TestRunner) Stop() {
+func (tr *concreteTestRunner) Stop() {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 	if tr.cancel != nil {
@@ -135,7 +145,7 @@ func (tr *TestRunner) Stop() {
 
 // acquire path quiz pairs from db via uuid
 // called upsert as maps.Copy overwrites dest on collision
-func (tr *TestRunner) UpsertQuiz(quizPaths []string) error {
+func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string) error {
 	tr.mu.RLock()
 	if tr.cancel == nil { // reading a bunch of files might fry the potato
 		tr.mu.RUnlock()
@@ -143,12 +153,12 @@ func (tr *TestRunner) UpsertQuiz(quizPaths []string) error {
 	}
 	tr.mu.RUnlock()
 
-	quizzes := make([]*Quiz, len(quizPaths))
+	quizzes := make([]*quiz.Quiz, len(quizPaths))
 	for i, path := range quizPaths {
 		if !filepath.IsLocal(path) {
 			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
 		}
-		quiz, err := ParseQuizByPath(path) //no reason to hold the lock when I/O and not writing to tr
+		quiz, err := quizparser.ParseQuizByPath(path) //no reason to hold the lock when I/O and not writing to tr
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
@@ -167,7 +177,7 @@ func (tr *TestRunner) UpsertQuiz(quizPaths []string) error {
 }
 
 // remember: parioal deletion, return 200 207 OR 404
-func (tr *TestRunner) RemoveQuiz(ids []int) error {
+func (tr *concreteTestRunner) RemoveQuiz(ids []int) error {
 	tr.mu.RLock()
 	if tr.cancel == nil {
 		tr.mu.RUnlock()
@@ -197,7 +207,7 @@ func (tr *TestRunner) RemoveQuiz(ids []int) error {
 	return nil
 }
 
-func (tr *TestRunner) ExtendTime(duration time.Duration) error {
+func (tr *concreteTestRunner) ExtendTime(duration time.Duration) error {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 
@@ -217,7 +227,7 @@ func (tr *TestRunner) ExtendTime(duration time.Duration) error {
 }
 
 // doesn't lock the runner for the whole pause letting dialer know what's up
-func (tr *TestRunner) Pause() error {
+func (tr *concreteTestRunner) Pause() error {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 
@@ -236,7 +246,7 @@ func (tr *TestRunner) Pause() error {
 	return nil
 }
 
-func (tr *TestRunner) Resume() error {
+func (tr *concreteTestRunner) Resume() error {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 	if tr.cancel == nil {

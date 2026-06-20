@@ -6,31 +6,18 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/egot3/fathom/internal/quiz"
 )
 
-type Frontmatter struct {
-	Kind       string `yaml:"kind"`
-	Randomized bool   `yaml:"randomized"`
-	Score      int    `yaml:"score"`
-	AllOrNone  bool   `yaml:"all-or-none"`
-}
-
-type Quiz struct {
-	Meta    Frontmatter
-	Title   string
-	Body    string
-	Options QuizOptions
-	Answer  QuizAnswers
-}
-
-func ParseQuizByPath(path string) (*Quiz, error) {
+func ParseQuizByPath(path string) (*quiz.Quiz, error) {
 	sourceFull, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	var quiz Quiz
-	fm, source, err := parseFrontmatter(sourceFull)
+	var quiz quiz.Quiz
+	fm, source, err := ParseFrontmatter(sourceFull)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +40,7 @@ func ParseQuizByPath(path string) (*Quiz, error) {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
 
-		if regex.MatchString(trimmedLine) {
+		if InputRegex.MatchString(trimmedLine) {
 			break
 		}
 		if strings.HasPrefix(trimmedLine, "- ") {
