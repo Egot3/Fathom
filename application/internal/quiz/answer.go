@@ -1,4 +1,4 @@
-package quizparser
+package quiz
 
 type AnswerInput struct {
 	Input string `json:"input"`

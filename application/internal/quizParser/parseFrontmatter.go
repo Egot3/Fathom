@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/egot3/fathom/internal/quiz"
 	"go.yaml.in/yaml/v4"
 )
 
-func parseFrontmatter(source []byte) (Frontmatter, []byte, error) {
-	var fm Frontmatter
+func ParseFrontmatter(source []byte) (quiz.Frontmatter, []byte, error) {
+	var fm quiz.Frontmatter
 
 	lines := bytes.Split(source, []byte("\n"))
 	if len(lines) < 2 || strings.TrimSpace(string(lines[0])) != "---" {

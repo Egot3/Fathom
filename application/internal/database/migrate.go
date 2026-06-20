@@ -11,7 +11,7 @@ import (
 )
 
 func RunMigrations(ctx context.Context, db *bun.DB) error {
-	migrations, err := migrations.New(db.Dialect().Name())
+	migrations, err := migrations.New(ctx, db.Dialect().Name())
 	if err != nil {
 		return fmt.Errorf("build migrations: %w", err)
 	}

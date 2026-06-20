@@ -1,9 +1,12 @@
 package migrations
 
 import (
+	"context"
 	"embed"
 	"fmt"
+	"log/slog"
 
+	"github.com/egot3/fathom/internal/logging"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/migrate"
 )
@@ -14,7 +17,12 @@ var sqliteMigrations embed.FS
 //go:embed postgres/*.sql
 var postgresMigrations embed.FS
 
-func New(dialectName dialect.Name) (*migrate.Migrations, error) {
+func New(ctx context.Context, dialectName dialect.Name) (*migrate.Migrations, error) {
+	logger := logging.LoggerFromContext(ctx).With(
+		slog.String("layer", "migration"),
+	)
+	ctx = logging.WithLogger(ctx, logger)
+
 	migrations := migrate.NewMigrations()
 
 	var fsys embed.FS

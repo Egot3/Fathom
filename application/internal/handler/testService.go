@@ -8,7 +8,7 @@ import (
 	"github.com/egot3/fathom/internal/database/repositories/quiz"
 	"github.com/egot3/fathom/internal/database/repositories/test"
 	"github.com/egot3/fathom/internal/database/repositories/user"
-	quizparser "github.com/egot3/fathom/internal/quizParser"
+	testrunner "github.com/egot3/fathom/internal/testRunner"
 	"github.com/samber/do/v2"
 )
 
@@ -19,7 +19,7 @@ type chiTestService struct {
 	testRepo   test.TestRepository
 	answerRepo answer.AnswerRepository
 
-	runner *quizparser.TestRunner
+	runner testrunner.TestRunner
 }
 
 type TestService interface {
@@ -38,7 +38,7 @@ func NewTestService(i do.Injector) (TestService, error) {
 	tR := do.MustInvoke[test.TestRepository](i)
 	aR := do.MustInvoke[answer.AnswerRepository](i)
 
-	r := do.MustInvoke[*quizparser.TestRunner](i)
+	r := do.MustInvoke[testrunner.TestRunner](i)
 
 	return &chiTestService{userRepo: uR,
 		quizRepo:   qR,
