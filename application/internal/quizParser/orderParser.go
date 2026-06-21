@@ -13,7 +13,7 @@ import (
 func OrderParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 	var ordered []string
 
-	for reader.Scan() {
+	for {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
 
@@ -23,6 +23,9 @@ func OrderParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 				return fmt.Errorf("can't have multiple of the same value in order")
 			}
 			ordered = append(ordered, item)
+		}
+		if !reader.Scan() {
+			break
 		}
 	}
 

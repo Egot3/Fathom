@@ -20,13 +20,15 @@ func Test_parsers(t *testing.T) {
 		if d.IsDir() {
 			t.Logf("Directory: %s\n", path)
 		} else {
-			_, err := quizparser.ParseQuizByPath(path)
-			if strings.Contains(path, "valid") {
-				require.NoError(t, err)
-			} else {
-				t.Logf("path:%v\n%v", path, err)
-				require.Error(t, err)
-			}
+			t.Run(path, func(t *testing.T) {
+				_, err := quizparser.ParseQuizByPath(path)
+				if strings.Contains(path, "valid") {
+					require.NoError(t, err)
+				} else {
+					t.Logf("path:%v\n%v", path, err)
+					require.Error(t, err)
+				}
+			})
 
 		}
 

@@ -11,11 +11,16 @@ import (
 var InputRegex = regexp.MustCompile(`\[([^\[\]]+)\]`)
 
 func InputParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
-	for reader.Scan() {
+	for {
 		line := reader.Text()
 		matches := InputRegex.FindStringSubmatch(line)
+		fmt.Print("matches: ", matches)
 		if len(matches) > 1 {
 			quizP.Answer.Input = &quiz.AnswerInput{Input: matches[1]}
+			break
+		}
+
+		if !reader.Scan() {
 			break
 		}
 	}

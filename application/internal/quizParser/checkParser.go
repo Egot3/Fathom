@@ -13,7 +13,7 @@ import (
 func CheckParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 	quizP.Options.Check = &quiz.OptionsRadioAndCheck{Choices: make([]quiz.Choice, 0)}
 	quizP.Answer.Check = &quiz.AnswerCheck{ChoiceIdxs: make([]int, 0)}
-	for id := 0; reader.Scan(); {
+	for id := 0; ; {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmedLine, "- [x]") {
@@ -22,14 +22,16 @@ func CheckParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 
 			quizP.Options.Check.Choices = append(quizP.Options.Check.Choices, quiz.Choice{Id: id, Label: opt})
 			id++
-			continue
 		}
 		if strings.HasPrefix(trimmedLine, "- [ ]") {
 			opt := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- [ ] "))
 
 			quizP.Options.Check.Choices = append(quizP.Options.Check.Choices, quiz.Choice{Id: id, Label: opt})
 			id++
-			continue
+		}
+
+		if !reader.Scan() {
+			break
 		}
 	}
 
