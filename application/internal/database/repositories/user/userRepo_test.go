@@ -58,52 +58,55 @@ func TestUser_Login(t *testing.T) {
 	r := do.MustInvoke[user.UserRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(rand.Text()), bcrypt.DefaultCost)
-	require.NoError(t, err)
+	password := []byte(rand.Text())
 	name := rand.Text()
 
-	var origUser models.User = models.User{Nickname: name, PasswordHash: passwordHash}
+	pswdHash, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
+	require.NoError(t, err)
+	var origUser models.User = models.User{Nickname: name, PasswordHash: pswdHash}
 	err = db.NewInsert().
 		Model(&origUser).
 		Scan(t.Context())
 	require.NoError(t, err)
 
 	testCases := []struct {
-		desc         string
-		nickname     string
-		passwordHash []byte
-		ExpectFail   bool
+		desc       string
+		nickname   string
+		password   []byte
+		ExpectFail bool
 	}{
 		{
-			desc:         "Valid login",
-			nickname:     name,
-			passwordHash: passwordHash,
-			ExpectFail:   false,
+			desc:       "Valid login",
+			nickname:   name,
+			password:   password,
+			ExpectFail: false,
 		},
 		{
-			desc:         "Bad nickname",
-			nickname:     "",
-			passwordHash: passwordHash,
-			ExpectFail:   true,
+			desc:       "Bad nickname",
+			nickname:   "",
+			password:   password,
+			ExpectFail: true,
 		},
 		{
-			desc:         "Bad password",
-			nickname:     name,
-			passwordHash: []byte{},
-			ExpectFail:   true,
+			desc:       "Bad password",
+			nickname:   name,
+			password:   []byte("12313"),
+			ExpectFail: true,
 		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			user, err := r.Login(t.Context(), tC.nickname, tC.passwordHash)
+			user, err := r.Login(t.Context(), tC.nickname, tC.password)
 
 			if tC.ExpectFail {
 				require.Nil(t, user)
 				require.Error(t, err)
 				require.ErrorIs(t, err, sql.ErrNoRows)
 			} else {
+				require.NoError(t, err)
+				require.NotNil(t, user)
 				require.Equal(t, origUser.UUID, user.UUID)
 			}
 		})
@@ -118,12 +121,11 @@ func TestUser_User(t *testing.T) {
 	r := do.MustInvoke[user.UserRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(rand.Text()), bcrypt.DefaultCost)
-	require.NoError(t, err)
+	passwordHash := []byte(rand.Text())
 	name := rand.Text()
 
 	user := models.User{Nickname: name, PasswordHash: passwordHash}
-	err = db.NewInsert().
+	err := db.NewInsert().
 		Model(&user).
 		Scan(t.Context())
 	require.NoError(t, err)
