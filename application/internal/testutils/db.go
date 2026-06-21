@@ -11,7 +11,7 @@ import (
 	"github.com/uptrace/bun/driver/sqliteshim"
 )
 
-func NewTestInjector(tb testing.TB) do.Injector {
+func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 	tb.Helper()
 
 	dsn := "file::memory:?cache=private"
@@ -33,7 +33,9 @@ func NewTestInjector(tb testing.TB) do.Injector {
 		}
 	})
 
-	i := do.New()
+	i := do.New(
+		packages...,
+	)
 
 	do.Provide(i, func(i do.Injector) (*bun.DB, error) {
 		return db, nil

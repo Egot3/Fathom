@@ -33,8 +33,8 @@ type PatchRequest struct {
 }
 
 type ListUsersRequest struct {
-	Page int `json:"page"`
-	Size int `json:"size"`
+	Page int
+	Size int
 }
 
 type ListUsersResponse struct {

@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/egot3/fathom/internal/carefulness"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
 	"github.com/uptrace/bun"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type bunUserRepository struct {
@@ -23,14 +25,13 @@ func NewUserRepository(i do.Injector) (UserRepository, error) {
 }
 
 func (r *bunUserRepository) Register(ctx context.Context, name string, passwordHash []byte) (*models.User, error) {
-	bakedUser := models.User{UUID: uuid.Nil, Nickname: name, PasswordHash: passwordHash}
+	bakedUser := models.User{Nickname: name, PasswordHash: passwordHash}
 	err := r.db.NewInsert().Ignore().Model(&bakedUser).Scan(ctx)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, carefulness.Conflict{Conflictor: name}
+		}
 		return nil, err
-	}
-
-	if bakedUser.UUID == uuid.Nil {
-		return nil, carefulness.Conflict{Conflictor: name}
 	}
 
 	return &models.User{
@@ -43,15 +44,27 @@ func (r *bunUserRepository) Register(ctx context.Context, name string, passwordH
 	}, nil
 }
 
-func (r *bunUserRepository) Login(ctx context.Context, nickname string, passwordHash []byte) (*models.User, error) {
+func (r *bunUserRepository) Login(ctx context.Context, nickname string, password []byte) (*models.User, error) {
 	var user models.User
 	err := r.db.NewSelect().Model(&user).
-		Where("password_hash = ?", passwordHash).Where("nickname = ?", nickname).
+		Where("nickname = ?", nickname).
 		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+
+	err = bcrypt.CompareHashAndPassword(user.PasswordHash, password)
+	if err != nil {
+		return nil, sql.ErrNoRows // will be sql.ErrNoRows
+	}
+	return &models.User{
+		UUID:      user.UUID,
+		Nickname:  user.Nickname,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		DeletedAt: user.DeletedAt,
+		IsTeacher: user.IsTeacher,
+	}, nil
 }
 
 func (r *bunUserRepository) Exists(ctx context.Context, uuid uuid.UUID) (bool, error) {
