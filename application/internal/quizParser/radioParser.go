@@ -11,7 +11,7 @@ import (
 
 func RadioParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 	quizP.Options.Radio = &quiz.OptionsRadioAndCheck{Choices: make([]quiz.Choice, 2)}
-	for id := 0; reader.Scan(); {
+	for id := 0; ; {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
 
@@ -25,14 +25,15 @@ func RadioParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 
 			quizP.Options.Radio.Choices = append(quizP.Options.Radio.Choices, quiz.Choice{Id: id, Label: opt})
 			id++
-			continue
 		}
 		if strings.HasPrefix(trimmedLine, "- [ ]") {
 			opt := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- [ ] "))
 
 			quizP.Options.Radio.Choices = append(quizP.Options.Radio.Choices, quiz.Choice{Id: id, Label: opt})
 			id++
-			continue
+		}
+		if !reader.Scan() {
+			break
 		}
 	}
 

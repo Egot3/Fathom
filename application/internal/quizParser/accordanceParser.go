@@ -16,7 +16,7 @@ func AccordanceParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 	// Q: why not map[string]string?
 	// A: slices are ordered, can reuse logic from order
 
-	for reader.Scan() {
+	for {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
 
@@ -36,6 +36,10 @@ func AccordanceParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 
 			keys = append(keys, key)
 			vals = append(vals, val)
+		}
+
+		if !reader.Scan() {
+			break
 		}
 	}
 

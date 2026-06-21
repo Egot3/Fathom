@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -48,8 +49,10 @@ func ParseQuizByPath(path string) (*quiz.Quiz, error) {
 		}
 
 		quiz.Body += line + " "
+
 	}
 
+	log.Printf("quiz with: %v, and body: %v", reader.Text(), quiz.Body)
 	// each quiz has 1 typeof question
 	switch quiz.Meta.Kind {
 	case "input":
