@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/egot3/fathom/internal/carefulness"
@@ -127,18 +128,31 @@ func (r *bunUserRepository) User(ctx context.Context, uuid uuid.UUID) (*models.U
 }
 
 func (r *bunUserRepository) UpdateUser(ctx context.Context, patchedUser models.PatchUser) error {
-	query := r.db.NewUpdate().Model(&models.User{UUID: patchedUser.UUID}).WherePK()
-	if patchedUser.Nickname != nil {
-		query = query.Set("nickname = ?", patchedUser.Nickname)
-	}
-	if patchedUser.PasswordHash != nil {
-		query = query.Set("password_hash = ?", patchedUser.PasswordHash)
-	}
-	if patchedUser.IsTeacher != nil {
-		query = query.Set("is_teacher = ?", patchedUser.IsTeacher)
-	}
+	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		query := tx.NewUpdate().Model((*models.User)(nil)).
+			Where("uuid = ?", patchedUser.UUID)
+		if patchedUser.Nickname != nil {
+			e, err := tx.NewSelect().Model((*models.User)(nil)).
+				Where("uuid <> ?", patchedUser.UUID).
+				Where("nickname = ?", patchedUser.Nickname).
+				Exists(ctx)
+			if err != nil {
+				return fmt.Errorf("Error while checking for unique: %w", err)
+			}
+			if e {
+				return carefulness.Conflict{Conflictor: "nickname"}
+			}
+			query = query.Set("nickname = ?", patchedUser.Nickname)
+		}
+		if patchedUser.PasswordHash != nil {
+			query = query.Set("password_hash = ?", patchedUser.PasswordHash)
+		}
+		if patchedUser.IsTeacher != nil {
+			query = query.Set("is_teacher = ?", patchedUser.IsTeacher)
+		}
 
-	_, err := query.Exec(ctx)
+		_, err := query.Exec(ctx)
 
-	return err
+		return err
+	})
 }

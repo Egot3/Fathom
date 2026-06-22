@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	jwtutils "github.com/egot3/fathom/internal/JWTutils"
@@ -12,11 +13,19 @@ import (
 
 func JWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token == "" {
+		authorization := r.Header.Get("Authorization")
+		if authorization == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+
+		dismanteledAuth := strings.Split(authorization, " ")
+		if len(dismanteledAuth) != 2 || dismanteledAuth[0] != "Bearer" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		token := dismanteledAuth[1]
 
 		claims, err := jwtutils.ValidateToken(token)
 		if err != nil {
@@ -34,7 +43,7 @@ func JWT(next http.Handler) http.Handler {
 		}
 
 		rctx := r.Context()
-		ctx := context.WithValue(rctx, "claims", &claims)
+		ctx := context.WithValue(rctx, "claims", *claims)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 
