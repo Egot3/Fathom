@@ -31,6 +31,7 @@ func (c *chiTestService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
+		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
 		return
@@ -44,11 +45,15 @@ func (c *chiTestService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	err := c.userRepo.DeleteUser(ctx, userUUID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			logger.Error("Delete user found no rows")
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "User not found"})
 
 			return
 		}
+		logger.Error("Delete user got an unexpected error",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -212,9 +217,13 @@ func (c *chiTestService) PatchUser(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
 		return
 	}
+
 	var req contracts.PatchRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		logger.Error("Failed to parse body",
+			slog.String("Error", err.Error()),
+		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
@@ -228,8 +237,7 @@ func (c *chiTestService) PatchUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Empty body"})
+			w.WriteHeader(http.StatusNoContent)
 
 			return
 		}
@@ -243,12 +251,30 @@ func (c *chiTestService) PatchUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	logger.With(slog.String("uuid", userUUID.String()))
+	logger = logger.With(slog.String("uuid", userUUID.String()))
+	ctx = logging.WithLogger(ctx, logger)
+
+	if req.Nickname == nil && req.IsTeacher == nil && req.Password == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
 	var passwordHash []byte = nil
 	if req.Password != nil {
+		err = passwordutils.CheckPasswordSafety(*req.Password)
+		if err != nil {
+			logger.Error("Unsafe password",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+			return
+		}
 		passwordHash, err = bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
 		if err != nil {
+			logger.Error("Error while parsing hash",
+				slog.String("Error", err.Error()),
+			)
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Hashing error"})
 			return
@@ -259,6 +285,9 @@ func (c *chiTestService) PatchUser(w http.ResponseWriter, r *http.Request) {
 	if isTeacher != nil {
 		is, err := c.userRepo.IsTeacher(ctx, userUUID)
 		if err != nil {
+			logger.Error("Error while checking if user is teacher",
+				slog.String("Error", err.Error()),
+			)
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to authorize given user"})
 			return
@@ -276,11 +305,19 @@ func (c *chiTestService) PatchUser(w http.ResponseWriter, r *http.Request) {
 		IsTeacher:    isTeacher,
 	})
 	if err != nil {
+		logger.Error("Error while updating user",
+			slog.String("Error", err.Error()),
+		)
+		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(conflict.JSONError())
+			return
+		}
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // Register implements [TestService].

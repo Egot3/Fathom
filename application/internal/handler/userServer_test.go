@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/database/repositories"
 	"github.com/egot3/fathom/internal/handler"
@@ -422,5 +424,466 @@ func TestUserHandler_List(t *testing.T) {
 				return retUser.UUID == user.UUID
 			}))
 		}
+	})
+}
+
+func TestUserHandler_Delete(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Self", func(t *testing.T) {
+		t.Parallel()
+
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+		)
+		do.ProvideValue(i, slog.Default())
+		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, handler.NewTestService)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		pswd := rand.Text()
+		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
+		require.NoError(t, err)
+
+		user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+		err = db.NewInsert().Model(&user).Scan(t.Context())
+		require.NoError(t, err)
+
+		token, err := jwtutils.GenerateToken(user.UUID, false)
+		require.NoError(t, err)
+
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(
+			http.MethodDelete,
+			fmt.Sprintf("/api/v1/user/%v", user.UUID),
+			nil,
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusNoContent, rec.Code)
+	})
+
+	t.Run("By teacher", func(t *testing.T) {
+		t.Parallel()
+
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+		)
+		do.ProvideValue(i, slog.Default())
+		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, handler.NewTestService)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		pswd := rand.Text()
+		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
+		require.NoError(t, err)
+
+		user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+		err = db.NewInsert().Model(&user).Scan(t.Context())
+		require.NoError(t, err)
+
+		token, err := jwtutils.GenerateToken(uuid.Nil, true)
+		require.NoError(t, err)
+
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(
+			http.MethodDelete,
+			fmt.Sprintf("/api/v1/user/%v", user.UUID),
+			nil,
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusNoContent, rec.Code)
+	})
+
+	t.Run("By not permitted", func(t *testing.T) {
+		t.Parallel()
+
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+		)
+		do.ProvideValue(i, slog.Default())
+		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, handler.NewTestService)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		pswd := rand.Text()
+		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
+		require.NoError(t, err)
+
+		user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+		err = db.NewInsert().Model(&user).Scan(t.Context())
+		require.NoError(t, err)
+
+		token, err := jwtutils.GenerateToken(uuid.Nil, false)
+		require.NoError(t, err)
+
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(
+			http.MethodDelete,
+			fmt.Sprintf("/api/v1/user/%v", user.UUID),
+			nil,
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusForbidden, rec.Code)
+	})
+
+	t.Run("Not found", func(t *testing.T) {
+		t.Parallel()
+
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+		)
+		do.ProvideValue(i, slog.Default())
+		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, handler.NewTestService)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		pswd := rand.Text()
+		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
+		require.NoError(t, err)
+
+		user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+		err = db.NewInsert().Model(&user).Scan(t.Context())
+		require.NoError(t, err)
+
+		token, err := jwtutils.GenerateToken(user.UUID, true)
+		require.NoError(t, err)
+
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(
+			http.MethodDelete,
+			fmt.Sprintf("/api/v1/user/%v", uuid.Nil),
+			nil,
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusNotFound, rec.Code)
+	})
+}
+
+func TestUserHandler_Patch(t *testing.T) {
+	// t.Parallel()
+	testCases := []struct {
+		desc           string
+		changeNickname bool
+		changePassword bool
+	}{
+		{
+			desc:           "Valid patch all",
+			changeNickname: true,
+			changePassword: true,
+		},
+		{
+			desc:           "Valid patch password",
+			changeNickname: false,
+			changePassword: true,
+		},
+		{
+			desc:           "Valid patch nickname",
+			changeNickname: true,
+			changePassword: false,
+		},
+		{
+			desc:           "Valid patch none",
+			changeNickname: false,
+			changePassword: false,
+		},
+	}
+	for _, ptt := range testCases {
+		t.Run(ptt.desc, func(t *testing.T) {
+			//t.Parallel()
+
+			i := testutils.NewTestInjector(t,
+				repositories.RepositoryPackage,
+			)
+			do.ProvideValue(i, slog.Default())
+			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, handler.NewTestService)
+
+			db := do.MustInvoke[*bun.DB](i)
+
+			pswd := rand.Text()
+			pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
+			require.NoError(t, err)
+
+			user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+			err = db.NewInsert().Model(&user).Scan(t.Context())
+			require.NoError(t, err)
+
+			token, err := jwtutils.GenerateToken(user.UUID, true)
+			require.NoError(t, err)
+
+			router, err := server.ChiServer(i)
+			require.NoError(t, err)
+
+			var nickname *string = nil
+			if ptt.changeNickname {
+				ran := rand.Text()
+				nickname = &ran
+			}
+			var password *string = nil
+			if ptt.changePassword {
+				ran := "1232314Et12"
+				password = &ran
+			}
+
+			body := contracts.PatchRequest{
+				Nickname: nickname,
+				Password: password,
+			}
+			bodyRaw, err := json.Marshal(body)
+			require.NoError(t, err)
+			req := httptest.NewRequest(
+				http.MethodPatch,
+				fmt.Sprintf("/api/v1/user/%v", user.UUID),
+				bytes.NewReader(bodyRaw),
+			)
+
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+			rec := httptest.NewRecorder()
+
+			router.ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusNoContent, rec.Code)
+
+			userR := models.User{}
+			err = db.NewSelect().Model(&userR).Where("uuid = ?", user.UUID).Scan(t.Context())
+			require.NoError(t, err)
+
+			if ptt.changeNickname {
+				require.Equal(t, *nickname, userR.Nickname)
+			} else {
+				require.Equal(t, user.Nickname, userR.Nickname)
+			}
+
+			if ptt.changePassword {
+				require.NotEqual(t, user.PasswordHash, userR.PasswordHash)
+			} else {
+				require.Equal(t, user.PasswordHash, userR.PasswordHash)
+			}
+		})
+	}
+
+	t.Run("Bad password", func(t *testing.T) {
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+		)
+		do.ProvideValue(i, slog.Default())
+		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, handler.NewTestService)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		pswd := rand.Text()
+		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
+		require.NoError(t, err)
+
+		user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+		err = db.NewInsert().Model(&user).Scan(t.Context())
+		require.NoError(t, err)
+
+		token, err := jwtutils.GenerateToken(user.UUID, true)
+		require.NoError(t, err)
+
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		pswdN := "1231233E"
+		body := contracts.PatchRequest{
+			Password: &pswdN,
+		}
+		bodyRaw, err := json.Marshal(body)
+		require.NoError(t, err)
+		req := httptest.NewRequest(
+			http.MethodPatch,
+			fmt.Sprintf("/api/v1/user/%v", user.UUID),
+			bytes.NewReader(bodyRaw),
+		)
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("Change to existing", func(t *testing.T) {
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+		)
+		do.ProvideValue(i, slog.Default())
+		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, handler.NewTestService)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		pswd := rand.Text()
+		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
+		require.NoError(t, err)
+
+		user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+		err = db.NewInsert().Model(&user).Scan(t.Context())
+		require.NoError(t, err)
+
+		userB := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+		err = db.NewInsert().Model(&userB).Scan(t.Context())
+		require.NoError(t, err)
+
+		token, err := jwtutils.GenerateToken(user.UUID, true)
+		require.NoError(t, err)
+
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		body := contracts.PatchRequest{
+			Nickname: &user.Nickname,
+		}
+		bodyRaw, err := json.Marshal(body)
+		require.NoError(t, err)
+		req := httptest.NewRequest(
+			http.MethodPatch,
+			fmt.Sprintf("/api/v1/user/%v", userB.UUID),
+			bytes.NewReader(bodyRaw),
+		)
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusConflict, rec.Code)
+	})
+
+	t.Run("Rights to change isTeacher", func(t *testing.T) {
+		t.Run("Teacher", func(t *testing.T) {
+			i := testutils.NewTestInjector(t,
+				repositories.RepositoryPackage,
+			)
+			do.ProvideValue(i, slog.Default())
+			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, handler.NewTestService)
+
+			db := do.MustInvoke[*bun.DB](i)
+
+			pswd := rand.Text()
+			pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
+			require.NoError(t, err)
+
+			user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+			err = db.NewInsert().Model(&user).Scan(t.Context())
+			require.NoError(t, err)
+
+			userB := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+			err = db.NewInsert().Model(&userB).Scan(t.Context())
+			require.NoError(t, err)
+
+			token, err := jwtutils.GenerateToken(user.UUID, true)
+			require.NoError(t, err)
+
+			router, err := server.ChiServer(i)
+			require.NoError(t, err)
+
+			nickname := rand.Text()
+			body := contracts.PatchRequest{
+				Nickname: &nickname,
+			}
+			bodyRaw, err := json.Marshal(body)
+			require.NoError(t, err)
+			req := httptest.NewRequest(
+				http.MethodPatch,
+				fmt.Sprintf("/api/v1/user/%v", userB.UUID),
+				bytes.NewReader(bodyRaw),
+			)
+
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+			rec := httptest.NewRecorder()
+
+			router.ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusNoContent, rec.Code)
+		})
+		t.Run("Pupil", func(t *testing.T) {
+			i := testutils.NewTestInjector(t,
+				repositories.RepositoryPackage,
+			)
+			do.ProvideValue(i, slog.Default())
+			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, handler.NewTestService)
+
+			db := do.MustInvoke[*bun.DB](i)
+
+			pswd := rand.Text()
+			pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
+			require.NoError(t, err)
+
+			user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+			err = db.NewInsert().Model(&user).Scan(t.Context())
+			require.NoError(t, err)
+
+			userB := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
+			err = db.NewInsert().Model(&userB).Scan(t.Context())
+			require.NoError(t, err)
+
+			token, err := jwtutils.GenerateToken(user.UUID, false)
+			require.NoError(t, err)
+
+			router, err := server.ChiServer(i)
+			require.NoError(t, err)
+
+			nickname := rand.Text()
+			body := contracts.PatchRequest{
+				Nickname: &nickname,
+			}
+			bodyRaw, err := json.Marshal(body)
+			require.NoError(t, err)
+			req := httptest.NewRequest(
+				http.MethodPatch,
+				fmt.Sprintf("/api/v1/user/%v", userB.UUID),
+				bytes.NewReader(bodyRaw),
+			)
+
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+			rec := httptest.NewRecorder()
+
+			router.ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusForbidden, rec.Code)
+		})
 	})
 }
