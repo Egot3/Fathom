@@ -3,7 +3,9 @@ package group
 import (
 	"context"
 	"database/sql"
+	"errors"
 
+	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
@@ -20,7 +22,10 @@ func NewGroupRepository(i do.Injector) (GroupRepository, error) {
 }
 
 func (r *bunGroupRepository) NewGroup(ctx context.Context, name string) error {
-	_, err := r.db.NewInsert().Model(&models.Group{Name: name}).Exec(ctx)
+	err := r.db.NewInsert().Model(&models.Group{Name: name}).Ignore().Returning("uuid").Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return carefulness.Conflict{Conflictor: "group name"}
+	}
 	return err
 }
 
@@ -52,6 +57,16 @@ func (r *bunGroupRepository) DeleteGroup(ctx context.Context, uuid uuid.UUID) er
 }
 
 func (r *bunGroupRepository) UpdateGroup(ctx context.Context, uuid uuid.UUID, name string) error {
+	e, err := r.db.NewSelect().Model((*models.Group)(nil)).
+		Where("uuid <> ?", uuid).Where("name = ?", name).
+		Exists(ctx)
+	if err != nil {
+		return err
+	}
+	if e {
+		return carefulness.Conflict{Conflictor: "name"}
+	}
+
 	res, err := r.db.NewUpdate().Model(&models.Group{UUID: uuid, Name: name}).WherePK().Exec(ctx)
 	if err != nil {
 		return err
@@ -74,8 +89,24 @@ func (r *bunGroupRepository) AppendUsers(ctx context.Context, groupUUID uuid.UUI
 		for i, userUUID := range userUUIDs {
 			groupUsers[i] = models.GroupsUsers{UserUUID: userUUID, GroupUUID: groupUUID}
 		}
-		if _, err := tx.NewInsert().Model(&groupUsers).Exec(ctx); err != nil {
+		res, err := tx.NewInsert().Ignore().Model(&groupUsers).Exec(ctx)
+		if err != nil {
 			return err
+		}
+
+		c, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if c == 0 {
+			return sql.ErrNoRows
+		}
+		if int(c) < len(userUUIDs) {
+			return carefulness.PartialSuccess{
+				Target:      "users",
+				ActualCount: int(c),
+				WantCount:   len(userUUIDs),
+			}
 		}
 
 		return nil
@@ -109,4 +140,18 @@ func (r *bunGroupRepository) RemoveUsers(ctx context.Context, groupUUID uuid.UUI
 func (r *bunGroupRepository) IsInGroup(ctx context.Context, groupUUID, userUUID uuid.UUID) (bool, error) {
 	return r.db.NewSelect().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).
 		WherePK().Exists(ctx)
+}
+
+func (r *bunGroupRepository) ListGroups(ctx context.Context, page, size int) ([]models.Group, int, error) {
+	var groups []models.Group
+	total, err := r.db.NewSelect().Model(&groups).
+		OrderBy("name", bun.OrderAsc).
+		Offset(size * page).Limit(size).
+		ScanAndCount(ctx)
+	if err != nil {
+
+		return nil, 0, err
+	}
+
+	return groups, total, nil
 }

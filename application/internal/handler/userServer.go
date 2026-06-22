@@ -20,8 +20,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// DeleteUser implements [TestService].
-func (c *chiTestService) DeleteUser(w http.ResponseWriter, r *http.Request) {
+// DeleteUser implements [UserService].
+func (c *chiService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
@@ -61,8 +61,8 @@ func (c *chiTestService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// GetUser implements [TestService].
-func (c *chiTestService) GetUser(w http.ResponseWriter, r *http.Request) {
+// GetUser implements [UserService].
+func (c *chiService) GetUser(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
@@ -103,8 +103,8 @@ func (c *chiTestService) GetUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Login implements [TestService].
-func (c *chiTestService) Login(w http.ResponseWriter, r *http.Request) {
+// Login implements [UserService].
+func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
@@ -203,8 +203,8 @@ func (c *chiTestService) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// PatchUser implements [TestService].
-func (c *chiTestService) PatchUser(w http.ResponseWriter, r *http.Request) {
+// PatchUser implements [UserService].
+func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
@@ -320,8 +320,8 @@ func (c *chiTestService) PatchUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// Register implements [TestService].
-func (c *chiTestService) Register(w http.ResponseWriter, r *http.Request) {
+// Register implements [UserService].
+func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
@@ -436,8 +436,8 @@ func (c *chiTestService) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ListUsers implements [TestService].
-func (c *chiTestService) ListUsers(w http.ResponseWriter, r *http.Request) {
+// ListUsers implements [UserService].
+func (c *chiService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
@@ -447,7 +447,7 @@ func (c *chiTestService) ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
 		return
 	}

@@ -15,4 +15,5 @@ type GroupRepository interface {
 	AppendUsers(ctx context.Context, groupUUID uuid.UUID, userUUIDs uuid.UUIDs) error
 	RemoveUsers(ctx context.Context, groupUUID uuid.UUID, userUUIDs uuid.UUIDs) error
 	IsInGroup(ctx context.Context, groupUUID, userUUID uuid.UUID) (bool, error)
+	ListGroups(ctx context.Context, page, size int) ([]models.Group, int, error)
 }

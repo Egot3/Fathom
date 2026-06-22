@@ -12,7 +12,7 @@ import (
 
 func ChiServer(i do.Injector) (chi.Router, error) {
 	r := chi.NewRouter()
-	svc := do.MustInvoke[handler.TestService](i)
+	svc := do.MustInvoke[handler.Service](i)
 
 	r.Use(middleware.BodySizer)
 
@@ -34,7 +34,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.JWT)
-				r.Use(middleware.ParseUUID, middleware.Rights)
+				r.Use(middleware.ParseUUID, middleware.UUIDRights, middleware.IsTeacherRights)
 
 				r.Patch("/{uuid}", svc.PatchUser)
 				r.Delete("/{uuid}", svc.DeleteUser)

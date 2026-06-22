@@ -13,7 +13,7 @@ import (
 
 // requires JWT
 // requires parseUUID
-func Rights(next http.Handler) http.Handler { // did you know you have rights?
+func UUIDRights(next http.Handler) http.Handler { // did you know you have rights?
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := logging.LoggerFromContext(r.Context())
 		logger = logger.With(slog.String("layer", "middleware"))
@@ -34,11 +34,10 @@ func Rights(next http.Handler) http.Handler { // did you know you have rights?
 			return
 		}
 
-		if claims.UserID != uuid && !claims.IsTeacher {
+		if claims.UserID != uuid {
 			logger.Warn("No rights for operation",
 				slog.String("requestorUUID", claims.ID),
 				slog.String("requestedUUID", uuid.String()),
-				slog.Bool("IsTeacher", claims.IsTeacher),
 			)
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Not enough permissions for operation"})

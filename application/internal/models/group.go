@@ -10,10 +10,10 @@ import (
 type Group struct {
 	bun.BaseModel `bun:"table:groups,alias:g"`
 
-	UUID uuid.UUID `bun:"uuid,pk"`
-	Name string    `bun:"name,unique"`
+	UUID uuid.UUID `bun:"uuid,pk" json:"uuid"`
+	Name string    `bun:"name,unique" json:"name"`
 
-	Users []User `bun:"m2m:groups_users,join:Group=User"`
+	Users []User `bun:"m2m:groups_users,join:Group=User" json:"pupils"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Group)(nil)

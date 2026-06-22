@@ -12,7 +12,7 @@ import (
 	"github.com/samber/do/v2"
 )
 
-type chiTestService struct {
+type chiService struct {
 	userRepo   user.UserRepository
 	groupRepo  group.GroupRepository
 	quizRepo   quiz.QuizRepository
@@ -22,7 +22,7 @@ type chiTestService struct {
 	runner testrunner.TestRunner
 }
 
-type TestService interface {
+type UserService interface {
 	Register(w http.ResponseWriter, r *http.Request)
 	Login(w http.ResponseWriter, r *http.Request)
 	PatchUser(w http.ResponseWriter, r *http.Request)
@@ -31,7 +31,22 @@ type TestService interface {
 	ListUsers(w http.ResponseWriter, r *http.Request)
 }
 
-func NewTestService(i do.Injector) (TestService, error) {
+type GroupService interface {
+	PostGroup(w http.ResponseWriter, r *http.Request)
+	GetGroup(w http.ResponseWriter, r *http.Request)
+	DeleteGroup(w http.ResponseWriter, r *http.Request)
+	PatchGroup(w http.ResponseWriter, r *http.Request)
+	AppendUsers(w http.ResponseWriter, r *http.Request)
+	RemoveUsers(w http.ResponseWriter, r *http.Request)
+	ListGroups(w http.ResponseWriter, r *http.Request)
+}
+
+type Service interface {
+	UserService
+	GroupService
+}
+
+func NewTestService(i do.Injector) (Service, error) {
 	uR := do.MustInvoke[user.UserRepository](i)
 	gR := do.MustInvoke[group.GroupRepository](i)
 	qR := do.MustInvoke[quiz.QuizRepository](i)
@@ -40,7 +55,8 @@ func NewTestService(i do.Injector) (TestService, error) {
 
 	r := do.MustInvoke[testrunner.TestRunner](i)
 
-	return &chiTestService{userRepo: uR,
+	return &chiService{
+		userRepo:   uR,
 		quizRepo:   qR,
 		groupRepo:  gR,
 		testRepo:   tR,
