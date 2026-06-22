@@ -7,6 +7,7 @@ import (
 	mrand "math/rand/v2"
 	"testing"
 
+	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/database/repositories/group"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/testutils"
@@ -66,6 +67,7 @@ func TestGroup_Creation(t *testing.T) {
 
 		err = r.NewGroup(t.Context(), name)
 		require.Error(t, err)
+		require.ErrorIs(t, err, carefulness.ErrConflict)
 	})
 }
 
