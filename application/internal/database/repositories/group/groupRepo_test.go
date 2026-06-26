@@ -44,7 +44,7 @@ func TestGroup_Creation(t *testing.T) {
 		t.Parallel()
 
 		name := rand.Text()
-		err := r.NewGroup(t.Context(), name)
+		_, err := r.NewGroup(t.Context(), name)
 		require.NoError(t, err)
 
 		var group models.Group
@@ -57,7 +57,7 @@ func TestGroup_Creation(t *testing.T) {
 		t.Parallel()
 
 		name := rand.Text()
-		err := r.NewGroup(t.Context(), name)
+		_, err := r.NewGroup(t.Context(), name)
 		require.NoError(t, err)
 
 		var group models.Group
@@ -65,7 +65,7 @@ func TestGroup_Creation(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, name, group.Name)
 
-		err = r.NewGroup(t.Context(), name)
+		_, err = r.NewGroup(t.Context(), name)
 		require.Error(t, err)
 		require.ErrorIs(t, err, carefulness.ErrConflict)
 	})

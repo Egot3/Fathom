@@ -8,7 +8,7 @@ import (
 )
 
 type GroupRepository interface {
-	NewGroup(ctx context.Context, name string) error
+	NewGroup(ctx context.Context, name string) (*models.Group, error)
 	DeleteGroup(ctx context.Context, uuid uuid.UUID) error
 	Group(ctx context.Context, uuid uuid.UUID) (*models.Group, error)
 	UpdateGroup(ctx context.Context, uuid uuid.UUID, name string) error

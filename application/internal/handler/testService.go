@@ -41,9 +41,18 @@ type GroupService interface {
 	ListGroups(w http.ResponseWriter, r *http.Request)
 }
 
+type QuizService interface {
+	PostQuiz(w http.ResponseWriter, r *http.Request)
+	DeleteQuiz(w http.ResponseWriter, r *http.Request)
+	GetQuiz(w http.ResponseWriter, r *http.Request)
+	ListQuizzes(w http.ResponseWriter, r *http.Request)
+	PatchQuiz(w http.ResponseWriter, r *http.Request)
+}
+
 type Service interface {
 	UserService
 	GroupService
+	QuizService
 }
 
 func NewTestService(i do.Injector) (Service, error) {
