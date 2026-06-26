@@ -104,29 +104,16 @@ func (c *chiService) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	err := r.ParseForm()
-	if err != nil {
-		logger.Error("Failed to parse form data",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
-		return
-	}
-
-	groupUUID, err := uuid.Parse(r.Form.Get("uuid"))
-	if err != nil {
-		logger.Error("Failed to parse uuid",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse uuid"})
+	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
 	ctx = logging.WithLogger(ctx, logger)
 
-	err = c.groupRepo.DeleteGroup(ctx, groupUUID)
+	err := c.groupRepo.DeleteGroup(ctx, groupUUID)
 	if err != nil {
 		logger.Error("Failed to get group",
 			slog.String("Error", err.Error()),
@@ -152,23 +139,10 @@ func (c *chiService) GetGroup(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	err := r.ParseForm()
-	if err != nil {
-		logger.Error("Failed to parse form data",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
-		return
-	}
-
-	groupUUID, err := uuid.Parse(r.Form.Get("uuid"))
-	if err != nil {
-		logger.Error("Failed to parse uuid",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse uuid"})
+	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
@@ -203,30 +177,17 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	err := r.ParseForm()
-	if err != nil {
-		logger.Error("Failed to parse form data",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
-		return
-	}
-
-	groupUUID, err := uuid.Parse(r.Form.Get("uuid"))
-	if err != nil {
-		logger.Error("Failed to parse uuid",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse uuid"})
+	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.PatchGroupRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", err.Error()),
@@ -264,6 +225,17 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(*req.Name) > 256 {
+		w.WriteHeader(422)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "group name is too long, must be <256"})
+		return
+	}
+	if len(*req.Name) < 4 {
+		w.WriteHeader(422)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "group name is too short, must be <4"})
+		return
+	}
+
 	err = c.groupRepo.UpdateGroup(ctx, groupUUID, *req.Name)
 	if err != nil {
 		logger.Error("Failed to patch group",
@@ -293,30 +265,8 @@ func (c *chiService) PostGroup(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	err := r.ParseForm()
-	if err != nil {
-		logger.Error("Failed to parse form data",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
-		return
-	}
-
-	groupUUID, err := uuid.Parse(r.Form.Get("uuid"))
-	if err != nil {
-		logger.Error("Failed to parse uuid",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse uuid"})
-		return
-	}
-	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
-	ctx = logging.WithLogger(ctx, logger)
-
 	var req contracts.PostGroupRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", err.Error()),
@@ -351,7 +301,24 @@ func (c *chiService) PostGroup(w http.ResponseWriter, r *http.Request) {
 	logger = logger.With(slog.String("group_name", req.Name))
 	ctx = logging.WithLogger(ctx, logger)
 
-	err = c.groupRepo.NewGroup(ctx, req.Name)
+	if len(req.Name) < 3 {
+		logger.Info("Attempt to create group with invalid nickname",
+			slog.String("group_name", req.Name),
+		)
+		w.WriteHeader(422)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "group name is too short"})
+		return
+	}
+	if len(req.Name) > 255 {
+		logger.Info("Attempt to create group with invalid nickname",
+			slog.String("group_name", req.Name),
+		)
+		w.WriteHeader(422)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "group name is too big"})
+		return
+	}
+
+	group, err := c.groupRepo.NewGroup(ctx, req.Name)
 	if err != nil {
 		logger.Error("Failed to create new group",
 			slog.String("Error", err.Error()),
@@ -366,7 +333,7 @@ func (c *chiService) PostGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(req.Appendants) != 0 {
-		err = c.groupRepo.AppendUsers(ctx, groupUUID, req.Appendants)
+		err = c.groupRepo.AppendUsers(ctx, group.UUID, req.Appendants)
 		if err != nil {
 			logger.Error("Failed to append users to new group",
 				slog.String("Error", err.Error()),
