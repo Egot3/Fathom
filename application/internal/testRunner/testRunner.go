@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"slices"
 	"sync"
@@ -58,7 +59,11 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		if !filepath.IsLocal(path) {
 			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
 		}
-		quiz, err := quizparser.ParseQuizByPath(path) //no reason to hold the lock when I/O and not writing to tr
+		buf, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		quiz, err := quizparser.ParseQuizByBytes(buf) //no reason to hold the lock when I/O and not writing to tr
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
@@ -158,7 +163,11 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string) error {
 		if !filepath.IsLocal(path) {
 			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
 		}
-		quiz, err := quizparser.ParseQuizByPath(path) //no reason to hold the lock when I/O and not writing to tr
+		buf, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		quiz, err := quizparser.ParseQuizByBytes(buf) //no reason to hold the lock when I/O and not writing to tr
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}

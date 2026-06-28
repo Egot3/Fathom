@@ -5,20 +5,15 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/egot3/fathom/internal/quiz"
 )
 
-func ParseQuizByPath(path string) (*quiz.Quiz, error) {
-	sourceFull, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
+func ParseQuizByBytes(fileBytes []byte) (*quiz.Quiz, error) {
 
 	var quiz quiz.Quiz
-	fm, source, err := ParseFrontmatter(sourceFull)
+	fm, source, err := ParseFrontmatter(fileBytes)
 	if err != nil {
 		return nil, err
 	}
