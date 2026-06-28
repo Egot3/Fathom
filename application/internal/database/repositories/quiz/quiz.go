@@ -3,8 +3,11 @@ package quiz
 import (
 	"context"
 	"database/sql"
+	"errors"
 
+	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/models"
+	"github.com/google/uuid"
 	"github.com/samber/do/v2"
 	"github.com/samber/lo"
 	"github.com/uptrace/bun"
@@ -19,13 +22,30 @@ func NewQuizRepository(i do.Injector) (QuizRepository, error) {
 	return &bunQuizRepository{db: db}, nil
 }
 
-func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, checksum []byte, score int) error {
-	_, err := r.db.NewInsert().Model(&models.Quiz{Path: path, Checksum: checksum, Score: score}).Exec(ctx)
-	return err
+func (r *bunQuizRepository) QuizPath(ctx context.Context, quizUUID uuid.UUID) (string, error) {
+	var path string
+	err := r.db.NewSelect().Model(&models.Quiz{UUID: quizUUID}).
+		WherePK().Column("path").Scan(ctx, &path)
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
 }
 
-func (r *bunQuizRepository) DeallocateQuiz(ctx context.Context, path string) error {
-	res, err := r.db.NewDelete().Model(&models.Quiz{Path: path}).WherePK().Exec(ctx)
+func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, checksum []byte, score int) error {
+	err := r.db.NewInsert().Model(&models.Quiz{Path: path, Checksum: checksum, Score: score}).Scan(ctx)
+	if err != nil {
+		if errors.Is(sql.ErrNoRows, err) {
+			return carefulness.Conflict{Conflictor: "Path"}
+		}
+		return err
+	}
+	return nil
+}
+
+func (r *bunQuizRepository) DeallocateQuiz(ctx context.Context, quizUUID uuid.UUID) error {
+	res, err := r.db.NewDelete().Model(&models.Quiz{UUID: quizUUID}).WherePK().Exec(ctx)
 	if err != nil {
 		return err
 	}

@@ -22,4 +22,5 @@ type Config struct {
 			Level   string   `yaml:"level"`
 		} `yaml:"logging"`
 	} `yaml:"server"`
+	QuizPath string `yaml:"quizPath"`
 }

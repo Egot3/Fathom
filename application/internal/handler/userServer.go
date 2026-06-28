@@ -372,7 +372,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.With(slog.String("nickname", req.Nickname))
+	logger = logger.With(slog.String("nickname", req.Nickname))
 
 	err = passwordutils.CheckPasswordSafety(req.Password)
 	if err != nil {

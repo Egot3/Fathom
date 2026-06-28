@@ -2,6 +2,7 @@ package quizparser_test
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -21,7 +22,9 @@ func Test_parsers(t *testing.T) {
 			t.Logf("Directory: %s\n", path)
 		} else {
 			t.Run(path, func(t *testing.T) {
-				_, err := quizparser.ParseQuizByPath(path)
+				raw, err := os.ReadFile(path)
+				require.NoError(t, err)
+				_, err = quizparser.ParseQuizByBytes(raw)
 				if strings.Contains(path, "valid") {
 					require.NoError(t, err)
 				} else {

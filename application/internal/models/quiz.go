@@ -5,15 +5,17 @@ import (
 	"path/filepath"
 
 	"github.com/egot3/fathom/internal/carefulness"
+	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
 
 type Quiz struct {
 	bun.BaseModel `bun:"table:quizzes,alias:q"`
 
-	Path     string `bun:"path,pk"`
-	Checksum []byte `bun:"checksum,notnull"`
-	Score    int    `bun:"score,notnull"`
+	UUID     uuid.UUID `bun:"uuid,pk"`
+	Path     string    `bun:"path,unique"`
+	Checksum []byte    `bun:"checksum,notnull"`
+	Score    int       `bun:"score,notnull"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Quiz)(nil)
@@ -27,6 +29,7 @@ func (q *Quiz) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 		if filepath.Ext(q.Path) != ".md" {
 			return carefulness.PlainMarkdownRequired
 		}
+		q.UUID = uuid.New()
 	}
 	return nil
 }

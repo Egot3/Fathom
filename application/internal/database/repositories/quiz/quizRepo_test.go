@@ -12,6 +12,7 @@ import (
 	"github.com/egot3/fathom/internal/database/repositories/quiz"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/testutils"
+	"github.com/google/uuid"
 	"github.com/samber/do/v2"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -78,22 +79,23 @@ func TestQuiz_Deallocate(t *testing.T) {
 	db := do.MustInvoke[*bun.DB](i)
 
 	path := "/usr/path/to/quiz.md"
-	_, err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: []byte{}, Score: 2}).Exec(t.Context())
+	var uuidQ uuid.UUID
+	err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: []byte{}, Score: 2}).Column("uuid").Scan(t.Context(), &uuidQ)
 	require.NoError(t, err)
 
 	testCases := []struct {
 		desc           string
-		path           string
+		uuid           uuid.UUID
 		expectNotFound bool
 	}{
 		{
 			desc:           "Valid deallocation",
-			path:           path,
+			uuid:           uuidQ,
 			expectNotFound: false,
 		},
 		{
 			desc:           "Invalid deallocation",
-			path:           "",
+			uuid:           uuid.Nil,
 			expectNotFound: true,
 		},
 	}
@@ -101,7 +103,7 @@ func TestQuiz_Deallocate(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			err = r.DeallocateQuiz(context.Background(), tC.path)
+			err = r.DeallocateQuiz(context.Background(), tC.uuid)
 			if tC.expectNotFound {
 				require.ErrorIs(t, err, sql.ErrNoRows)
 				return
