@@ -46,6 +46,7 @@ type QuizService interface {
 	DeleteQuiz(w http.ResponseWriter, r *http.Request)
 	GetQuiz(w http.ResponseWriter, r *http.Request)
 	ListQuizzes(w http.ResponseWriter, r *http.Request)
+	PutQuiz(w http.ResponseWriter, r *http.Request)
 	PatchQuiz(w http.ResponseWriter, r *http.Request)
 }
 

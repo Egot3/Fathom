@@ -9,7 +9,6 @@ import (
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
-	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 )
 
@@ -61,14 +60,17 @@ func (r *bunQuizRepository) DeallocateQuiz(ctx context.Context, quizUUID uuid.UU
 	return nil
 }
 
-func (r *bunQuizRepository) ListQuizzes(ctx context.Context, page, size int) ([]string, int, error) {
+func (r *bunQuizRepository) ListQuizzes(ctx context.Context, page, size int) ([]models.Quiz, int, error) {
 	var quizzes []models.Quiz
-	total, err := r.db.NewSelect().Model(&quizzes).Offset(page*size).Limit(page).OrderBy("path", bun.OrderDesc).ScanAndCount(ctx)
+	total, err := r.db.NewSelect().Model(&quizzes).
+		Offset(page*size).Limit(page).
+		Column("uuid").Column("path").
+		OrderBy("path", bun.OrderDesc).ScanAndCount(ctx)
 	if err != nil {
 		return nil, total, err
 	}
 
-	return lo.Map(quizzes, func(quiz models.Quiz, _ int) string { return quiz.Path }), total, nil
+	return quizzes, total, nil
 }
 
 func (r *bunQuizRepository) CheckRegistered(ctx context.Context, path string) (bool, error) {
@@ -77,4 +79,26 @@ func (r *bunQuizRepository) CheckRegistered(ctx context.Context, path string) (b
 
 func (r *bunQuizRepository) CheckIntegrity(ctx context.Context, path string, checksum []byte) (bool, error) {
 	return r.db.NewSelect().Model(&models.Quiz{Path: path}).WherePK().Where("checksum = ?", checksum).Exists(ctx)
+}
+
+func (r *bunQuizRepository) UpdateChecksum(ctx context.Context, quizUUID uuid.UUID, checksum []byte) error {
+	_, err := r.db.NewUpdate().Model((*models.Quiz)(nil)).
+		Where("uuid = ?", quizUUID).Set("checksum = ?", checksum).Exec(ctx)
+
+	return err
+}
+
+func (r *bunQuizRepository) PatchQuiz(ctx context.Context, quizUUID uuid.UUID, path *string, score *int) error {
+	q := r.db.NewUpdate().Model((*models.Quiz)(nil)).
+		Where("uuid = ?", quizUUID)
+
+	if path != nil {
+		q = q.Set("path = ?", path)
+	}
+	if score != nil {
+		q = q.Set("score = ?", score)
+	}
+
+	_, err := q.Exec(ctx)
+	return err
 }
