@@ -221,7 +221,7 @@ func TestQuiz_List(t *testing.T) {
 
 	var quizzes []string
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		path := fmt.Sprintf("/usr/path/to/%v.md", rand.Text())
 		randomBytes := make([]byte, 16)
 		rand.Read(randomBytes)
@@ -238,8 +238,8 @@ func TestQuiz_List(t *testing.T) {
 	require.Equal(t, len(quizzes), total)
 	require.ElementsMatch(t, pathes, quizzes)
 	require.Condition(t, func() (success bool) {
-		return lo.EveryBy(lo.Window(pathes, 2), func(item []string) bool {
-			return item[0] > item[1]
+		return lo.EveryBy(lo.Window(pathes, 2), func(item []models.Quiz) bool {
+			return item[0].Path > item[1].Path
 		})
 	})
 }

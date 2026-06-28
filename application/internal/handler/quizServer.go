@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/config"
@@ -138,7 +139,62 @@ func (c *chiService) GetQuiz(w http.ResponseWriter, r *http.Request) {
 
 // ListQuiz implements [Service].
 func (c *chiService) ListQuizzes(w http.ResponseWriter, r *http.Request) {
-	panic("unimplemented")
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
+		return
+	}
+
+	pageInt, err := strconv.Atoi(r.Form.Get("page"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
+		return
+	}
+	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
+		return
+	}
+	if sizeInt <= 0 {
+		w.WriteHeader(422)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
+		return
+	}
+
+	logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
+
+	quizzes, total, err := c.quizRepo.ListQuizzes(ctx, pageInt, sizeInt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Quizzes not found"})
+			return
+		}
+		if gone, ok := errors.AsType[carefulness.Gone](err); ok {
+			w.WriteHeader(http.StatusGone)
+			json.NewEncoder(w).Encode(gone.JSONError())
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contracts.ListQuizResponse{
+		Quizzes: quizzes,
+		Total:   total,
+		Page:    pageInt,
+		Size:    sizeInt,
+	})
 }
 
 // PostQuiz implements [Service].
@@ -205,12 +261,12 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	buf := []byte(fmt.Sprintf(`
+	buf := fmt.Appendf(nil, `
 	---
 	%v
 	---
 	%v
-	`, string(frontmatter), req.Body))
+	`, string(frontmatter), req.Body)
 
 	_, err = quizparser.ParseQuizByBytes(buf)
 	if err != nil {
@@ -247,7 +303,204 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// PatchQuiz implements [Service].
+// PutQuiz implements [Service].
+func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	quizUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		logger.Error("Bad uuid")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		return
+	}
+	logger = logger.With(slog.String("quizUUID", quizUUID.String()))
+	ctx = logging.WithLogger(ctx, logger)
+
+	w.Header().Set("Content-Type", "application/json")
+	var req contracts.PutQuizRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		logger.Error("error in register during reading",
+			slog.String("error", err.Error()),
+		)
+		if errors.Is(err, carefulness.ErrMalformedRequest) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+
+			return
+		}
+		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
+			w.WriteHeader(422)
+			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
+
+			return
+		}
+		if errors.Is(err, io.EOF) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Empty body"})
+
+			return
+		}
+		if errors.Is(err, io.ErrUnexpectedEOF) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
+
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	abs, err := c.quizRepo.QuizPath(ctx, quizUUID)
+	if err != nil {
+		logger.Error("couldn't select quiz path",
+			slog.String("Error", err.Error()),
+		)
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	frontmatter, err := yaml.Marshal(req.Meta)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		logger.Error("unable to process frontmatter",
+			slog.String("Error", err.Error()),
+		)
+
+		return
+	}
+	buf := fmt.Appendf(nil, `
+	---
+	%v
+	---
+	%v
+	`, string(frontmatter), req.Body)
+
+	_, err = quizparser.ParseQuizByBytes(buf)
+	if err != nil {
+		logger.Error("couldn't parse quiz", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		return
+	}
+
+	checksumUint := xxh3.HashString(req.Body)
+	checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
+	err = c.quizRepo.UpdateChecksum(ctx, quizUUID, checksum)
+	if err != nil {
+		logger.Error("couldn't update quiz", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't register quiz"})
+		return
+	}
+
+	err = os.WriteFile(abs, buf, os.ModeAppend)
+	if err != nil {
+		w.WriteHeader(http.StatusMultiStatus)
+
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write file"})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
-	panic("unimplemented")
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	quizUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		logger.Error("Bad uuid")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		return
+	}
+	logger = logger.With(slog.String("quizUUID", quizUUID.String()))
+	ctx = logging.WithLogger(ctx, logger)
+
+	w.Header().Set("Content-Type", "application/json")
+	var req contracts.PatchQuizRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		logger.Error("error in register during reading",
+			slog.String("error", err.Error()),
+		)
+		if errors.Is(err, carefulness.ErrMalformedRequest) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+
+			return
+		}
+		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
+			w.WriteHeader(422)
+			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
+
+			return
+		}
+		if errors.Is(err, io.EOF) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Empty body"})
+
+			return
+		}
+		if errors.Is(err, io.ErrUnexpectedEOF) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
+
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	abs, err := c.quizRepo.QuizPath(ctx, quizUUID)
+	if err != nil {
+		logger.Error("couldn't select quiz path",
+			slog.String("Error", err.Error()),
+		)
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var newAbs *string
+	if req.Name != nil {
+		v := config.TurnToAbs(*req.Name)
+		newAbs = &v
+	}
+
+	err = c.quizRepo.PatchQuiz(ctx, quizUUID, newAbs, req.Score)
+	if err != nil {
+		logger.Error("couldn't update quiz", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't register quiz"})
+		return
+	}
+
+	if newAbs != nil {
+		err := os.Rename(abs, *newAbs)
+		if err != nil {
+			w.WriteHeader(http.StatusMultiStatus)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
