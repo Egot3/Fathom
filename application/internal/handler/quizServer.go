@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"archive/tar"
+	"archive/zip"
 	"database/sql"
 	"encoding/binary"
 	"encoding/json"
@@ -10,7 +12,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/config"
@@ -503,4 +508,233 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (c *chiService) Export(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	var req contracts.ExportQuizRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		logger.Error("error in register during reading",
+			slog.String("error", err.Error()),
+		)
+		if errors.Is(err, carefulness.ErrMalformedRequest) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+
+			return
+		}
+		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
+			w.WriteHeader(422)
+			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
+
+			return
+		}
+		if errors.Is(err, io.EOF) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Empty body"})
+
+			return
+		}
+		if errors.Is(err, io.ErrUnexpectedEOF) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
+
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	acceptH := strings.Split(strings.ReplaceAll(r.Header.Get("Accept"), " ", ""), ",")
+	acceptStarts := make([]string, len(acceptH))
+	acceptQuality := make([]float32, len(acceptH))
+	for i, accept := range acceptH {
+		a := strings.Split(strings.TrimSpace(accept), ";q=")
+		acceptStarts[i] = a[0]
+		if len(a) > 1 {
+			f64, err := strconv.ParseFloat(a[1], 32)
+			if err != nil {
+				logger.Error("Error during accept parsing",
+					slog.String("Error", err.Error()),
+				)
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "bad accept header"})
+				return
+			}
+			acceptQuality[i] = float32(f64)
+		} else {
+			acceptQuality[i] = 1
+		}
+	}
+
+	for len(acceptStarts) > 0 {
+		idx := slices.Index(acceptQuality, slices.Max(acceptQuality))
+		switch acceptStarts[idx] {
+		case "application/zip":
+			w.Header().Set("Content-Type", "application/zip")
+			zipWriter := zip.NewWriter(w)
+			logger = logger.With(slog.String("strategy", "zip"))
+
+			for _, quizUUID := range req.UUIDs {
+				path, err := c.quizRepo.QuizPath(ctx, quizUUID)
+				if err != nil {
+					logger.Error("couldn't get path", slog.String("error", err.Error()))
+					/* if errors.Is(err, sql.ErrNoRows) {
+						w.WriteHeader(http.StatusNotFound)
+						json.NewEncoder(w).Encode(carefulness.JSONError{Error: fmt.Sprintf("%v not found", quizUUID.String())})
+						return
+					}
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: fmt.Sprintf("unable to process %v", quizUUID.String())})
+					return */
+					break
+				}
+
+				f, err := os.Open(path)
+				if err != nil {
+					logger.Error("couldn't open file", slog.String("error", err.Error()))
+					/* w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to read quiz file"})
+					return */
+					break
+				}
+				defer f.Close()
+
+				fileWriter, err := zipWriter.Create(filepath.Base(path))
+				if err != nil {
+					logger.Error("couldn't create entry in zip", slog.String("error", err.Error()))
+					/* w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to create archive entry"})
+					return */
+					break
+				}
+				if _, err := io.Copy(fileWriter, f); err != nil {
+					logger.Error("couldn't write file to zip", slog.String("error", err.Error()))
+					/* w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write quiz to archive"})
+					return */
+					break
+				}
+				f.Close()
+			}
+
+			if err := zipWriter.Close(); err != nil {
+				logger.Error("couldn't close zip", slog.String("error", err.Error()))
+				/* w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to finalize archive"})
+				return */
+				break
+			}
+
+			return
+		case "application/tar":
+			tarWriter := tar.NewWriter(w)
+
+			logger = logger.With(slog.String("strategy", "tar"))
+			w.Header().Set("Content-Type", "application/tar")
+
+			var err error
+			for _, quizUUID := range req.UUIDs {
+				var path string
+				path, err = c.quizRepo.QuizPath(ctx, quizUUID)
+				if err != nil {
+					logger.Error("couldn't get path for requested quiz",
+						slog.String("Error", err.Error()),
+					)
+					if errors.Is(err, sql.ErrNoRows) {
+						/* w.WriteHeader(http.StatusNotFound)
+						json.NewEncoder(w).Encode(carefulness.JSONError{Error: fmt.Sprintf("%v not found", quizUUID.String())})
+						return */
+						break
+					}
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: fmt.Sprintf("unable to process %v", quizUUID.String())})
+					return
+				}
+
+				f, err := os.Open(path)
+				if err != nil {
+					logger.Error("couldn't open file for requested quiz",
+						slog.String("Error", err.Error()),
+					)
+					/* w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to read quiz file"})
+					return */
+					break
+				}
+				defer f.Close()
+
+				info, err := f.Stat()
+				if err != nil {
+					logger.Error("couldn't get stats for file",
+						slog.String("Error", err.Error()),
+					)
+					/* w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get quiz's file stat"})
+					return */
+					break
+				}
+
+				header, err := tar.FileInfoHeader(info, "")
+				if err != nil {
+					logger.Error("couldn't get header for file",
+						slog.String("Error", err.Error()),
+					)
+					/* w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get quiz's file header"})
+					return */
+					break
+				}
+
+				if err := tarWriter.WriteHeader(header); err != nil {
+					logger.Error("couldn't write quiz header to archive",
+						slog.String("Error", err.Error()),
+					)
+					/* w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to create pass header to archive file"})
+					return */
+					break
+				}
+
+				if _, err = io.Copy(tarWriter, f); err != nil {
+					logger.Error("couldn't write file for requested quiz",
+						slog.String("Error", err.Error()),
+					)
+					/* w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write quiz file to archive"})
+					return */
+					break
+				}
+				f.Close()
+
+			}
+
+			err = tarWriter.Close()
+			if err != nil {
+				logger.Error("couldn't close file for requested quiz",
+					slog.String("Error", err.Error()),
+				)
+				break
+			}
+
+			return
+		default:
+			w.WriteHeader(http.StatusNotAcceptable)
+			return
+		}
+		acceptStarts = slices.Delete(acceptStarts, idx, idx+1)
+		acceptQuality = slices.Delete(acceptQuality, idx, idx+1)
+	}
+	w.WriteHeader(http.StatusBadRequest)
+	json.NewEncoder(w).Encode(carefulness.JSONError{Error: "None of the stratagy worked"})
+}
+
+func (c *chiService) Import(w http.ResponseWriter, r *http.Request) {
+	panic("unimp")
 }

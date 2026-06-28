@@ -48,12 +48,29 @@ type QuizService interface {
 	ListQuizzes(w http.ResponseWriter, r *http.Request)
 	PutQuiz(w http.ResponseWriter, r *http.Request)
 	PatchQuiz(w http.ResponseWriter, r *http.Request)
+	Export(w http.ResponseWriter, r *http.Request)
+	Import(w http.ResponseWriter, r *http.Request)
+}
+
+type TestService interface {
+	GetTest(w http.ResponseWriter, r *http.Request)
+	DeleteTest(w http.ResponseWriter, r *http.Request)
+	PatchTest(w http.ResponseWriter, r *http.Request)
+	PostTest(w http.ResponseWriter, r *http.Request)
+	StartTest(w http.ResponseWriter, r *http.Request)
+	StopTest(w http.ResponseWriter, r *http.Request)
+	PauseTest(w http.ResponseWriter, r *http.Request)
+	AddQuizzes(w http.ResponseWriter, r *http.Request)
+	RemoveQuizzes(w http.ResponseWriter, r *http.Request)
+	ExtendTest(w http.ResponseWriter, r *http.Request)
+	ResumeTest(w http.ResponseWriter, r *http.Request)
 }
 
 type Service interface {
 	UserService
 	GroupService
 	QuizService
+	TestService
 }
 
 func NewTestService(i do.Injector) (Service, error) {

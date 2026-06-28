@@ -3,6 +3,7 @@ package contracts
 import (
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/quiz"
+	"github.com/google/uuid"
 )
 
 type GetQuizResponse struct {
@@ -30,4 +31,8 @@ type ListQuizResponse struct {
 	Total   int           `json:"total"`
 	Page    int           `json:"page"`
 	Size    int           `json:"size"`
+}
+
+type ExportQuizRequest struct {
+	UUIDs uuid.UUIDs `json:"uuids"`
 }
