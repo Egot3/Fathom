@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
@@ -36,15 +37,23 @@ func NewTestRepository(i do.Injector) (TestRepository, error) {
 	return &bunTestRepository{db: db}, nil
 }
 
-func (r *bunTestRepository) CreateTest(ctx context.Context, name string) error {
-	_, err := r.db.NewInsert().Model(&models.Test{Name: name}).Exec(ctx)
-	return err
+func (r *bunTestRepository) CreateTest(ctx context.Context, name string) (*models.Test, error) {
+	var test = models.Test{Name: name}
+	err := r.db.NewInsert().Model(&test).Returning("*").Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &carefulness.Conflict{Conflictor: "name"}
+		}
+		return nil, err
+	}
+
+	return &test, nil
 }
 
-func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
+func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, quizUUIDs uuid.UUIDs) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		var testQuizzes []models.TestsQuizzies = lo.Map(pathes, func(path string, pos int) models.TestsQuizzies {
-			return models.TestsQuizzies{TestUUID: testUUID, Position: pos, QuizPath: path}
+		var testQuizzes []models.TestsQuizzies = lo.Map(quizUUIDs, func(u uuid.UUID, pos int) models.TestsQuizzies {
+			return models.TestsQuizzies{TestUUID: testUUID, Position: pos, QuizUUID: u}
 		})
 		_, err := tx.NewInsert().Model(&testQuizzes).Exec(ctx)
 		if err != nil {
@@ -98,11 +107,11 @@ func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uu
 } */
 
 // new(alpha)
-func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
+func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID uuid.UUID, quizUUIDs uuid.UUIDs) error {
 	notFound := 0
 
 	res, err := r.db.NewDelete().Model((*models.TestsQuizzies)(nil)).
-		Where("test_uuid = ?", testUUID).Where("quiz_path IN (?)", bun.List(pathes)).
+		Where("test_uuid = ?", testUUID).Where("quiz_uuid IN (?)", bun.List(quizUUIDs)).
 		Exec(ctx)
 	if err != nil {
 		return err
@@ -115,7 +124,7 @@ func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID u
 		return sql.ErrNoRows
 	}
 
-	notFound = len(pathes) - int(c)
+	notFound = len(quizUUIDs) - int(c)
 
 	if notFound > 0 {
 		return &NotInTestError{Count: notFound}

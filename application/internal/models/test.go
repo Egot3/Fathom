@@ -11,13 +11,13 @@ import (
 type Test struct {
 	bun.BaseModel `bun:"table:tests,alias:t"`
 
-	UUID uuid.UUID `bun:"uuid,pk"`
-	Name string    `bun:"name"`
+	UUID uuid.UUID `bun:"uuid,pk" json:"uuid"`
+	Name string    `bun:"name" json:"name"`
 
-	CreatedAt time.Time `bun:"created_at,notnull,default:now()"`
-	UpdatedAt time.Time `bun:"updated_at,notnull,default:now()"`
+	CreatedAt time.Time `bun:"created_at,notnull,default:now()" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,notnull,default:now()" json:"updated_at"`
 
-	Quizzes []Quiz `bun:"m2m:tests_quizzes,join:Test=Quiz"`
+	Quizzes []Quiz `bun:"m2m:tests_quizzes,join:Test=Quiz" json:"quizzes"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Test)(nil)

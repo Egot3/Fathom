@@ -47,7 +47,7 @@ func TestTest_Creation(t *testing.T) {
 		t.Parallel()
 
 		name := rand.Text()
-		err := r.CreateTest(t.Context(), name)
+		_, err := r.CreateTest(t.Context(), name)
 		require.NoError(t, err)
 
 		var test models.Test
@@ -60,7 +60,7 @@ func TestTest_Creation(t *testing.T) {
 		t.Parallel()
 
 		name := rand.Text()
-		err := r.CreateTest(t.Context(), name)
+		_, err := r.CreateTest(t.Context(), name)
 		require.NoError(t, err)
 
 		var test models.Test
@@ -68,7 +68,7 @@ func TestTest_Creation(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, name, test.Name)
 
-		err = r.CreateTest(t.Context(), name)
+		_, err = r.CreateTest(t.Context(), name)
 		require.Error(t, err)
 	})
 }
@@ -197,34 +197,34 @@ func TestTest_Bundle(t *testing.T) {
 		err = db.NewInsert().Model(&quizzes).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
-		pathes := lo.Map(quizzes, func(quiz models.Quiz, _ int) string { return quiz.Path })
-		err = r.BundleQuizzesToTest(t.Context(), test.UUID, pathes)
+		uuids := lo.Map(quizzes, func(quiz models.Quiz, _ int) uuid.UUID { return quiz.UUID })
+		err = r.BundleQuizzesToTest(t.Context(), test.UUID, uuids)
 		require.NoError(t, err)
 
 		type quizShort struct {
-			Path     string `bun:"quiz_path"`
-			Position int    `bun:"position"`
+			UUID     uuid.UUID `bun:"quiz_uuid"`
+			Position int       `bun:"position"`
 		}
 		var quizzesR []quizShort
 		err = db.NewSelect().Model((*models.TestsQuizzies)(nil)).
 			Where("test_uuid = ?", test.UUID).
-			Column("quiz_path", "position").
+			Column("quiz_uuid", "position").
 			Scan(t.Context(), &quizzesR)
 
-		var pathesR []string
+		var pathesR uuid.UUIDs
 		var posR []int
 		lo.ForEach(quizzesR, func(quizS quizShort, _ int) {
-			pathesR = append(pathesR, quizS.Path)
+			pathesR = append(pathesR, quizS.UUID)
 			posR = append(posR, quizS.Position)
 
 		})
 		require.Condition(t, func() (success bool) {
 			i := -1 //crutch
-			return lo.EveryBy(pathes, func(path string) bool {
+			return lo.EveryBy(uuids, func(uuid uuid.UUID) bool {
 				i++
-				return i == posR[lo.IndexOf(pathesR, path)]
+				return i == posR[lo.IndexOf(pathesR, uuid)]
 			})
-		}, pathesR, posR, pathes)
+		}, pathesR, posR, uuids)
 	})
 
 	t.Run("Patially valid bundle", func(t *testing.T) {
@@ -239,8 +239,8 @@ func TestTest_Bundle(t *testing.T) {
 		err = db.NewInsert().Model(&quizzes).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
-		pathes := lo.Map(quizzes, func(quiz models.Quiz, _ int) string { return quiz.Path })
-		err = r.BundleQuizzesToTest(t.Context(), testM.UUID, append(pathes, "/unknown.md"))
+		uuids := lo.Map(quizzes, func(quiz models.Quiz, _ int) uuid.UUID { return quiz.UUID })
+		err = r.BundleQuizzesToTest(t.Context(), testM.UUID, append(uuids, uuid.Nil))
 		require.Error(t, err)
 	})
 
@@ -249,7 +249,7 @@ func TestTest_Bundle(t *testing.T) {
 		err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
-		err = r.BundleQuizzesToTest(t.Context(), testM.UUID, append([]string{}, "/unknown.md"))
+		err = r.BundleQuizzesToTest(t.Context(), testM.UUID, append(uuid.UUIDs{}, uuid.Nil))
 		require.Error(t, err)
 	})
 }
@@ -269,18 +269,20 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 		err := db.NewInsert().Model(&models.Test{Name: name}).Returning("uuid").Scan(b.Context(), &testUUID)
 		require.NoError(b, err)
 
-		var pathes []string
 		var quizzes []models.Quiz
 		for range 5 {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
-			pathes = append(pathes, quizPath)
 			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
 		}
 
-		_, err = db.NewInsert().Model(&quizzes).
-			Exec(b.Context())
+		err = db.NewInsert().Model(&quizzes).
+			Scan(b.Context())
+		require.NoError(b, err)
+		uuids := lo.Map(quizzes, func(quiz models.Quiz, _ int) uuid.UUID {
+			return quiz.UUID
+		})
 
 		b.ResetTimer()
 
@@ -290,7 +292,7 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 			require.NoError(b, err)
 			b.StartTimer()
 
-			err = r.BundleQuizzesToTest(b.Context(), testUUID, pathes)
+			err = r.BundleQuizzesToTest(b.Context(), testUUID, uuids)
 			require.NoError(b, err)
 		}
 		db.Close()
@@ -308,18 +310,20 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 		err := db.NewInsert().Model(&models.Test{Name: name}).Returning("uuid").Scan(b.Context(), &testUUID)
 		require.NoError(b, err)
 
-		var pathes []string
 		var quizzes []models.Quiz
 		for range 50 {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
-			pathes = append(pathes, quizPath)
 			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
 		}
 
-		_, err = db.NewInsert().Model(&quizzes).
-			Exec(b.Context())
+		err = db.NewInsert().Model(&quizzes).
+			Scan(b.Context())
+		require.NoError(b, err)
+		uuids := lo.Map(quizzes, func(quiz models.Quiz, _ int) uuid.UUID {
+			return quiz.UUID
+		})
 
 		b.ResetTimer()
 
@@ -329,7 +333,7 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 			require.NoError(b, err)
 			b.StartTimer()
 
-			err = r.BundleQuizzesToTest(b.Context(), testUUID, pathes)
+			err = r.BundleQuizzesToTest(b.Context(), testUUID, uuids)
 			require.NoError(b, err)
 		}
 	})
@@ -346,18 +350,20 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 		err := db.NewInsert().Model(&models.Test{Name: name}).Returning("uuid").Scan(b.Context(), &testUUID)
 		require.NoError(b, err)
 
-		var pathes []string
 		var quizzes []models.Quiz
 		for range 500 {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
-			pathes = append(pathes, quizPath)
 			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
 		}
 
-		_, err = db.NewInsert().Model(&quizzes).
-			Exec(b.Context())
+		err = db.NewInsert().Model(&quizzes).
+			Scan(b.Context())
+		require.NoError(b, err)
+		uuids := lo.Map(quizzes, func(quiz models.Quiz, _ int) uuid.UUID {
+			return quiz.UUID
+		})
 
 		b.ResetTimer()
 
@@ -367,7 +373,7 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 			require.NoError(b, err)
 			b.StartTimer()
 
-			err = r.BundleQuizzesToTest(b.Context(), testUUID, pathes)
+			err = r.BundleQuizzesToTest(b.Context(), testUUID, uuids)
 			require.NoError(b, err)
 		}
 	})
@@ -388,23 +394,23 @@ func TestTest_Prune(t *testing.T) {
 		require.NoError(t, err)
 
 		count := mrand.IntN(6) + 3
-		pathes := make([]string, count)
 		var quizzes []models.Quiz = make([]models.Quiz, count)
 		for i := range count {
 			path := fmt.Sprintf("/path/to/%v.md", rand.Text())
-			pathes[i] = path
 			quizzes[i] = models.Quiz{Path: path, Checksum: []byte{}}
 		}
 		err = db.NewInsert().Model(&quizzes).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
+		uuids := make(uuid.UUIDs, len(quizzes))
 		inserts := lo.Map(quizzes, func(quiz models.Quiz, i int) models.TestsQuizzies {
-			return models.TestsQuizzies{TestUUID: test.UUID, QuizPath: quiz.Path, Position: i}
+			uuids[i] = quiz.UUID
+			return models.TestsQuizzies{TestUUID: test.UUID, QuizUUID: quiz.UUID, Position: i}
 		})
 		_, err = db.NewInsert().Model(&inserts).Exec(t.Context())
 		require.NoError(t, err)
 
-		err = r.PruneQuizzesFromTest(t.Context(), test.UUID, pathes)
+		err = r.PruneQuizzesFromTest(t.Context(), test.UUID, uuids)
 		require.NoError(t, err)
 
 		type quizShort struct {
@@ -435,14 +441,16 @@ func TestTest_Prune(t *testing.T) {
 		}
 		err = db.NewInsert().Model(&quizzes).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
+		uuids := make(uuid.UUIDs, len(quizzes))
 
 		inserts := lo.Map(quizzes, func(quiz models.Quiz, i int) models.TestsQuizzies {
-			return models.TestsQuizzies{TestUUID: testM.UUID, QuizPath: quiz.Path, Position: i}
+			uuids[i] = quiz.UUID
+			return models.TestsQuizzies{TestUUID: testM.UUID, QuizUUID: quiz.UUID, Position: i}
 		})
 		_, err = db.NewInsert().Model(&inserts).Exec(t.Context())
 		require.NoError(t, err)
 
-		err = r.PruneQuizzesFromTest(t.Context(), testM.UUID, append(pathes, "/unknown.md"))
+		err = r.PruneQuizzesFromTest(t.Context(), testM.UUID, append(uuids, uuid.Nil))
 		require.Error(t, err)
 		require.ErrorIs(t, err, test.ErrQuizNotInTest)
 		require.Equal(t, "1 quizzes are not in test", err.Error())
@@ -465,12 +473,12 @@ func TestTest_Prune(t *testing.T) {
 		err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
-		err = r.BundleQuizzesToTest(t.Context(), testM.UUID, append([]string{}, "/unknown.md"))
+		err = r.BundleQuizzesToTest(t.Context(), testM.UUID, append(uuid.UUIDs{}, uuid.Nil))
 		require.Error(t, err)
 	})
 }
 
-func BenchmarkGroup_Prune_quizzes(b *testing.B) {
+/* func BenchmarkGroup_Prune_quizzes(b *testing.B) {
 	log.SetOutput(io.Discard)
 	b.Run("Benchmark 5 prunants", func(b *testing.B) {
 		i := NewInjectorWithTestRepo(b)
@@ -484,20 +492,18 @@ func BenchmarkGroup_Prune_quizzes(b *testing.B) {
 		err := db.NewInsert().Model(&models.Test{Name: name}).Returning("uuid").Scan(b.Context(), &testUUID)
 		require.NoError(b, err)
 
-		var pathes []string = make([]string, 0, 5)
 		var quizzes []models.Quiz = make([]models.Quiz, 0, 5)
 		var testQuizzes []models.TestsQuizzies = make([]models.TestsQuizzies, 0, 5)
 		for range 5 {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
-			pathes = append(pathes, quizPath)
 			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
-			testQuizzes = append(testQuizzes, models.TestsQuizzies{TestUUID: testUUID, QuizPath: quizPath, Position: mrand.Int()})
 		}
 
 		_, err = db.NewInsert().Model(&quizzes).
 			Exec(b.Context())
+
 
 		b.ResetTimer()
 
@@ -593,3 +599,4 @@ func BenchmarkGroup_Prune_quizzes(b *testing.B) {
 		}
 	})
 }
+*/
