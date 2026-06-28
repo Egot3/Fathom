@@ -61,6 +61,7 @@ type TestService interface {
 	StopTest(w http.ResponseWriter, r *http.Request)
 	PauseTest(w http.ResponseWriter, r *http.Request)
 	AddQuizzes(w http.ResponseWriter, r *http.Request)
+	AddQuizzesToRunning(w http.ResponseWriter, r *http.Request)
 	RemoveQuizzes(w http.ResponseWriter, r *http.Request)
 	ExtendTest(w http.ResponseWriter, r *http.Request)
 	ResumeTest(w http.ResponseWriter, r *http.Request)

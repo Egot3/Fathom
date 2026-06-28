@@ -49,7 +49,7 @@ func TestAnswer_Set(t *testing.T) {
 	err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
-	_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizPath: quiz.Path}).Exec(t.Context())
+	_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizUUID: quiz.UUID}).Exec(t.Context())
 	require.NoError(t, err)
 
 	name := rand.Text()
@@ -206,7 +206,7 @@ func TestAnswer_Get(t *testing.T) {
 	err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
-	_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizPath: quiz.Path}).Exec(t.Context())
+	_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizUUID: quiz.UUID}).Exec(t.Context())
 	require.NoError(t, err)
 
 	name := rand.Text()
@@ -277,7 +277,7 @@ func TestAnswer_Totalization(t *testing.T) {
 	err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
-	_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizPath: quiz.Path}).Exec(t.Context())
+	_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizUUID: quiz.UUID}).Exec(t.Context())
 	require.NoError(t, err)
 
 	name := rand.Text()
@@ -366,7 +366,7 @@ func TestAnswer_Totalization(t *testing.T) {
 		err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
-		_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizPath: quiz.Path}).Exec(t.Context())
+		_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizUUID: quiz.UUID}).Exec(t.Context())
 		require.NoError(t, err)
 
 		_, err = db.NewInsert().Model(&models.Answer{
@@ -409,7 +409,7 @@ func TestAnswer_Totals(t *testing.T) {
 	err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
-	_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizPath: quiz.Path}).Exec(t.Context())
+	_, err = db.NewInsert().Model(&models.TestsQuizzies{TestUUID: testM.UUID, QuizUUID: quiz.UUID}).Exec(t.Context())
 	require.NoError(t, err)
 
 	name := rand.Text()
