@@ -65,6 +65,21 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				})
 			})
 
+			r.Route("/quiz", func(r chi.Router) {
+				r.Use(middleware.JWT, middleware.IsTeacherRights)
+
+				r.Get("/", svc.ListQuizzes)
+				r.Post("/", svc.PostQuiz)
+
+				r.Route("/{uuid}", func(r chi.Router) {
+					r.Use(middleware.ParseUUID)
+					r.Patch("/", svc.PatchQuiz)
+					r.Put("/", svc.PutQuiz)
+					r.Get("/", svc.GetQuiz)
+					r.Delete("/", svc.DeleteQuiz)
+				})
+			})
+
 		})
 	})
 
