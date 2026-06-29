@@ -3,6 +3,7 @@ package handler
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"database/sql"
 	"encoding/binary"
@@ -11,9 +12,12 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"mime"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	acceptutils "github.com/egot3/fathom/internal/acceptUtils"
 	archiveutlis "github.com/egot3/fathom/internal/archiveUtlis"
@@ -664,5 +668,157 @@ func (c *chiService) Export(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *chiService) Import(w http.ResponseWriter, r *http.Request) {
-	panic("unimp")
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	w.Header().Add("content-type", "application/json")
+
+	if err := r.ParseMultipartForm(8 << 20); err != nil {
+		logger.Error("archive is too big", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "archive is too big!"})
+		return
+	}
+
+	archiveParts, handler, err := r.FormFile("imported")
+	if err != nil {
+		logger.Error("couldn't get file", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse file"})
+		return
+	}
+	defer archiveParts.Close()
+
+	contentType, _, err := mime.ParseMediaType(handler.Header.Get("Content-Type"))
+	if err != nil {
+		logger.Error("couldn't parse MIME type", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse MIME"})
+		return
+	}
+
+	logger = logger.With(
+		slog.String("file_name", handler.Filename),
+		slog.String("mime", contentType),
+		slog.Int64("size", handler.Size),
+	)
+	ctx = logging.WithLogger(ctx, logger)
+
+	tmpDir, err := os.MkdirTemp(config.PathToQuizzes, "tmp-")
+	if err != nil {
+		logger.Error("failed to create tmpDir",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't create temp dir for new quiz bank"})
+		return
+	}
+	defer os.RemoveAll(tmpDir)
+
+	switch contentType {
+	case "application/zip":
+		zipReader, err := zip.NewReader(archiveParts, handler.Size)
+		if err != nil {
+			logger.Error("couldn't create new zip-reader", slog.String("Error", err.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to create zip reader"})
+			return
+		}
+
+		for _, f := range zipReader.File {
+			cleanPath := filepath.Clean(f.FileInfo().Name())
+			destPath := filepath.Join(tmpDir, cleanPath)
+			absPath, err := filepath.Abs(destPath)
+			if err != nil {
+				logger.Error("zip-slip detected", slog.String("Error", err.Error()))
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "can't use this zip as it was suspected to be unsafe"})
+				return
+			}
+			if !strings.HasPrefix(absPath, filepath.Clean(tmpDir)+string(os.PathSeparator)) {
+				logger.Error("real zip-slip")
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "can't use this zip as it IS unsafe(https://developer.android.com/privacy-and-security/risks/zip-path-traversal)"})
+				return
+			}
+
+			if f.FileInfo().IsDir() {
+				if err := os.Mkdir(absPath, 0o750); err != nil {
+					logger.Error("couldn't create dir", slog.String("Error", err.Error()))
+					if errors.Is(err, os.ErrExist) {
+						continue
+					}
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to create dir from zip"})
+					return
+				}
+				continue
+			}
+
+			rc, err := f.Open()
+			if err != nil {
+				logger.Error("couldn't create reader for file from zip reader", slog.String("Error", err.Error()))
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't read file from zip"})
+				return
+			}
+
+			var contents []byte
+			_, err = rc.Read(contents)
+			if err != nil {
+				logger.Error("couldn't read file from zip reader", slog.String("Error", err.Error()))
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't read file from zip"})
+				return
+			}
+
+			q, err := quizparser.ParseQuizByBytes(contents)
+			if err != nil {
+				logger.Error("invalid quiz", slog.String("Error", err.Error()))
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't parse quiz" + err.Error()})
+				return
+			}
+
+			dest, err := os.Create(absPath)
+			if err != nil {
+				logger.Error("couldn't create file for zip file", slog.String("Error", err.Error()))
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't create file"})
+				return
+			}
+			_, err = io.Copy(dest, bytes.NewReader(contents))
+			if err != nil {
+				logger.Error("couldn't write zip entry to file", slog.String("Error", err.Error()))
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't write zip entry to file"})
+				return
+			}
+			rc.Close()
+			dest.Close()
+
+			checksumUint := xxh3.Hash(contents)
+			checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
+			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score)
+			if err != nil {
+				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
+				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
+					w.WriteHeader(http.StatusConflict)
+					json.NewEncoder(w).Encode(conflict.JSONError())
+					return
+				}
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't register quiz"})
+				return
+			}
+		}
+
+		err = os.Rename(tmpDir, filepath.Join(config.PathToQuizzes, handler.Filename[:len(handler.Filename)-4]))
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.WriteHeader(http.StatusInternalServerError)
 }
