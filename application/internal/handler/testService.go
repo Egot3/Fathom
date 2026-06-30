@@ -48,8 +48,8 @@ type QuizService interface {
 	ListQuizzes(w http.ResponseWriter, r *http.Request)
 	PutQuiz(w http.ResponseWriter, r *http.Request)
 	PatchQuiz(w http.ResponseWriter, r *http.Request)
-	Export(w http.ResponseWriter, r *http.Request)
-	Import(w http.ResponseWriter, r *http.Request)
+	ExportQuizBank(w http.ResponseWriter, r *http.Request)
+	ImportQuizBank(w http.ResponseWriter, r *http.Request)
 }
 
 type TestService interface {
@@ -62,6 +62,7 @@ type TestService interface {
 	PauseTest(w http.ResponseWriter, r *http.Request)
 	AddQuizzes(w http.ResponseWriter, r *http.Request)
 	AddQuizzesToRunning(w http.ResponseWriter, r *http.Request)
+	RemoveQuizzesFromRunning(w http.ResponseWriter, r *http.Request)
 	RemoveQuizzes(w http.ResponseWriter, r *http.Request)
 	ExtendTest(w http.ResponseWriter, r *http.Request)
 	ResumeTest(w http.ResponseWriter, r *http.Request)
