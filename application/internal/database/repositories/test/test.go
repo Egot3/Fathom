@@ -37,6 +37,23 @@ func NewTestRepository(i do.Injector) (TestRepository, error) {
 	return &bunTestRepository{db: db}, nil
 }
 
+func (r *bunTestRepository) TestPathes(ctx context.Context, UUIDs uuid.UUIDs) ([]string, error) {
+	pathes := make([]string, len(UUIDs))
+	err := r.db.NewSelect().Model((*models.Quiz)(nil)).
+		Column("path").
+		Where("uuid IN (?)", bun.List(UUIDs)).
+		Scan(ctx, pathes)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(UUIDs) != len(pathes) {
+		return nil, sql.ErrNoRows
+	}
+
+	return pathes, nil
+}
+
 func (r *bunTestRepository) CreateTest(ctx context.Context, name string) (*models.Test, error) {
 	var test = models.Test{Name: name}
 	err := r.db.NewInsert().Model(&test).Returning("*").Scan(ctx)
@@ -157,8 +174,18 @@ func (r *bunTestRepository) DeleteTest(ctx context.Context, UUID uuid.UUID) erro
 }
 
 func (r *bunTestRepository) UpdateTest(ctx context.Context, UUID uuid.UUID, name string) error {
-	res, err := r.db.NewUpdate().Model(&models.Test{UUID: UUID, Name: name}).WherePK().Exec(ctx)
+	e, err := r.db.NewSelect().Model((*models.Test)(nil)).Where("name = ?", name).Exists(ctx)
+	if err != nil {
+		return err
+	}
+	if e {
+		return carefulness.Conflict{Conflictor: "name"}
+	}
 
+	res, err := r.db.NewUpdate().Model(&models.Test{UUID: UUID, Name: name}).WherePK().Exec(ctx)
+	if err != nil {
+		return err
+	}
 	c, err := res.RowsAffected()
 	if err != nil {
 		return err
@@ -166,5 +193,6 @@ func (r *bunTestRepository) UpdateTest(ctx context.Context, UUID uuid.UUID, name
 	if c == 0 {
 		return sql.ErrNoRows
 	}
+
 	return nil
 }

@@ -514,7 +514,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (c *chiService) Export(w http.ResponseWriter, r *http.Request) {
+func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
@@ -667,7 +667,7 @@ func (c *chiService) Export(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *chiService) Import(w http.ResponseWriter, r *http.Request) {
+func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
