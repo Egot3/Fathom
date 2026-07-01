@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
@@ -181,7 +182,70 @@ func (c *chiService) DeleteTest(w http.ResponseWriter, r *http.Request) {
 
 // ExtendTest implements [Service].
 func (c *chiService) ExtendTest(w http.ResponseWriter, r *http.Request) {
-	panic("unimp")
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+	w.Header().Set("Content-Type", "application/json")
+
+	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve test uuid"})
+		return
+	}
+	logger = logger.With(slog.String("test_uuid", testUUID.String()))
+	ctx = logging.WithLogger(ctx, logger)
+
+	var req contracts.ExtendTestRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		logger.Error("Failed to parse body",
+			slog.String("Error", err.Error()),
+		)
+		if errors.Is(err, carefulness.ErrMalformedRequest) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+
+			return
+		}
+		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
+			w.WriteHeader(422)
+			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
+
+			return
+		}
+		if errors.Is(err, io.EOF) {
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+		if errors.Is(err, io.ErrUnexpectedEOF) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
+
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	logger = logger.With(slog.String("extend_by", req.ExtendBy))
+	ctx = logging.WithLogger(ctx, logger)
+
+	extendBy, err := time.ParseDuration(req.ExtendBy)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()}) //always parseError
+		return
+	}
+	err = c.runner.ExtendTime(extendBy)
+	if err != nil {
+		w.WriteHeader(http.StatusLocked)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()}) // my own error
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // GetTest implements [Service].
@@ -317,7 +381,21 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 
 // PauseTest implements [Service].
 func (c *chiService) PauseTest(w http.ResponseWriter, r *http.Request) {
-	panic("unimplemented")
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	// there is like nothing to return
+	w.Header().Set("Content-Type", "application/json")
+
+	err := c.runner.Pause()
+	if err != nil {
+		logger.Error("couldn't pause test", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusLocked)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // PostTest implements [Service].
