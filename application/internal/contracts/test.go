@@ -2,6 +2,7 @@ package contracts
 
 import (
 	"github.com/egot3/fathom/internal/models"
+	"github.com/egot3/fathom/internal/quiz"
 	"github.com/google/uuid"
 )
 
@@ -22,6 +23,27 @@ type PatchTestRequest struct {
 	Name *string `json:"name"`
 }
 
-type ExtendTest struct {
+type ExtendTestRequest struct {
 	ExtendBy string `json:"extend_by"`
+}
+
+type RemoveQuizzesRequest struct {
+	QuizUUIDs uuid.UUIDs `json:"quiz_uuids"`
+}
+
+type StartRequest struct {
+	Duration  string     `json:"duration"`
+	QuizUUIDs uuid.UUIDs `json:"quiz_uuids"`
+}
+
+type GetQuizFromRunningResponse struct {
+	Id   int       `json:"id"`
+	Quiz quiz.Quiz `json:"quiz"`
+}
+
+type ListTestsResponse struct {
+	Page  int           `json:"page"`
+	Size  int           `json:"size"`
+	Total int           `json:"total"`
+	Tests []models.Test `json:"tests"`
 }
