@@ -12,7 +12,9 @@ import (
 
 	"github.com/egot3/fathom/internal/quiz"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
+	"github.com/google/uuid"
 	"github.com/samber/do/v2"
+	"github.com/samber/lo"
 )
 
 var (
@@ -24,11 +26,11 @@ var (
 )
 
 type NotCachedError struct {
-	Ids []int
+	Count int
 }
 
 func (e *NotCachedError) Error() string {
-	return fmt.Sprintf("%d quizzes not cached in runner", len(e.Ids))
+	return fmt.Sprintf("%d quizzes not cached in runner", e.Count)
 }
 
 func (e *NotCachedError) Is(target error) bool {
@@ -53,7 +55,7 @@ func NewTestRunner(i do.Injector) (TestRunner, error) {
 }
 
 // Ctx must explicitly hold the lifetime of test
-func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string) error {
+func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs) error {
 	quizzes := make([]*quiz.Quiz, len(quizPaths))
 	for i, path := range quizPaths {
 		if !filepath.IsLocal(path) {
@@ -150,7 +152,7 @@ func (tr *concreteTestRunner) Stop() {
 
 // acquire path quiz pairs from db via uuid
 // called upsert as maps.Copy overwrites dest on collision
-func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string) error {
+func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUIDs) error {
 	tr.mu.RLock()
 	if tr.cancel == nil { // reading a bunch of files might fry the potato
 		tr.mu.RUnlock()
@@ -171,6 +173,7 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string) error {
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
+		quiz.UUID = quizUUIDs[i]
 		quizzes[i] = quiz
 
 	}
@@ -186,7 +189,7 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string) error {
 }
 
 // remember: parioal deletion, return 200 207 OR 404
-func (tr *concreteTestRunner) RemoveQuiz(ids []int) error {
+func (tr *concreteTestRunner) RemoveQuiz(uuids uuid.UUIDs) error {
 	tr.mu.RLock()
 	if tr.cancel == nil {
 		tr.mu.RUnlock()
@@ -194,23 +197,14 @@ func (tr *concreteTestRunner) RemoveQuiz(ids []int) error {
 	}
 	tr.mu.RUnlock() //just to keep up with upsert
 
-	notFound := make([]int, 0)
-	tr.mu.Lock()
-	if tr.cancel == nil {
-		return ErrRunnerInactive
-	}
-	for _, id := range ids {
-		if ok := len(tr.quizzes) > id; !ok {
-			notFound = append(notFound, id)
-			continue
-		}
-
-		tr.quizzes = append(tr.quizzes[:id], tr.quizzes[id+1:]...)
-	}
+	oldL := len(tr.quizzes)
+	tr.quizzes = lo.Filter(tr.quizzes, func(quiz *quiz.Quiz, _ int) bool {
+		return !slices.Contains(uuids, quiz.UUID)
+	})
+	nf := oldL - len(tr.quizzes) - len(uuids)
 	tr.mu.Unlock()
-
-	if len(notFound) != 0 {
-		return &NotCachedError{Ids: notFound}
+	if nf != 0 {
+		return &NotCachedError{Count: nf}
 	}
 
 	return nil

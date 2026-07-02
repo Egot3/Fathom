@@ -15,4 +15,5 @@ type TestRepository interface {
 	DeleteTest(ctx context.Context, UUID uuid.UUID) error
 	UpdateTest(ctx context.Context, UUID uuid.UUID, name string) error
 	TestPathes(ctx context.Context, UUIDs uuid.UUIDs) ([]string, error)
+	ListTests(ctx context.Context, page, size int) ([]models.Test, int, error)
 }

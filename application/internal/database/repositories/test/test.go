@@ -196,3 +196,14 @@ func (r *bunTestRepository) UpdateTest(ctx context.Context, UUID uuid.UUID, name
 
 	return nil
 }
+
+func (r *bunTestRepository) ListTests(ctx context.Context, page, size int) ([]models.Test, int, error) {
+	tests := make([]models.Test, size)
+	total, err := r.db.NewSelect().Model(&tests).OrderBy("uuid", bun.OrderAsc).
+		Limit(size).Offset(page * size).ScanAndCount(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return tests, total, nil
+}

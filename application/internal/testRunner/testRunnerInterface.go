@@ -5,15 +5,16 @@ import (
 	"time"
 
 	"github.com/egot3/fathom/internal/quiz"
+	"github.com/google/uuid"
 )
 
 type TestRunner interface {
-	Start(ctx context.Context, duration time.Duration, quizPaths []string) error
+	Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs) error
 	Get(id int) (*quiz.Quiz, error)
 	cleanup(gen uint64)
 	Stop()
-	UpsertQuiz(quizPaths []string) error
-	RemoveQuiz(ids []int) error
+	UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUIDs) error
+	RemoveQuiz(UUIDs uuid.UUIDs) error
 	ExtendTime(duration time.Duration) error
 	Resume() error
 	Pause() error

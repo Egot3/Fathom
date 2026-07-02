@@ -82,6 +82,45 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				r.Delete("/", svc.DeleteQuiz)
 			})
 		})
+
+		r.Route("/test", func(r chi.Router) {
+			r.Use(middleware.JWT)
+
+			r.With(middleware.IsTeacherRights).Post("/", svc.PostTest)
+			r.Get("/", svc.ListTests)
+
+			r.Route("/running", func(r chi.Router) {
+				r.Get("/", svc.GetQuizFromRunning)
+
+				//protected
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.IsTeacherRights)
+					r.Post("/start", svc.StartTest)
+					r.Post("/stop", svc.StopTest)
+					r.Post("/pause", svc.PauseTest)
+					r.Post("/resume", svc.ResumeTest)
+					r.Post("/", svc.AddQuizzesToRunning)
+					r.Delete("/", svc.RemoveQuizzesFromRunning)
+					r.Post("/extend", svc.ExtendTest)
+				})
+
+			})
+
+			r.Route("/{uuid}", func(r chi.Router) {
+				r.Use(middleware.ParseUUID)
+
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.IsTeacherRights)
+
+					r.Delete("/", svc.DeleteTest)
+					r.Patch("/", svc.PatchTest)
+					r.Post("/quizzes", svc.AddQuizzes)
+					r.Delete("/quizzes", svc.RemoveQuizzes)
+
+				})
+
+			})
+		})
 	})
 
 	return r, nil
