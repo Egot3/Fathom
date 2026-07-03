@@ -1,4 +1,4 @@
-package answer
+package total
 
 import (
 	"context"
@@ -10,20 +10,20 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type bunAnswerRepository struct {
+type bunTotalRepository struct {
 	db *bun.DB
 }
 
-func NewAnswerRepository(i do.Injector) (AnswerRepository, error) {
+func NewTotalRepository(i do.Injector) (TotalRepository, error) {
 	db := do.MustInvoke[*bun.DB](i)
-	return &bunAnswerRepository{db: db}, nil
+	return &bunTotalRepository{db: db}, nil
 } //created all of it just to live a good life in tests
 
-func (r *bunAnswerRepository) SetAnswer(ctx context.Context, testUUID, groupUUID, userUUID uuid.UUID, quizPath, answerValue string, score int) error {
+func (r *bunTotalRepository) SetAnswer(ctx context.Context, testUUID, groupUUID, userUUID, quizUUID uuid.UUID, answerValue string, score int) error {
 	_, err := r.db.NewInsert().On("CONFLICT DO UPDATE").Model(&models.Answer{
 		TestUUID:    testUUID,
 		UserUUID:    userUUID,
-		QuizPath:    quizPath,
+		QuizUUID:    quizUUID,
 		GroupUUID:   groupUUID,
 		AnswerValue: answerValue,
 		Score:       score,
@@ -31,14 +31,14 @@ func (r *bunAnswerRepository) SetAnswer(ctx context.Context, testUUID, groupUUID
 	return err
 }
 
-func (r *bunAnswerRepository) Answer(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, quizPath string) (string, error) {
+func (r *bunTotalRepository) Answer(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (string, error) {
 	var answer string
 	err := r.db.NewSelect().
 		Model((*models.Answer)(nil)).
 		Where("test_uuid = ?", testUUID).
 		Where("group_uuid = ?", groupUUID).
 		Where("user_uuid = ?", userUUID).
-		Where("quiz_path = ?", quizPath).
+		Where("quiz_uuid = ?", quizUUID).
 		OrderBy("answered_at", bun.OrderDesc).
 		Limit(1).
 		Column("answer_value").Scan(ctx, &answer)
@@ -49,19 +49,19 @@ func (r *bunAnswerRepository) Answer(ctx context.Context, userUUID, testUUID, gr
 	return answer, nil
 }
 
-func (r *bunAnswerRepository) Totalize(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) error {
+func (r *bunTotalRepository) Totalize(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) error {
 	var userTotal int
-	var quizPathes []string
+	var quizUUIDs uuid.UUIDs
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		err := tx.NewSelect().TableExpr("tests_quizzes AS tq").
-			Column("tq.quiz_path").
+			Column("tq.quiz_uuid").
 			Where("tq.test_uuid = ?", testUUID).
-			Scan(ctx, &quizPathes)
+			Scan(ctx, &quizUUIDs)
 		if err != nil {
 			return err
 		}
 
-		if len(quizPathes) == 0 {
+		if len(quizUUIDs) == 0 {
 			userTotal = 0
 		} else {
 			latestPerQuiz := tx.NewSelect().
@@ -70,7 +70,7 @@ func (r *bunAnswerRepository) Totalize(ctx context.Context, userUUID, testUUID, 
 				Where("inner_a.test_uuid = a.test_uuid").
 				Where("inner_a.group_uuid = a.group_uuid").
 				Where("inner_a.user_uuid = a.user_uuid").
-				Where("inner_a.quiz_path = a.quiz_path")
+				Where("inner_a.quiz_uuid = a.quiz_uuid")
 
 			err = tx.NewSelect().
 				TableExpr("users_groups_tests_quiz_answers AS a").
@@ -78,7 +78,7 @@ func (r *bunAnswerRepository) Totalize(ctx context.Context, userUUID, testUUID, 
 				Where("a.test_uuid = ?", testUUID).
 				Where("a.group_uuid = ?", groupUUID).
 				Where("a.user_uuid = ?", userUUID).
-				Where("a.quiz_path IN (?)", bun.List(quizPathes)).
+				Where("a.quiz_uuid IN (?)", bun.List(quizUUIDs)).
 				Where("a.answered_at = (?)", latestPerQuiz).
 				Scan(ctx, &userTotal)
 			if err != nil {
@@ -94,14 +94,14 @@ func (r *bunAnswerRepository) Totalize(ctx context.Context, userUUID, testUUID, 
 	})
 }
 
-func (r *bunAnswerRepository) AnswerScore(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, quizPath string) (int, error) {
+func (r *bunTotalRepository) AnswerScore(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (int, error) {
 	var score int
 	err := r.db.NewSelect().
 		Model((*models.Answer)(nil)).
 		Where("test_uuid = ?", testUUID).
 		Where("group_uuid = ?", groupUUID).
 		Where("user_uuid = ?", userUUID).
-		Where("quiz_path = ?", quizPath).
+		Where("quiz_uuid = ?", quizUUID).
 		OrderBy("answered_at", bun.OrderDesc).
 		Limit(1).
 		Column("score").Scan(ctx, &score)
@@ -112,7 +112,7 @@ func (r *bunAnswerRepository) AnswerScore(ctx context.Context, userUUID, testUUI
 	return score, nil
 }
 
-func (r *bunAnswerRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (*models.UserGroupsTests, error) {
+func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (*models.UserGroupsTests, error) {
 	var total models.UserGroupsTests
 	err := r.db.NewSelect().Model(&total).
 		Where("test_uuid = ?", testUUID).
@@ -129,7 +129,7 @@ func (r *bunAnswerRepository) Total(ctx context.Context, userUUID, testUUID, gro
 // even after 100 tests they get the same results
 // But because alpha introduces c(another allocant) will stick to beta
 // alpha
-/* func (r *bunAnswerRepository) AllTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+/* func (r *bunTotalRepository) AllTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error) {
 	var totals []models.UserGroupsTests
 	c, err := r.db.NewSelect().Model(&totals).
 		Where("user_uuid = ?", userUUID).ScanAndCount(ctx)
@@ -145,7 +145,7 @@ func (r *bunAnswerRepository) Total(ctx context.Context, userUUID, testUUID, gro
 } */
 
 // beta
-func (r *bunAnswerRepository) AllTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+func (r *bunTotalRepository) AllTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error) {
 	var totals []models.UserGroupsTests
 	err := r.db.NewSelect().Model(&totals).
 		Where("user_uuid = ?", userUUID).Scan(ctx)
@@ -160,7 +160,7 @@ func (r *bunAnswerRepository) AllTotals(ctx context.Context, userUUID uuid.UUID)
 	return totals, nil
 }
 
-func (r *bunAnswerRepository) TestTotals(ctx context.Context, testUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+func (r *bunTotalRepository) TestTotals(ctx context.Context, testUUID uuid.UUID) ([]models.UserGroupsTests, error) {
 	var totals []models.UserGroupsTests
 	err := r.db.NewSelect().Model(&totals).
 		Where("test_uuid = ?", testUUID).Scan(ctx)
@@ -175,7 +175,7 @@ func (r *bunAnswerRepository) TestTotals(ctx context.Context, testUUID uuid.UUID
 	return totals, nil
 }
 
-func (r *bunAnswerRepository) GroupTestTotals(ctx context.Context, testUUID, groupUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+func (r *bunTotalRepository) GroupTestTotals(ctx context.Context, testUUID, groupUUID uuid.UUID) ([]models.UserGroupsTests, error) {
 	var totals []models.UserGroupsTests
 	err := r.db.NewSelect().Model(&totals).
 		Where("test_uuid = ?", testUUID).

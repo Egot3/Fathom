@@ -3,10 +3,10 @@ package handler
 import (
 	"net/http"
 
-	"github.com/egot3/fathom/internal/database/repositories/answer"
 	"github.com/egot3/fathom/internal/database/repositories/group"
 	"github.com/egot3/fathom/internal/database/repositories/quiz"
 	"github.com/egot3/fathom/internal/database/repositories/test"
+	"github.com/egot3/fathom/internal/database/repositories/total"
 	"github.com/egot3/fathom/internal/database/repositories/user"
 	testrunner "github.com/egot3/fathom/internal/testRunner"
 	"github.com/samber/do/v2"
@@ -17,7 +17,7 @@ type chiService struct {
 	groupRepo  group.GroupRepository
 	quizRepo   quiz.QuizRepository
 	testRepo   test.TestRepository
-	answerRepo answer.AnswerRepository
+	answerRepo total.TotalRepository
 
 	runner testrunner.TestRunner
 }
@@ -70,11 +70,24 @@ type TestService interface {
 	ListTests(w http.ResponseWriter, r *http.Request)
 }
 
+type TotalService interface {
+	PostAnswer(w http.ResponseWriter, r *http.Request) // answer as a VERB
+	GetAnswer(w http.ResponseWriter, r *http.Request)  // answer as a NOUN
+
+	Totalize(w http.ResponseWriter, r *http.Request)
+
+	GetUserTotal(w http.ResponseWriter, r *http.Request)
+	GetUserTotals(w http.ResponseWriter, r *http.Request)
+	GetGroupTotals(w http.ResponseWriter, r *http.Request)
+	GetTestTotals(w http.ResponseWriter, r *http.Request)
+}
+
 type Service interface {
 	UserService
 	GroupService
 	QuizService
 	TestService
+	TotalService
 }
 
 func NewTestService(i do.Injector) (Service, error) {
@@ -82,7 +95,7 @@ func NewTestService(i do.Injector) (Service, error) {
 	gR := do.MustInvoke[group.GroupRepository](i)
 	qR := do.MustInvoke[quiz.QuizRepository](i)
 	tR := do.MustInvoke[test.TestRepository](i)
-	aR := do.MustInvoke[answer.AnswerRepository](i)
+	aR := do.MustInvoke[total.TotalRepository](i)
 
 	r := do.MustInvoke[testrunner.TestRunner](i)
 

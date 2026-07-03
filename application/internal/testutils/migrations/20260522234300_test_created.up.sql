@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS "groups_users" (
 
 -- Create table "quizzes"
 CREATE TABLE IF NOT EXISTS "quizzes" (
-    "path"     TEXT PRIMARY KEY,
+    "uuid"     TEXT PRIMARY KEY,
+    "path"     TEXT UNIQUE,
     "checksum" TEXT NOT NULL,          
     "score"    INTEGER NOT NULL        
 );
@@ -43,10 +44,10 @@ CREATE TABLE IF NOT EXISTS "tests" (
 -- Create table "tests_quizzes"
 CREATE TABLE IF NOT EXISTS "tests_quizzes" (
     "test_uuid" TEXT REFERENCES tests(uuid) ON DELETE CASCADE,
-    "quiz_path" TEXT REFERENCES quizzes("path") ON DELETE CASCADE,
+    "quiz_uuid" TEXT REFERENCES quizzes("uuid") ON DELETE CASCADE,
     "position" INTEGER NOT NULL,
 
-    PRIMARY KEY ("test_uuid", "quiz_path", "position")
+    PRIMARY KEY ("test_uuid", "quiz_uuid", "position")
 );
 
 -- Create table "users_groups_tests"
@@ -64,11 +65,11 @@ CREATE TABLE IF NOT EXISTS "users_groups_tests_quiz_answers" (
     "test_uuid"    TEXT REFERENCES tests(uuid) ON DELETE CASCADE,
     "group_uuid"   TEXT REFERENCES groups(uuid) ON DELETE CASCADE,
     "user_uuid"    TEXT REFERENCES users(uuid) ON DELETE CASCADE,
-    "quiz_path"    TEXT REFERENCES quizzes(path) ON DELETE CASCADE,
+    "quiz_uuid"    TEXT REFERENCES quizzes(uuid) ON DELETE CASCADE,
     "score"        INTEGER NOT NULL,
     "answer_value" TEXT NOT NULL,
 
     "answered_at" TEXT NOT NULL,
 
-    PRIMARY KEY ("test_uuid", "group_uuid", "user_uuid", "quiz_path", "answered_at")
+    PRIMARY KEY ("test_uuid", "group_uuid", "user_uuid", "quiz_uuid", "answered_at")
 );
