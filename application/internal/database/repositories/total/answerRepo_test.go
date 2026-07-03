@@ -1,4 +1,4 @@
-package answer_test
+package total_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	mrand "math/rand/v2"
 	"testing"
 
-	"github.com/egot3/fathom/internal/database/repositories/answer"
+	"github.com/egot3/fathom/internal/database/repositories/total"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/testutils"
 	"github.com/google/uuid"
@@ -22,7 +22,7 @@ func NewInjectorWithTestRepo(t testing.TB) do.Injector {
 
 	i := testutils.NewTestInjector(t)
 
-	do.Provide(i, answer.NewAnswerRepository)
+	do.Provide(i, total.NewTotalRepository)
 
 	return i
 }
@@ -36,7 +36,7 @@ func RegisterModels(db *bun.DB) {
 
 func TestAnswer_Set(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
-	r := do.MustInvoke[answer.AnswerRepository](i)
+	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
 	RegisterModels(db)
@@ -72,13 +72,13 @@ func TestAnswer_Set(t *testing.T) {
 		testUUID  uuid.UUID
 		userUUID  uuid.UUID
 		groupUUID uuid.UUID
-		quizPath  string
+		quizUUID  uuid.UUID
 		expectErr bool
 	}{
 		{
 			desc:      "Valid set",
 			testUUID:  testM.UUID,
-			quizPath:  quiz.Path,
+			quizUUID:  quiz.UUID,
 			userUUID:  userUUID,
 			groupUUID: groupUUID,
 			expectErr: false,
@@ -86,7 +86,7 @@ func TestAnswer_Set(t *testing.T) {
 		{
 			desc:      "Invalid test",
 			testUUID:  uuid.Nil,
-			quizPath:  quiz.Path,
+			quizUUID:  quiz.UUID,
 			userUUID:  userUUID,
 			groupUUID: groupUUID,
 			expectErr: true,
@@ -94,7 +94,7 @@ func TestAnswer_Set(t *testing.T) {
 		{
 			desc:      "Invalid quizPath",
 			testUUID:  testM.UUID,
-			quizPath:  "/unknown.md",
+			quizUUID:  uuid.Nil,
 			userUUID:  userUUID,
 			groupUUID: groupUUID,
 			expectErr: true,
@@ -102,7 +102,7 @@ func TestAnswer_Set(t *testing.T) {
 		{
 			desc:      "Invalid user",
 			testUUID:  testM.UUID,
-			quizPath:  quiz.Path,
+			quizUUID:  quiz.UUID,
 			userUUID:  uuid.Nil,
 			groupUUID: groupUUID,
 			expectErr: true,
@@ -110,7 +110,7 @@ func TestAnswer_Set(t *testing.T) {
 		{
 			desc:      "Invalid group",
 			testUUID:  testM.UUID,
-			quizPath:  quiz.Path,
+			quizUUID:  quiz.UUID,
 			userUUID:  userUUID,
 			groupUUID: uuid.Nil,
 			expectErr: true,
@@ -118,7 +118,7 @@ func TestAnswer_Set(t *testing.T) {
 		{
 			desc:      "Invalid group and user", // testing those pairs as they are only binded between eachother
 			testUUID:  testM.UUID,
-			quizPath:  quiz.Path,
+			quizUUID:  quiz.UUID,
 			userUUID:  uuid.Nil,
 			groupUUID: uuid.Nil,
 			expectErr: true,
@@ -126,7 +126,7 @@ func TestAnswer_Set(t *testing.T) {
 		{
 			desc:      "Invalid test and quiz",
 			testUUID:  uuid.Nil,
-			quizPath:  "/unknown.md",
+			quizUUID:  uuid.Nil,
 			userUUID:  userUUID,
 			groupUUID: groupUUID,
 			expectErr: true,
@@ -134,7 +134,7 @@ func TestAnswer_Set(t *testing.T) {
 		{
 			desc:      "Invalid all",
 			testUUID:  uuid.Nil,
-			quizPath:  "/unknown.md",
+			quizUUID:  uuid.Nil,
 			userUUID:  uuid.Nil,
 			groupUUID: uuid.Nil,
 			expectErr: true,
@@ -147,7 +147,7 @@ func TestAnswer_Set(t *testing.T) {
 				require.NoError(t, err)
 			})
 
-			err := r.SetAnswer(t.Context(), tC.testUUID, tC.groupUUID, tC.userUUID, tC.quizPath, "", 1)
+			err := r.SetAnswer(t.Context(), tC.testUUID, tC.groupUUID, tC.userUUID, tC.quizUUID, "", 1)
 			if tC.expectErr {
 				require.Error(t, err)
 				return
@@ -162,7 +162,7 @@ func TestAnswer_Set(t *testing.T) {
 			require.NoError(t, err)
 		})
 
-		err := r.SetAnswer(t.Context(), testM.UUID, groupUUID, userUUID, quiz.Path, "", 1)
+		err := r.SetAnswer(t.Context(), testM.UUID, groupUUID, userUUID, quiz.UUID, "", 1)
 
 		require.NoError(t, err)
 		var insertion models.Answer = models.Answer{}
@@ -170,11 +170,11 @@ func TestAnswer_Set(t *testing.T) {
 			Where("test_uuid = ?", testM.UUID).
 			Where("group_uuid = ?", groupUUID).
 			Where("user_uuid = ?", userUUID).
-			Where("quiz_path = ?", quiz.Path).
+			Where("quiz_uuid = ?", quiz.UUID).
 			Scan(t.Context())
 		require.NoError(t, err)
 
-		err = r.SetAnswer(t.Context(), testM.UUID, groupUUID, userUUID, quiz.Path, "", 1)
+		err = r.SetAnswer(t.Context(), testM.UUID, groupUUID, userUUID, quiz.UUID, "", 1)
 
 		require.NoError(t, err)
 
@@ -183,7 +183,7 @@ func TestAnswer_Set(t *testing.T) {
 			Where("test_uuid = ?", testM.UUID).
 			Where("group_uuid = ?", groupUUID).
 			Where("user_uuid = ?", userUUID).
-			Where("quiz_path = ?", quiz.Path).
+			Where("quiz_uuid = ?", quiz.UUID).
 			Scan(t.Context())
 		require.NoError(t, err)
 
@@ -193,7 +193,7 @@ func TestAnswer_Set(t *testing.T) {
 
 func TestAnswer_Get(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
-	r := do.MustInvoke[answer.AnswerRepository](i)
+	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
 	RegisterModels(db)
@@ -225,46 +225,46 @@ func TestAnswer_Get(t *testing.T) {
 	_, err = db.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(t.Context())
 
 	score := mrand.IntN(256)
-	answerValue := rand.Text()
+	totalValue := rand.Text()
 	_, err = db.NewInsert().Model(&models.Answer{
 		GroupUUID:   groupUUID,
 		TestUUID:    testM.UUID,
 		UserUUID:    userUUID,
-		QuizPath:    quiz.Path,
-		AnswerValue: answerValue,
+		QuizUUID:    quiz.UUID,
+		AnswerValue: totalValue,
 		Score:       score,
 	}).Exec(t.Context())
 	require.NoError(t, err)
 
 	t.Run("Score suite", func(t *testing.T) {
 		t.Run("Of known", func(t *testing.T) {
-			scoreR, err := r.AnswerScore(t.Context(), userUUID, testM.UUID, groupUUID, quiz.Path)
+			scoreR, err := r.AnswerScore(t.Context(), userUUID, testM.UUID, groupUUID, quiz.UUID)
 			require.NoError(t, err)
 			require.Equal(t, score, scoreR)
 		})
 		t.Run("Of unknown", func(t *testing.T) {
-			scoreR, err := r.AnswerScore(t.Context(), uuid.Nil, uuid.Nil, uuid.Nil, "/unknown.md")
+			scoreR, err := r.AnswerScore(t.Context(), uuid.Nil, uuid.Nil, uuid.Nil, uuid.Nil)
 			require.Error(t, err)
 			require.Equal(t, 0, scoreR)
 		})
 	})
 	t.Run("Value suite", func(t *testing.T) {
 		t.Run("Of known", func(t *testing.T) {
-			answerR, err := r.Answer(t.Context(), userUUID, testM.UUID, groupUUID, quiz.Path)
+			totalR, err := r.Answer(t.Context(), userUUID, testM.UUID, groupUUID, quiz.UUID)
 			require.NoError(t, err)
-			require.Equal(t, answerValue, answerR)
+			require.Equal(t, totalValue, totalR)
 		})
 		t.Run("Of unknown", func(t *testing.T) {
-			answerR, err := r.Answer(t.Context(), uuid.Nil, uuid.Nil, uuid.Nil, "/unknown.md")
+			totalR, err := r.Answer(t.Context(), uuid.Nil, uuid.Nil, uuid.Nil, uuid.Nil)
 			require.Error(t, err)
-			require.Equal(t, "", answerR)
+			require.Equal(t, "", totalR)
 		})
 	})
 }
 
 func TestAnswer_Totalization(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
-	r := do.MustInvoke[answer.AnswerRepository](i)
+	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
 	RegisterModels(db)
@@ -300,7 +300,7 @@ func TestAnswer_Totalization(t *testing.T) {
 		GroupUUID:   groupUUID,
 		TestUUID:    testM.UUID,
 		UserUUID:    userUUID,
-		QuizPath:    quiz.Path,
+		QuizUUID:    quiz.UUID,
 		AnswerValue: rand.Text(),
 		Score:       score,
 	}).Exec(t.Context())
@@ -373,7 +373,7 @@ func TestAnswer_Totalization(t *testing.T) {
 			GroupUUID:   groupUUID,
 			TestUUID:    testM.UUID,
 			UserUUID:    userUUID,
-			QuizPath:    quiz.Path,
+			QuizUUID:    quiz.UUID,
 			AnswerValue: rand.Text(),
 			Score:       scoreN,
 		}).Exec(t.Context())
@@ -396,7 +396,7 @@ func TestAnswer_Totalization(t *testing.T) {
 
 func TestAnswer_Totals(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
-	r := do.MustInvoke[answer.AnswerRepository](i)
+	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
 	RegisterModels(db)
@@ -584,7 +584,7 @@ func TestAnswer_Totals(t *testing.T) {
 
 func BenchmarkTotals_Errors(b *testing.B) {
 	i := NewInjectorWithTestRepo(b)
-	r := do.MustInvoke[answer.AnswerRepository](i)
+	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
 	RegisterModels(db)

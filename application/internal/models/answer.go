@@ -20,8 +20,8 @@ type Answer struct {
 	UserUUID uuid.UUID `bun:"user_uuid,pk"`
 	User     *User     `bun:"rel:belongs-to,join:user_uuid=uuid"`
 
-	QuizPath string `bun:"quiz_path,pk"`
-	Quiz     *Quiz  `bun:"rel:belongs-to,join:quiz_path=path"`
+	QuizUUID uuid.UUID `bun:"quiz_uuid,pk"`
+	Quiz     *Quiz     `bun:"rel:belongs-to,join:quiz_uuid=uuid"`
 
 	AnswerValue string    `bun:"answer_value"`
 	AnsweredAt  time.Time `bun:"answered_at,pk"`
