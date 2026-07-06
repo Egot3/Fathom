@@ -19,7 +19,7 @@ func NewTotalRepository(i do.Injector) (TotalRepository, error) {
 	return &bunTotalRepository{db: db}, nil
 } //created all of it just to live a good life in tests
 
-func (r *bunTotalRepository) SetAnswer(ctx context.Context, testUUID, groupUUID, userUUID, quizUUID uuid.UUID, answerValue string, score int) error {
+func (r *bunTotalRepository) SetAnswer(ctx context.Context, testUUID, groupUUID, userUUID, quizUUID uuid.UUID, answerValue string, score float32) error {
 	_, err := r.db.NewInsert().On("CONFLICT DO UPDATE").Model(&models.Answer{
 		TestUUID:    testUUID,
 		UserUUID:    userUUID,
@@ -94,8 +94,8 @@ func (r *bunTotalRepository) Totalize(ctx context.Context, userUUID, testUUID, g
 	})
 }
 
-func (r *bunTotalRepository) AnswerScore(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (int, error) {
-	var score int
+func (r *bunTotalRepository) AnswerScore(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (float32, error) {
+	var score float32
 	err := r.db.NewSelect().
 		Model((*models.Answer)(nil)).
 		Where("test_uuid = ?", testUUID).

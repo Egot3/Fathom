@@ -277,7 +277,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	%v
 	`, string(frontmatter), req.Body)
 
-	_, err = quizparser.ParseQuizByBytes(buf)
+	quiz, err := quizparser.ParseQuizByBytes(buf)
 	if err != nil {
 		logger.Error("couldn't parse quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
@@ -288,7 +288,17 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	abs := config.TurnToAbs(req.Name)
 	checksumUint := xxh3.HashString(req.Body)
 	checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
-	err = c.quizRepo.RegisterQuiz(ctx, abs, checksum, req.Meta.Score)
+
+	answer, err := json.Marshal(quiz.Answer)
+	if err != nil {
+		logger.Error("couldn't marshal answer to json",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = c.quizRepo.RegisterQuiz(ctx, abs, checksum, quiz.Meta.Score, answer)
 	if err != nil {
 		logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
 		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
@@ -801,7 +811,17 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 
 			checksumUint := xxh3.Hash(contents)
 			checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
-			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score)
+
+			answer, err := json.Marshal(q.Answer)
+			if err != nil {
+				logger.Error("couldn't marshal answer to json",
+					slog.String("Error", err.Error()),
+				)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score, answer)
 			if err != nil {
 				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
 				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
@@ -898,7 +918,17 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 
 			checksumUint := xxh3.Hash(contents)
 			checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
-			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score)
+
+			answer, err := json.Marshal(q.Answer)
+			if err != nil {
+				logger.Error("couldn't marshal answer to json",
+					slog.String("Error", err.Error()),
+				)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score, answer)
 			if err != nil {
 				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
 				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
@@ -1005,7 +1035,17 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 
 			checksumUint := xxh3.Hash(contents)
 			checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
-			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score)
+
+			answer, err := json.Marshal(q.Answer)
+			if err != nil {
+				logger.Error("couldn't marshal answer to json",
+					slog.String("Error", err.Error()),
+				)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score, answer)
 			if err != nil {
 				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
 				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {

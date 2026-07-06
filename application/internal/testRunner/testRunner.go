@@ -46,6 +46,7 @@ type concreteTestRunner struct {
 	isPaused   bool
 	deadline   time.Time
 	pausedAt   time.Time
+	TestUUID   uuid.UUID
 }
 
 func NewTestRunner(i do.Injector) (TestRunner, error) {
@@ -54,8 +55,11 @@ func NewTestRunner(i do.Injector) (TestRunner, error) {
 	}, nil
 }
 
-// Ctx must explicitly hold the lifetime of test
-func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs) error {
+func (tr *concreteTestRunner) CurrentTestUUID() uuid.UUID {
+	return tr.TestUUID
+}
+
+func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs, testUUID uuid.UUID) error {
 	quizzes := make([]*quiz.Quiz, len(quizPaths))
 	for i, path := range quizPaths {
 		if !filepath.IsLocal(path) {
@@ -83,6 +87,7 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		tr.timer.Stop()
 	}
 
+	tr.TestUUID = testUUID
 	tr.cancel = cancel
 	tr.quizzes = quizzes
 	tr.isPaused = false
@@ -121,7 +126,7 @@ func (tr *concreteTestRunner) cleanup(gen uint64) {
 	}
 }
 
-func (tr *concreteTestRunner) Get(id int) (*quiz.Quiz, error) {
+func (tr *concreteTestRunner) Get(quizUUID uuid.UUID) (*quiz.Quiz, error) {
 	tr.mu.RLock()
 	defer tr.mu.RUnlock()
 
@@ -129,11 +134,12 @@ func (tr *concreteTestRunner) Get(id int) (*quiz.Quiz, error) {
 		return nil, ErrRunnerInactive
 	}
 
-	if ok := len(tr.quizzes) > id; !ok {
+	q, ok := lo.Find(tr.quizzes, func(quiz *quiz.Quiz) bool {
+		return quiz.UUID == quizUUID
+	})
+	if !ok {
 		return nil, ErrQuizNotCached
 	}
-	q := tr.quizzes[id]
-
 	return q, nil
 }
 

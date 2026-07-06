@@ -40,31 +40,28 @@ func TestQuiz_Register(t *testing.T) {
 	t.Run("Valid quiz", func(t *testing.T) {
 		t.Parallel()
 
-		path := "/usr/path/to/quiz.md"
-		err := r.RegisterQuiz(t.Context(), path, []byte{}, 1)
+		path := "/usr/" + rand.Text() + "/path/to/quiz.md"
+		err := r.RegisterQuiz(t.Context(), path, []byte{}, 1, []byte("121321"))
 		require.NoError(t, err)
 
 		quiz := models.Quiz{Path: path}
-		err = db.NewSelect().Model(&quiz).WherePK().Scan(t.Context())
+		err = db.NewSelect().Model(&quiz).Where("path = ?", path).Scan(t.Context())
 		require.NoError(t, err)
 
-		require.Equal(t, quiz, models.Quiz{
-			Path:     path,
-			Checksum: []byte{},
-			Score:    1,
-		})
+		require.Equal(t, quiz.Path, path)
+		require.Equal(t, quiz.CorrectAnswer, "121321")
 	})
 	t.Run("Not abs path", func(t *testing.T) {
 		t.Parallel()
 
-		err := r.RegisterQuiz(t.Context(), "path.md", []byte{}, 1)
+		err := r.RegisterQuiz(t.Context(), "path.md", []byte{}, 1, []byte{})
 		require.Error(t, err)
 		require.ErrorIs(t, err, carefulness.ErrAbsoluteRequired)
 	})
 	t.Run("Not md", func(t *testing.T) {
 		t.Parallel()
 
-		err := r.RegisterQuiz(t.Context(), "/usr/path/to/cooler_quiz.mdx", []byte{}, 1)
+		err := r.RegisterQuiz(t.Context(), "/usr/path/to/cooler_quiz.mdx", []byte{}, 1, []byte{})
 		require.Error(t, err)
 		require.ErrorIs(t, err, carefulness.PlainMarkdownRequired)
 	})
@@ -80,7 +77,7 @@ func TestQuiz_Deallocate(t *testing.T) {
 
 	path := "/usr/path/to/quiz.md"
 	var uuidQ uuid.UUID
-	err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: []byte{}, Score: 2}).Column("uuid").Scan(t.Context(), &uuidQ)
+	err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: []byte{1, 2}, Score: 2}).Returning("uuid").Scan(t.Context(), &uuidQ)
 	require.NoError(t, err)
 
 	testCases := []struct {

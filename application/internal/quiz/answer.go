@@ -21,9 +21,9 @@ type AnswerOrder struct {
 }
 
 type QuizAnswers struct {
-	Radio      *AnswerRadio      `json:"radio,omitempty"`
-	Check      *AnswerCheck      `json:"check,omitempty"`
-	Accordance *AnswerAccordance `json:"accordance,omitempty"`
-	Order      *AnswerOrder      `json:"order,omitempty"`
-	Input      *AnswerInput      `json:"input,omitempty"`
+	Radio      AnswerRadio      `json:"radio,omitzero"`
+	Check      AnswerCheck      `json:"check,omitzero"`
+	Accordance AnswerAccordance `json:"accordance,omitzero"`
+	Order      AnswerOrder      `json:"order,omitzero"`
+	Input      AnswerInput      `json:"input,omitzero"`
 }

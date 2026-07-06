@@ -224,7 +224,7 @@ func TestAnswer_Get(t *testing.T) {
 
 	_, err = db.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(t.Context())
 
-	score := mrand.IntN(256)
+	score := mrand.Float32() * 256
 	totalValue := rand.Text()
 	_, err = db.NewInsert().Model(&models.Answer{
 		GroupUUID:   groupUUID,
@@ -240,12 +240,12 @@ func TestAnswer_Get(t *testing.T) {
 		t.Run("Of known", func(t *testing.T) {
 			scoreR, err := r.AnswerScore(t.Context(), userUUID, testM.UUID, groupUUID, quiz.UUID)
 			require.NoError(t, err)
-			require.Equal(t, score, scoreR)
+			require.EqualValues(t, score, scoreR)
 		})
 		t.Run("Of unknown", func(t *testing.T) {
 			scoreR, err := r.AnswerScore(t.Context(), uuid.Nil, uuid.Nil, uuid.Nil, uuid.Nil)
 			require.Error(t, err)
-			require.Equal(t, 0, scoreR)
+			require.EqualValues(t, 0, scoreR)
 		})
 	})
 	t.Run("Value suite", func(t *testing.T) {
@@ -295,7 +295,7 @@ func TestAnswer_Totalization(t *testing.T) {
 
 	_, err = db.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(t.Context())
 
-	score := mrand.IntN(256)
+	score := mrand.Float32() * 256
 	_, err = db.NewInsert().Model(&models.Answer{
 		GroupUUID:   groupUUID,
 		TestUUID:    testM.UUID,
@@ -361,7 +361,7 @@ func TestAnswer_Totalization(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, score, scoreR)
 
-		scoreN := mrand.IntN(256)
+		scoreN := mrand.Float32() * 256
 		var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}, Score: 1}
 		err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -382,7 +382,7 @@ func TestAnswer_Totalization(t *testing.T) {
 		err = r.Totalize(t.Context(), userUUID, testM.UUID, groupUUID)
 		require.NoError(t, err)
 
-		var scoreR2 int
+		var scoreR2 float32
 		err = db.NewSelect().Model(&models.UserGroupsTests{
 			UserUUID:  userUUID,
 			GroupUUID: groupUUID,

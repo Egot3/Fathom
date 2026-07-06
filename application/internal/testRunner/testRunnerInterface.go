@@ -9,8 +9,8 @@ import (
 )
 
 type TestRunner interface {
-	Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs) error
-	Get(id int) (*quiz.Quiz, error)
+	Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs, testUUID uuid.UUID) error
+	Get(quizUUID uuid.UUID) (*quiz.Quiz, error)
 	cleanup(gen uint64)
 	Stop()
 	UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUIDs) error
@@ -18,4 +18,5 @@ type TestRunner interface {
 	ExtendTime(duration time.Duration) error
 	Resume() error
 	Pause() error
+	CurrentTestUUID() uuid.UUID
 }
