@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS "quizzes" (
     "uuid"     TEXT PRIMARY KEY,
     "path"     TEXT UNIQUE,
     "checksum" TEXT NOT NULL,          
-    "score"    INTEGER NOT NULL        
+    "score"    INTEGER NOT NULL,
+    "correct_answer" TEXT NOT NULL      
 );
 
 -- Create table "tests"
@@ -66,7 +67,7 @@ CREATE TABLE IF NOT EXISTS "users_groups_tests_quiz_answers" (
     "group_uuid"   TEXT REFERENCES groups(uuid) ON DELETE CASCADE,
     "user_uuid"    TEXT REFERENCES users(uuid) ON DELETE CASCADE,
     "quiz_uuid"    TEXT REFERENCES quizzes(uuid) ON DELETE CASCADE,
-    "score"        INTEGER NOT NULL,
+    "score"        REAL NOT NULL,
     "answer_value" TEXT NOT NULL,
 
     "answered_at" TEXT NOT NULL,

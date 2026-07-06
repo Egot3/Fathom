@@ -32,8 +32,14 @@ func (r *bunQuizRepository) QuizPath(ctx context.Context, quizUUID uuid.UUID) (s
 	return path, nil
 }
 
-func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, checksum []byte, score int) error {
-	err := r.db.NewInsert().Model(&models.Quiz{Path: path, Checksum: checksum, Score: score}).Scan(ctx)
+func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, checksum []byte, score int, answer []byte) error {
+	q := &models.Quiz{
+		Path:          path,
+		Checksum:      checksum,
+		Score:         score,
+		CorrectAnswer: string(answer),
+	}
+	err := r.db.NewInsert().Model(q).Returning("*").Scan(ctx)
 	if err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
 			return carefulness.Conflict{Conflictor: "Path"}
@@ -101,4 +107,15 @@ func (r *bunQuizRepository) PatchQuiz(ctx context.Context, quizUUID uuid.UUID, p
 
 	_, err := q.Exec(ctx)
 	return err
+}
+
+func (r *bunQuizRepository) CorrectAnswer(ctx context.Context, quizUUID uuid.UUID) (string, error) {
+	var answer string
+	err := r.db.NewSelect().Model((*models.Quiz)(nil)).
+		Where("uuid = ?", quizUUID).Scan(ctx, &answer)
+	if err != nil {
+		return "", err
+	}
+
+	return answer, nil
 }

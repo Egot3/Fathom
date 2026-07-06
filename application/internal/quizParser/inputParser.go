@@ -16,7 +16,7 @@ func InputParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 		matches := InputRegex.FindStringSubmatch(line)
 		fmt.Print("matches: ", matches)
 		if len(matches) > 1 {
-			quizP.Answer.Input = &quiz.AnswerInput{Input: matches[1]}
+			quizP.Answer.Input = quiz.AnswerInput{Input: matches[1]}
 			break
 		}
 
@@ -24,7 +24,7 @@ func InputParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 			break
 		}
 	}
-	if quizP.Answer.Input == nil {
+	if quizP.Answer.Input.Input == "" {
 		return fmt.Errorf("Can't have no answer in input")
 	}
 

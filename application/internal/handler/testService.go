@@ -68,6 +68,8 @@ type TestService interface {
 	ExtendTest(w http.ResponseWriter, r *http.Request)
 	ResumeTest(w http.ResponseWriter, r *http.Request)
 	ListTests(w http.ResponseWriter, r *http.Request)
+	ExportTest(w http.ResponseWriter, r *http.Request)
+	ImportTest(w http.ResponseWriter, r *http.Request)
 }
 
 type TotalService interface {

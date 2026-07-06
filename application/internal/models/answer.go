@@ -26,7 +26,7 @@ type Answer struct {
 	AnswerValue string    `bun:"answer_value"`
 	AnsweredAt  time.Time `bun:"answered_at,pk"`
 
-	Score int `bun:"score"`
+	Score float32 `bun:"score"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Answer)(nil)

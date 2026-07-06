@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS "quizzes" (
     "uuid" UUID primary key,
     "path" TEXT,
     "checksum" CHAR(32) NOT NULL, --de-facto for "is cached" check
-    "score" SMALLINT NOT NULL
+    "score" SMALLINT NOT NULL,
+    "correct_answer" TEXT NOT NULL
 );
 
 -- Create table "tests"
@@ -64,7 +65,7 @@ CREATE TABLE IF NOT EXISTS "users_groups_tests_quiz_answers" (
     "group_uuid"   UUID REFERENCES groups(uuid) ON DELETE CASCADE,
     "user_uuid"    UUID REFERENCES users(uuid) ON DELETE CASCADE,
     "quiz_uuid"    UUID REFERENCES quizzes(uuid) ON DELETE CASCADE,
-    "score"        SMALLINT NOT NULL,
+    "score"        FLOAT NOT NULL,
     "answer_value" TEXT NOT NULL,
 
     "answered_at" TIMESTAMPTZ NOT NULL,

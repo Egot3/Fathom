@@ -10,18 +10,19 @@ import (
 )
 
 func RadioParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
-	quizP.Options.Radio = &quiz.OptionsRadioAndCheck{Choices: make([]quiz.Choice, 2)}
+	quizP.Options.Radio = quiz.OptionsRadioAndCheck{Choices: make([]quiz.Choice, 2)}
 	for id := 0; ; {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
+		quizP.Answer.Radio.ChoiceIdx = -1
 
 		if strings.HasPrefix(trimmedLine, "- [x]") {
-			if quizP.Answer.Radio != nil {
+			if quizP.Answer.Radio.ChoiceIdx != -1 {
 				return fmt.Errorf("radio can't have multiple answers")
 			}
 
 			opt := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- [x] "))
-			quizP.Answer.Radio = &quiz.AnswerRadio{ChoiceIdx: id}
+			quizP.Answer.Radio = quiz.AnswerRadio{ChoiceIdx: id}
 
 			quizP.Options.Radio.Choices = append(quizP.Options.Radio.Choices, quiz.Choice{Id: id, Label: opt})
 			id++
@@ -41,7 +42,7 @@ func RadioParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 		return fmt.Errorf("radio can't have less than 2 options")
 	}
 
-	if quizP.Answer.Radio == nil {
+	if quizP.Answer.Radio.ChoiceIdx == -1 {
 		return fmt.Errorf("radio must have exactly 1 answer")
 	}
 

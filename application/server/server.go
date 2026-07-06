@@ -90,7 +90,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			r.Get("/", svc.ListTests)
 
 			r.Route("/running", func(r chi.Router) {
-				r.Get("/", svc.GetQuizFromRunning)
+				r.Get("/{uuid:^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$}", svc.GetQuizFromRunning)
 
 				//protected
 				r.Group(func(r chi.Router) {

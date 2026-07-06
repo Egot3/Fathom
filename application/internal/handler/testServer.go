@@ -13,7 +13,10 @@ import (
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/logging"
+	"github.com/egot3/fathom/internal/models"
+	"github.com/egot3/fathom/internal/quiz"
 	testrunner "github.com/egot3/fathom/internal/testRunner"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
 )
@@ -127,7 +130,7 @@ func (c *chiService) AddQuizzesToRunning(w http.ResponseWriter, r *http.Request)
 
 	pathes, err := c.testRepo.TestPathes(ctx, dedupUUIDs)
 	if err != nil {
-		logger.Info("get pathes for quizzes",
+		logger.Error("get pathes for quizzes",
 			slog.String("Error", err.Error()),
 		)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -669,7 +672,7 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	logger = logger.With(slog.String("duration", req.Duration), slog.Any("requested quizzes", req.QuizUUIDs.Strings()))
+	logger = logger.With(slog.String("duration", req.Duration), slog.Any("requested test", req.TestUUID))
 	ctx = logging.WithLogger(ctx, logger)
 
 	duration, err := time.ParseDuration(req.Duration)
@@ -679,11 +682,9 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dedupUUIDs := lo.FindDuplicates(req.QuizUUIDs)
-
-	pathes, err := c.testRepo.TestPathes(ctx, dedupUUIDs)
+	test, err := c.testRepo.Test(ctx, req.TestUUID)
 	if err != nil {
-		logger.Info("couldn't get pathes for quizzes",
+		logger.Info("couldn't get pathes for test",
 			slog.String("Error", err.Error()),
 		)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -696,7 +697,14 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = c.runner.Start(ctx, duration, pathes, dedupUUIDs)
+	quizPathes := make([]string, len(test.Quizzes))
+	quizUUIDs := make(uuid.UUIDs, len(test.Quizzes))
+	lo.ForEach(test.Quizzes, func(quiz models.Quiz, i int) {
+		quizPathes[i] = quiz.Path
+		quizUUIDs[i] = quiz.UUID
+	})
+
+	err = c.runner.Start(ctx, duration, quizPathes, quizUUIDs, test.UUID)
 	if err != nil {
 		logger.Error("unable to start test", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)                                            // all returned errors are user dependant anyways
@@ -721,33 +729,17 @@ func (c *chiService) GetQuizFromRunning(w http.ResponseWriter, r *http.Request) 
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	err := r.ParseForm()
+	quizUUID, err := uuid.Parse(chi.URLParam(r, "uuid"))
 	if err != nil {
-		logger.Error("unable to parse form", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse form values"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get uuid"})
 		return
 	}
 
-	idS := r.Form.Get("id")
-	if idS == "" {
-		logger.Error("unable to retrieve id from form")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to retrieve id from form"})
-		return
-	}
-
-	id, err := strconv.Atoi(idS)
-	if err != nil {
-		logger.Error("provided id is Not A Number", slog.String("id", idS), slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "provided id is Not A Number"})
-		return
-	}
-	logger = logger.With(slog.Int("id", id))
+	logger = logger.With(slog.String("quizUUID", quizUUID.String()))
 	ctx = logging.WithLogger(ctx, logger)
 
-	quiz, err := c.runner.Get(id)
+	quizC, err := c.runner.Get(quizUUID)
 	if err != nil {
 		logger.Error("couldn't retrive quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -756,7 +748,15 @@ func (c *chiService) GetQuizFromRunning(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.GetQuizFromRunningResponse{Quiz: *quiz, Id: id})
+	json.NewEncoder(w).Encode(contracts.GetQuizFromRunningResponse{
+		Quiz: quiz.Quiz{
+			Meta:    quizC.Meta,
+			Title:   quizC.Title,
+			Body:    quizC.Body,
+			UUID:    quizC.UUID,
+			Options: quizC.Options,
+		},
+	})
 }
 
 func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
