@@ -18,4 +18,5 @@ type QuizRepository interface {
 	UpdateChecksum(ctx context.Context, quizUUID uuid.UUID, checksum []byte) error
 	PatchQuiz(ctx context.Context, quizUUID uuid.UUID, path *string, score *int) error
 	CorrectAnswer(ctx context.Context, quizUUID uuid.UUID) (string, error)
+	ExistsByUUID(ctx context.Context, quizUUID uuid.UUID) (bool, error)
 }

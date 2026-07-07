@@ -20,10 +20,10 @@ import (
 	"strings"
 
 	acceptutils "github.com/egot3/fathom/internal/acceptUtils"
-	archiveutlis "github.com/egot3/fathom/internal/archiveUtlis"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/config"
 	"github.com/egot3/fathom/internal/contracts"
+	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
 	"github.com/egot3/fathom/internal/logging"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
 	"github.com/google/uuid"
@@ -608,7 +608,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		logger = logger.With(slog.String("strategy", "zip"))
 
 		for _, qf := range files {
-			if err := archiveutlis.AddFileToZip(zipWriter, qf.path); err != nil {
+			if err := exportutlis.AddFileToZip(zipWriter, qf.path); err != nil {
 				logger.Error("error writing to zip",
 					slog.String("path", qf.path),
 					slog.String("Error", err.Error()),
@@ -628,7 +628,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		tarWriter := tar.NewWriter(w)
 
 		for _, qf := range files {
-			if err := archiveutlis.AddFileToTar(tarWriter, qf.path, qf.fi); err != nil {
+			if err := exportutlis.AddFileToTar(tarWriter, qf.path, qf.fi); err != nil {
 				logger.Error("error writing to tar",
 					slog.String("path", qf.path),
 					slog.String("Error", err.Error()),
@@ -651,7 +651,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		tarWriter := tar.NewWriter(gzipWriter)
 
 		for _, qf := range files {
-			if err := archiveutlis.AddFileToTar(tarWriter, qf.path, qf.fi); err != nil {
+			if err := exportutlis.AddFileToTar(tarWriter, qf.path, qf.fi); err != nil {
 				logger.Error("error writing to tar",
 					slog.String("path", qf.path),
 					slog.String("Error", err.Error()),

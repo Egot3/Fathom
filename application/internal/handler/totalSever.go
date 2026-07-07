@@ -24,19 +24,19 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	groupUUID, err := uuid.Parse(chi.URLParam(r, "group_uuid"))
 	if err != nil {
 		logger.Error("couldn't parse testUUID in url",
 			slog.String("Error", err.Error()),
 		)
 	}
-	userUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
-			slog.String("Error", err.Error()),
-		)
+	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		return
 	}
-	quizUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	quizUUID, err := uuid.Parse(chi.URLParam(r, "quiz_uuid"))
 	if err != nil {
 		logger.Error("couldn't parse testUUID in url",
 			slog.String("Error", err.Error()),
@@ -107,7 +107,7 @@ func (c *chiService) GetGroupTotals(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	groupUUID, err := uuid.Parse(chi.URLParam(r, "group_uuid"))
 	if err != nil {
 		logger.Error("couldn't parse testUUID in url",
 			slog.String("Error", err.Error()),
@@ -198,17 +198,17 @@ func (c *chiService) GetUserTotal(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	groupUUID, err := uuid.Parse(chi.URLParam(r, "group_uuid"))
 	if err != nil {
 		logger.Error("couldn't parse testUUID in url",
 			slog.String("Error", err.Error()),
 		)
 	}
-	userUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
-			slog.String("Error", err.Error()),
-		)
+	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		return
 	}
 	testUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
 	if err != nil {
@@ -254,11 +254,11 @@ func (c *chiService) GetUserTotals(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	userUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
-			slog.String("Error", err.Error()),
-		)
+	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		return
 	}
 
 	logger = logger.With(
@@ -296,35 +296,26 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	quizUUID, err := uuid.Parse(chi.URLParam(r, "quiz_uuid"))
 	if err != nil {
 		logger.Error("couldn't parse testUUID in url",
 			slog.String("Error", err.Error()),
 		)
 	}
-	userUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	groupUUID, err := uuid.Parse(chi.URLParam(r, "group_uuid"))
 	if err != nil {
 		logger.Error("couldn't parse testUUID in url",
 			slog.String("Error", err.Error()),
 		)
 	}
-	quizUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
-			slog.String("Error", err.Error()),
-		)
-	}
-	testUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
-			slog.String("Error", err.Error()),
-		)
+	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		return
 	}
 
 	logger = logger.With(
-		slog.String("group_uuid", groupUUID.String()),
-		slog.String("user_uuid", userUUID.String()),
-		slog.String("test_uuid", testUUID.String()),
 		slog.String("quiz_uuid", quizUUID.String()),
 	)
 	ctx = logging.WithLogger(ctx, logger)
@@ -389,7 +380,7 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 		return
 	}
-	err = c.answerRepo.SetAnswer(ctx, testUUID, groupUUID, userUUID, quizUUID, string(answered), score)
+	err = c.answerRepo.SetAnswer(ctx, c.runner.CurrentTestUUID(), groupUUID, userUUID, quizUUID, string(answered), score)
 	if err != nil {
 		logger.Error("couldn't set an answer",
 			slog.String("Error", err.Error()),
@@ -405,15 +396,82 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 
 // Totalize implements [Service].
 func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
-	panic("unimplemented")
-}
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+	w.Header().Set("Content-Type", "application/json")
 
-// ExportTest implements [Service].
-func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
-	panic("unimplemented")
-}
+	groupUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	if err != nil {
+		logger.Error("couldn't parse testUUID in url",
+			slog.String("Error", err.Error()),
+		)
+	}
+	userUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	if err != nil {
+		logger.Error("couldn't parse testUUID in url",
+			slog.String("Error", err.Error()),
+		)
+	}
+	quizUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	if err != nil {
+		logger.Error("couldn't parse testUUID in url",
+			slog.String("Error", err.Error()),
+		)
+	}
 
-// ImportTest implements [Service].
-func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
-	panic("unimplemented")
+	logger = logger.With(
+		slog.String("group_uuid", groupUUID.String()),
+		slog.String("user_uuid", userUUID.String()),
+		slog.String("quiz_uuid", quizUUID.String()),
+	)
+	ctx = logging.WithLogger(ctx, logger)
+
+	var req contracts.PostAnswerRequest
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		logger.Error("Failed to parse body",
+			slog.String("Error", err.Error()),
+		)
+		if errors.Is(err, carefulness.ErrMalformedRequest) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
+
+			return
+		}
+		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
+			w.WriteHeader(422)
+			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
+
+			return
+		}
+		if errors.Is(err, io.EOF) {
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+		if errors.Is(err, io.ErrUnexpectedEOF) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
+
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = c.answerRepo.Totalize(ctx, userUUID, c.runner.CurrentTestUUID(), groupUUID)
+	if err != nil {
+		logger.Error("couldn't set an answer",
+			slog.String("Error", err.Error()),
+		)
+
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't set an answer because of unknown error"})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

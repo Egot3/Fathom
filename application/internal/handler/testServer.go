@@ -4,14 +4,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
+	"mime"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
+	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/quiz"
@@ -19,6 +22,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
+	"go.yaml.in/yaml/v4"
 )
 
 // AddQuizzes implements [Service].
@@ -812,4 +816,184 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 		Page:  pageInt,
 		Size:  sizeInt,
 	})
+}
+
+// ExportTest implements [Service].
+func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+	w.Header().Set("Content-Type", "application/json")
+
+	testUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	if err != nil {
+		logger.Error("couldn't parse testUUID in url",
+			slog.String("Error", err.Error()),
+		)
+	}
+
+	logger = logger.With(
+		slog.String("test_uuid", testUUID.String()),
+	)
+
+	var req contracts.ExportTestRequest
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		logger.Error("error in register during reading",
+			slog.String("error", err.Error()),
+		)
+		switch {
+		case errors.Is(err, carefulness.ErrMalformedRequest):
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+
+		case errors.Is(err, carefulness.ErrUnprocessableRequest):
+			w.WriteHeader(422)
+			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
+
+		case errors.Is(err, io.EOF):
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Empty body"})
+
+		case errors.Is(err, io.ErrUnexpectedEOF):
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
+
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	logger = logger.With(
+		slog.String("description", req.Description),
+	)
+	ctx = logging.WithLogger(ctx, logger)
+
+	test, err := c.testRepo.Test(ctx, testUUID)
+	if err != nil {
+		logger.Error("couldn't select test",
+			slog.String("Error", err.Error()),
+		)
+		if gone, ok := errors.AsType[carefulness.Gone](err); ok {
+			w.WriteHeader(http.StatusGone)
+			json.NewEncoder(w).Encode(gone.JSONError())
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	yamlTest := exportutlis.YamlTest{
+		Kind:        exportutlis.Kind(exportutlis.Test),
+		UUID:        testUUID,
+		Name:        test.Name,
+		Description: req.Description,
+		Quizzes: lo.Map(test.Quizzes, func(quiz models.Quiz, _ int) exportutlis.YamlQuiz {
+			return exportutlis.YamlQuiz{
+				Kind: exportutlis.Kind(exportutlis.Quiz),
+				UUID: quiz.UUID,
+			}
+		}),
+	}
+
+	out, err := yaml.Marshal(yamlTest)
+	if err != nil {
+		logger.Error("couldn't marshal test yaml",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't create the YAML file for tests"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/yaml")
+	w.Write(out)
+}
+
+// ImportTest implements [Service].
+func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	w.Header().Add("content-type", "application/json")
+
+	if err := r.ParseMultipartForm(8 << 20); err != nil {
+		logger.Error("archive is too big", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "archive is too big!"})
+		return
+	}
+
+	yamlFile, handler, err := r.FormFile("imported")
+	if err != nil {
+		logger.Error("couldn't get file", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse file"})
+		return
+	}
+	defer yamlFile.Close()
+
+	contentType, _, err := mime.ParseMediaType(handler.Header.Get("Content-Type"))
+	if err != nil {
+		logger.Error("couldn't parse MIME type", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse MIME"})
+		return
+	}
+	if contentType != "application/yaml" {
+		w.WriteHeader(http.StatusNotAcceptable)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: fmt.Sprintf("unsupported media type: %v", contentType)})
+		return
+	}
+
+	var test exportutlis.YamlTest
+	err = yaml.NewDecoder(yamlFile).Decode(&test)
+	if err != nil {
+		logger.Error("couldn't parse yaml file", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse file"})
+		return
+	}
+
+	e, err := c.testRepo.ExistsByUUID(ctx, test.UUID)
+	if err != nil {
+		logger.Error("couldn't check test existance", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to check test existanse"})
+		return
+	}
+	if e {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "it's either: this test already exists(probable) or you hit 1 in 18.8 sextillion chance in uuidv7 collision, either way, you address it"})
+		return
+	}
+
+	for _, q := range test.Quizzes {
+		e, err := c.quizRepo.ExistsByUUID(ctx, q.UUID)
+		if err != nil {
+			logger.Error("couldn't check quiz existance", slog.String("Error", err.Error()))
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to check quiz existanse"})
+			return
+		}
+		if !e {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "quiz from test is not found on local machine, have you imported quiz bank?"})
+			return
+		}
+	}
+
+	err = c.testRepo.ImportTest(ctx, test)
+	if err != nil {
+		logger.Error("couldn't check import test to db", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't check import test to db"})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
