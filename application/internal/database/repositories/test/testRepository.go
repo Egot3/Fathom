@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 
+	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 )
@@ -16,4 +17,6 @@ type TestRepository interface {
 	UpdateTest(ctx context.Context, UUID uuid.UUID, name string) error
 	TestPathes(ctx context.Context, UUIDs uuid.UUIDs) ([]string, error)
 	ListTests(ctx context.Context, page, size int) ([]models.Test, int, error)
+	ExistsByUUID(ctx context.Context, testUUID uuid.UUID) (bool, error)
+	ImportTest(ctx context.Context, test exportutlis.YamlTest) error
 }

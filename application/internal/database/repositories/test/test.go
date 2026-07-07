@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/egot3/fathom/internal/carefulness"
+	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
@@ -206,4 +207,33 @@ func (r *bunTestRepository) ListTests(ctx context.Context, page, size int) ([]mo
 	}
 
 	return tests, total, nil
+}
+
+func (r *bunTestRepository) ExistsByUUID(ctx context.Context, testUUID uuid.UUID) (bool, error) {
+	return r.db.NewSelect().Model((*models.Test)(nil)).
+		Where("uuid = ?", testUUID).Exists(ctx)
+}
+
+func (r *bunTestRepository) ImportTest(ctx context.Context, test exportutlis.YamlTest) error {
+	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		_, err := tx.NewInsert().Model(&models.Test{
+			UUID: test.UUID,
+			Name: test.Name,
+		}).Exec(ctx)
+		if err != nil {
+			return err
+		}
+
+		for _, q := range test.Quizzes {
+			_, err := tx.NewInsert().Model(&models.TestsQuizzies{
+				QuizUUID: q.UUID,
+				TestUUID: test.UUID,
+			}).Exec(ctx)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }

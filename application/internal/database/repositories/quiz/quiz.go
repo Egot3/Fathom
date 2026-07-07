@@ -119,3 +119,8 @@ func (r *bunQuizRepository) CorrectAnswer(ctx context.Context, quizUUID uuid.UUI
 
 	return answer, nil
 }
+
+func (r *bunQuizRepository) ExistsByUUID(ctx context.Context, quizUUID uuid.UUID) (bool, error) {
+	return r.db.NewSelect().Model((*models.Quiz)(nil)).
+		Where("uuid = ?", quizUUID).Exists(ctx)
+}

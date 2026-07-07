@@ -46,3 +46,7 @@ type ListTestsResponse struct {
 	Total int           `json:"total"`
 	Tests []models.Test `json:"tests"`
 }
+
+type ExportTestRequest struct {
+	Description string `json:"description"`
+}
