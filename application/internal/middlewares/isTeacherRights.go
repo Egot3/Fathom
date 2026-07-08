@@ -1,4 +1,4 @@
-package middleware
+package middlewares
 
 import (
 	"encoding/json"
@@ -36,4 +36,18 @@ func IsTeacherRights(next http.Handler) http.Handler { // did you know you don't
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// still requires JWT
+func IsTeacherCondition(r *http.Request) bool {
+	logger := logging.LoggerFromContext(r.Context())
+	logger = logger.With(slog.String("layer", "condition"))
+
+	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	if !ok {
+		logger.Error("Failed to retrieve jwt claims")
+		return false
+	}
+
+	return claims.IsTeacher
 }

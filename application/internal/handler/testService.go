@@ -9,6 +9,7 @@ import (
 	"github.com/egot3/fathom/internal/database/repositories/total"
 	"github.com/egot3/fathom/internal/database/repositories/user"
 	testrunner "github.com/egot3/fathom/internal/testRunner"
+	"github.com/google/uuid"
 	"github.com/samber/do/v2"
 )
 
@@ -90,6 +91,7 @@ type Service interface {
 	QuizService
 	TestService
 	TotalService
+	GetTestUUID() uuid.UUID
 }
 
 func NewTestService(i do.Injector) (Service, error) {
