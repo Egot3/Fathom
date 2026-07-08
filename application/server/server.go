@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/egot3/fathom/internal/handler"
-	"github.com/egot3/fathom/internal/middleware"
+	"github.com/egot3/fathom/internal/middlewares"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/samber/do/v2"
 )
 
@@ -14,7 +15,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 	r := chi.NewRouter()
 	svc := do.MustInvoke[handler.Service](i)
 
-	r.Use(middleware.BodySizer)
+	r.Use(middlewares.BodySizer)
 
 	r.Method("GET", "/health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -22,19 +23,21 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 	}))
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Use(middleware.AttachLogger(do.MustInvoke[*slog.Logger](i)))
-		r.Use(middleware.TraceAttacher)
+		r.Use(middlewares.AttachLogger(do.MustInvoke[*slog.Logger](i)))
+		r.Use(middlewares.TraceAttacher)
 
 		r.Route("/user", func(r chi.Router) {
 
 			r.Group(func(r chi.Router) {
-				r.With(middleware.ParseUUID).Get("/{uuid}", svc.GetUser)
+				r.With(middlewares.ParseUUID).Get("/{uuid}", svc.GetUser)
 				r.Get("/", svc.ListUsers)
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middleware.JWT)
-				r.Use(middleware.ParseUUID, middleware.UUIDRights, middleware.IsTeacherRights)
+				r.Use(middlewares.JWT)
+				r.Use(middlewares.ParseUUID, middleware.Maybe(middlewares.UUIDRights, func(r *http.Request) bool {
+					return !middlewares.IsTeacherCondition(r)
+				}))
 
 				r.Patch("/{uuid}", svc.PatchUser)
 				r.Delete("/{uuid}", svc.DeleteUser)
@@ -47,14 +50,14 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 		r.Route("/group", func(r chi.Router) {
 			r.Get("/", svc.ListGroups)
 
-			r.With(middleware.JWT, middleware.IsTeacherRights).Post("/", svc.PostGroup)
+			r.With(middlewares.JWT, middlewares.IsTeacherRights).Post("/", svc.PostGroup)
 
 			r.Route("/{uuid}", func(r chi.Router) {
-				r.Use(middleware.ParseUUID)
+				r.Use(middlewares.ParseUUID)
 				r.Get("/", svc.GetGroup)
 
 				r.Group(func(r chi.Router) {
-					r.Use(middleware.JWT, middleware.IsTeacherRights)
+					r.Use(middlewares.JWT, middlewares.IsTeacherRights)
 					r.Patch("/", svc.PatchGroup)
 					r.Delete("/", svc.DeleteGroup)
 				})
@@ -67,7 +70,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 		})
 
 		r.Route("/quiz", func(r chi.Router) {
-			r.Use(middleware.JWT, middleware.IsTeacherRights)
+			r.Use(middlewares.JWT, middlewares.IsTeacherRights)
 
 			r.Get("/", svc.ListQuizzes)
 			r.Post("/", svc.PostQuiz)
@@ -75,7 +78,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			r.Get("/export", svc.ExportQuizBank)
 
 			r.Route("/{uuid}", func(r chi.Router) {
-				r.Use(middleware.ParseUUID)
+				r.Use(middlewares.ParseUUID)
 				r.Patch("/", svc.PatchQuiz)
 				r.Put("/", svc.PutQuiz)
 				r.Get("/", svc.GetQuiz)
@@ -84,9 +87,14 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 		})
 
 		r.Route("/test", func(r chi.Router) {
-			r.Use(middleware.JWT)
+			r.Use(middlewares.JWT)
 
-			r.With(middleware.IsTeacherRights).Post("/", svc.PostTest)
+			r.Group(func(r chi.Router) {
+				r.Use(middlewares.IsTeacherRights)
+				r.Post("/", svc.PostTest)
+				r.Post("/import", svc.ImportTest)
+			})
+
 			r.Get("/", svc.ListTests)
 
 			r.Route("/running", func(r chi.Router) {
@@ -94,7 +102,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 
 				//protected
 				r.Group(func(r chi.Router) {
-					r.Use(middleware.IsTeacherRights)
+					r.Use(middlewares.IsTeacherRights)
 					r.Post("/start", svc.StartTest)
 					r.Post("/stop", svc.StopTest)
 					r.Post("/pause", svc.PauseTest)
@@ -107,19 +115,51 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			})
 
 			r.Route("/{uuid}", func(r chi.Router) {
-				r.Use(middleware.ParseUUID)
+				r.Use(middlewares.ParseUUID)
 
 				r.Group(func(r chi.Router) {
-					r.Use(middleware.IsTeacherRights)
+					r.Use(middlewares.IsTeacherRights)
 
 					r.Delete("/", svc.DeleteTest)
 					r.Patch("/", svc.PatchTest)
 					r.Post("/quizzes", svc.AddQuizzes)
 					r.Delete("/quizzes", svc.RemoveQuizzes)
 
+					r.Get("/export", svc.ExportTest)
 				})
-
 			})
+		})
+
+		r.Route("/total", func(r chi.Router) {
+			r.Use(middlewares.JWT)
+
+			r. // The r letter. Full stop
+				With(middleware.Maybe(
+					middlewares.NotRunning(svc.GetTestUUID),
+					middlewares.IsTeacherCondition,
+				), middlewares.ParseUUID).
+				Get("/{group_uuid}/{user_uuid}/{test_uuid}/{quiz_uuid}",
+					svc.GetAnswer)
+
+			r.Group(func(r chi.Router) {
+				r.Use(middlewares.IsTeacherRights)
+
+				r.Get("/all/all/{test_uuid}", svc.GetGroupTotals)
+				r.Get("/{group_uuid}/all/{test_uuid}", svc.GetTestTotals)
+				r.Get("/{group_uuid}/{user_uuid}/{test_uuid}", svc.GetUserTotal)
+				r.Get("/{group_uuid}/{user_uuid}", svc.GetUserTotals)
+			})
+
+			r.Route("/{group_uuid}/{user_uuid}/{test_uuid}", func(r chi.Router) {
+
+				r.With(middleware.Maybe(middlewares.UserRights, func(r *http.Request) bool {
+					return !middlewares.IsTeacherCondition(r)
+				})).
+					Post("/{group_uuid}/{user_uuid}/{test_uuid}/{quiz_uuid}", svc.PostAnswer)
+
+				r.Post("/{group_uuid}/{user_uuid}/{test_uuid}", svc.Totalize)
+			})
+
 		})
 	})
 

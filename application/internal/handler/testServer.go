@@ -997,3 +997,7 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (c *chiService) GetTestUUID() uuid.UUID {
+	return c.runner.CurrentTestUUID()
+}
