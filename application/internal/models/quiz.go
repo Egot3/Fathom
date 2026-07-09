@@ -12,11 +12,11 @@ import (
 type Quiz struct {
 	bun.BaseModel `bun:"table:quizzes,alias:q"`
 
-	UUID          uuid.UUID `bun:"uuid,pk"`
-	Path          string    `bun:"path,unique"`
+	UUID          uuid.UUID `bun:"uuid,pk" json:"uuid"`
+	Path          string    `bun:"path,unique" json:"path"`
 	Checksum      []byte    `bun:"checksum,notnull"`
-	Score         int       `bun:"score,notnull"`
-	CorrectAnswer string    `bun:"correct_answer,notnull"`
+	Score         int       `bun:"score,notnull" json:"score"`
+	CorrectAnswer string    `bun:"correct_answer,notnull" json:"correct_answer"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Quiz)(nil)

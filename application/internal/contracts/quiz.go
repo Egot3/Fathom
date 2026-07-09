@@ -22,8 +22,8 @@ type PutQuizRequest struct {
 }
 
 type PatchQuizRequest struct {
-	Name  *string `json:"name"`
-	Score *int    `json:"score"`
+	Name  *string `json:"name,omitzero"`
+	Score *int    `json:"score,omitzero"`
 }
 
 type ListQuizResponse struct {

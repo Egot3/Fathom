@@ -3,6 +3,7 @@ package quizparser
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"math/rand/v2"
 	"strings"
 
@@ -11,27 +12,25 @@ import (
 
 func RadioParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 	quizP.Options.Radio = quiz.OptionsRadioAndCheck{Choices: make([]quiz.Choice, 2)}
-	for id := 0; ; {
+	quizP.Answer.Radio.ChoiceIdx = -1
+	for id := 0; ; id++ {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
-		quizP.Answer.Radio.ChoiceIdx = -1
 
 		if strings.HasPrefix(trimmedLine, "- [x]") {
+			log.Print("catched - [x]")
 			if quizP.Answer.Radio.ChoiceIdx != -1 {
 				return fmt.Errorf("radio can't have multiple answers")
 			}
 
 			opt := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- [x] "))
-			quizP.Answer.Radio = quiz.AnswerRadio{ChoiceIdx: id}
+			quizP.Answer.Radio.ChoiceIdx = id
 
 			quizP.Options.Radio.Choices = append(quizP.Options.Radio.Choices, quiz.Choice{Id: id, Label: opt})
-			id++
-		}
-		if strings.HasPrefix(trimmedLine, "- [ ]") {
+		} else if strings.HasPrefix(trimmedLine, "- [ ]") {
 			opt := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- [ ] "))
 
 			quizP.Options.Radio.Choices = append(quizP.Options.Radio.Choices, quiz.Choice{Id: id, Label: opt})
-			id++
 		}
 		if !reader.Scan() {
 			break
