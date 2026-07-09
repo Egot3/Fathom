@@ -270,8 +270,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	buf := fmt.Appendf(nil, `
-	---
+	buf := fmt.Appendf(nil, `---
 	%v
 	---
 	%v
@@ -397,8 +396,7 @@ func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	buf := fmt.Appendf(nil, `
-	---
+	buf := fmt.Appendf(nil, `---
 	%v
 	---
 	%v
@@ -502,6 +500,14 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	if req.Name != nil {
 		v := config.TurnToAbs(*req.Name)
 		newAbs = &v
+	}
+
+	if req.Score != nil {
+		if *req.Score < 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "can't have negative score"})
+			return
+		}
 	}
 
 	err = c.quizRepo.PatchQuiz(ctx, quizUUID, newAbs, req.Score)

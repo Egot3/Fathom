@@ -12,13 +12,13 @@ import (
 
 func ParseQuizByBytes(fileBytes []byte) (*quiz.Quiz, error) {
 
-	var quiz quiz.Quiz
+	var q quiz.Quiz
 	fm, source, err := ParseFrontmatter(fileBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	quiz.Meta = fm
+	q.Meta = fm
 
 	reader := bufio.NewScanner(bytes.NewReader(source))
 
@@ -27,7 +27,7 @@ func ParseQuizByBytes(fileBytes []byte) (*quiz.Quiz, error) {
 		trimmedLine := strings.TrimSpace(line)
 
 		if strings.HasPrefix(trimmedLine, "# ") {
-			quiz.Title = strings.TrimSpace(strings.TrimPrefix(line, "# "))
+			q.Title = strings.TrimSpace(strings.TrimPrefix(line, "# "))
 			break
 		}
 	}
@@ -43,38 +43,38 @@ func ParseQuizByBytes(fileBytes []byte) (*quiz.Quiz, error) {
 			break
 		}
 
-		quiz.Body += line + " "
+		q.Body += line + " "
 
 	}
 
-	log.Printf("quiz with: %v, and body: %v", reader.Text(), quiz.Body)
+	log.Printf("quiz with: %v, and body: %v", reader.Text(), q.Body)
 	// each quiz has 1 typeof question
-	switch quiz.Meta.Kind {
-	case "input":
-		if err := InputParser(reader, &quiz); err != nil {
+	switch q.Meta.Kind {
+	case quiz.Input:
+		if err := InputParser(reader, &q); err != nil {
 			return nil, err
 		}
-	case "check":
-		if err := CheckParser(reader, &quiz); err != nil {
+	case quiz.Check:
+		if err := CheckParser(reader, &q); err != nil {
 			return nil, err
 		}
-	case "radio":
-		if err := RadioParser(reader, &quiz); err != nil {
+	case quiz.Radio:
+		if err := RadioParser(reader, &q); err != nil {
 			return nil, err
 		}
-	case "order":
-		if err := OrderParser(reader, &quiz); err != nil {
+	case quiz.Order:
+		if err := OrderParser(reader, &q); err != nil {
 			return nil, err
 		}
-	case "accordance":
-		if err := AccordanceParser(reader, &quiz); err != nil {
+	case quiz.Accordance:
+		if err := AccordanceParser(reader, &q); err != nil {
 			return nil, err
 		}
 	default:
 		return nil, fmt.Errorf("Unsupported kind")
 	}
 
-	return &quiz, nil
+	return &q, nil
 }
 
 // P.S. on parts where I am putting comments, my brain melts

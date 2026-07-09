@@ -9,6 +9,10 @@ import (
 	"go.yaml.in/yaml/v4"
 )
 
+func cleanFrontmatter(data []byte) []byte {
+	return bytes.ReplaceAll(data, []byte("\t"), []byte(""))
+}
+
 func ParseFrontmatter(source []byte) (quiz.Frontmatter, []byte, error) {
 	var fm quiz.Frontmatter
 
@@ -28,14 +32,17 @@ func ParseFrontmatter(source []byte) (quiz.Frontmatter, []byte, error) {
 		return fm, source, fmt.Errorf("unclosed frontmatter")
 	}
 
-	if err := yaml.Unmarshal(bytes.Join(lines[1:end], []byte("\n")), &fm); err != nil {
+	fmData := bytes.Join(lines[1:end], []byte("\n"))
+	fmData = cleanFrontmatter(fmData)
+
+	if err := yaml.Unmarshal(fmData, &fm); err != nil {
 		return fm, nil, err
 	}
 	if fm.Kind == "" {
 		return fm, nil, fmt.Errorf("mising entry in frontmatter: kind")
 	}
 	if fm.Score == 0 {
-		return fm, nil, fmt.Errorf("missing score/set to zero in frontmatter")
+		return fm, nil, fmt.Errorf("missing score/score set to zero in frontmatter")
 	}
 
 	return fm, bytes.Join(lines[end+1:], []byte("\n")), nil
