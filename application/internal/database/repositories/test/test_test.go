@@ -3,12 +3,14 @@ package test_test //finnaly something remotely funny
 import (
 	"crypto/rand"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	mrand "math/rand/v2"
 	"testing"
 
+	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/database/repositories/test"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/testutils"
@@ -30,7 +32,7 @@ func NewInjectorWithTestRepo(t testing.TB) do.Injector {
 }
 
 func RegisterModels(db *bun.DB) {
-	db.RegisterModel((*models.TestsQuizzies)(nil))
+	db.RegisterModel((*models.TestsQuizzes)(nil))
 	db.RegisterModel((*models.GroupsUsers)(nil))
 }
 
@@ -70,6 +72,8 @@ func TestTest_Creation(t *testing.T) {
 
 		_, err = r.CreateTest(t.Context(), name)
 		require.Error(t, err)
+
+		require.ErrorAs(t, err, &carefulness.ErrConflict)
 	})
 }
 
@@ -206,7 +210,7 @@ func TestTest_Bundle(t *testing.T) {
 			Position int       `bun:"position"`
 		}
 		var quizzesR []quizShort
-		err = db.NewSelect().Model((*models.TestsQuizzies)(nil)).
+		err = db.NewSelect().Model((*models.TestsQuizzes)(nil)).
 			Where("test_uuid = ?", test.UUID).
 			Column("quiz_uuid", "position").
 			Scan(t.Context(), &quizzesR)
@@ -403,9 +407,9 @@ func TestTest_Prune(t *testing.T) {
 		require.NoError(t, err)
 
 		uuids := make(uuid.UUIDs, len(quizzes))
-		inserts := lo.Map(quizzes, func(quiz models.Quiz, i int) models.TestsQuizzies {
+		inserts := lo.Map(quizzes, func(quiz models.Quiz, i int) models.TestsQuizzes {
 			uuids[i] = quiz.UUID
-			return models.TestsQuizzies{TestUUID: test.UUID, QuizUUID: quiz.UUID, Position: i}
+			return models.TestsQuizzes{TestUUID: test.UUID, QuizUUID: quiz.UUID, Position: i}
 		})
 		_, err = db.NewInsert().Model(&inserts).Exec(t.Context())
 		require.NoError(t, err)
@@ -418,7 +422,7 @@ func TestTest_Prune(t *testing.T) {
 			Position int    `bun:"position"`
 		}
 		var quizzesR []quizShort
-		err = db.NewSelect().Model((*models.TestsQuizzies)(nil)).
+		err = db.NewSelect().Model((*models.TestsQuizzes)(nil)).
 			Where("test_uuid = ?", test.UUID).
 			Column("quiz_path", "position").
 			Scan(t.Context(), &quizzesR)
@@ -443,16 +447,15 @@ func TestTest_Prune(t *testing.T) {
 		require.NoError(t, err)
 		uuids := make(uuid.UUIDs, len(quizzes))
 
-		inserts := lo.Map(quizzes, func(quiz models.Quiz, i int) models.TestsQuizzies {
+		inserts := lo.Map(quizzes, func(quiz models.Quiz, i int) models.TestsQuizzes {
 			uuids[i] = quiz.UUID
-			return models.TestsQuizzies{TestUUID: testM.UUID, QuizUUID: quiz.UUID, Position: i}
+			return models.TestsQuizzes{TestUUID: testM.UUID, QuizUUID: quiz.UUID, Position: i}
 		})
 		_, err = db.NewInsert().Model(&inserts).Exec(t.Context())
 		require.NoError(t, err)
 
 		err = r.PruneQuizzesFromTest(t.Context(), testM.UUID, append(uuids, uuid.Nil))
 		require.Error(t, err)
-		require.ErrorIs(t, err, test.ErrQuizNotInTest)
 		require.Equal(t, "1 quizzes are not in test", err.Error())
 
 		type quizShort struct {
@@ -460,7 +463,7 @@ func TestTest_Prune(t *testing.T) {
 			Position int    `bun:"position"`
 		}
 		var quizzesR []quizShort
-		err = db.NewSelect().Model((*models.TestsQuizzies)(nil)).
+		err = db.NewSelect().Model((*models.TestsQuizzes)(nil)).
 			Where("test_uuid = ?", testM.UUID).
 			Column("quiz_path", "position").
 			Scan(t.Context(), &quizzesR)
@@ -475,6 +478,12 @@ func TestTest_Prune(t *testing.T) {
 
 		err = r.BundleQuizzesToTest(t.Context(), testM.UUID, append(uuid.UUIDs{}, uuid.Nil))
 		require.Error(t, err)
+		if notIn, ok := errors.AsType[*carefulness.NotInTestError](err); ok {
+			t.Log(notIn.JSONError())
+			return
+		}
+		t.Log(err)
+		t.FailNow()
 	})
 }
 
@@ -493,7 +502,7 @@ func TestTest_Prune(t *testing.T) {
 		require.NoError(b, err)
 
 		var quizzes []models.Quiz = make([]models.Quiz, 0, 5)
-		var testQuizzes []models.TestsQuizzies = make([]models.TestsQuizzies, 0, 5)
+		var testQuizzes []models.TestsQuizzes = make([]models.TestsQuizzes, 0, 5)
 		for range 5 {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
@@ -533,14 +542,14 @@ func TestTest_Prune(t *testing.T) {
 
 		var pathes []string
 		var quizzes []models.Quiz
-		var testQuizzes []models.TestsQuizzies
+		var testQuizzes []models.TestsQuizzes
 		for range 50 {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
 			pathes = append(pathes, quizPath)
 			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
-			testQuizzes = append(testQuizzes, models.TestsQuizzies{TestUUID: testUUID, QuizPath: quizPath, Position: mrand.Int()})
+			testQuizzes = append(testQuizzes, models.TestsQuizzes{TestUUID: testUUID, QuizPath: quizPath, Position: mrand.Int()})
 		}
 
 		_, err = db.NewInsert().Model(&quizzes).
@@ -573,14 +582,14 @@ func TestTest_Prune(t *testing.T) {
 
 		var pathes []string
 		var quizzes []models.Quiz
-		var testQuizzes []models.TestsQuizzies
+		var testQuizzes []models.TestsQuizzes
 		for range 500 {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
 			pathes = append(pathes, quizPath)
 			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
-			testQuizzes = append(testQuizzes, models.TestsQuizzies{TestUUID: testUUID, QuizPath: quizPath, Position: mrand.Int()})
+			testQuizzes = append(testQuizzes, models.TestsQuizzes{TestUUID: testUUID, QuizPath: quizPath, Position: mrand.Int()})
 		}
 
 		_, err = db.NewInsert().Model(&quizzes).
