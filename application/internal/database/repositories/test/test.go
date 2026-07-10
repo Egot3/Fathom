@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
@@ -14,20 +13,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 )
-
-var ErrQuizNotInTest = errors.New("quiz is not in the test")
-
-type NotInTestError struct {
-	Count int
-}
-
-func (e *NotInTestError) Error() string {
-	return fmt.Sprintf("%d quizzes are not in test", e.Count)
-}
-
-func (e *NotInTestError) Is(target error) bool {
-	return target == ErrQuizNotInTest
-}
 
 type bunTestRepository struct {
 	db *bun.DB
@@ -57,7 +42,7 @@ func (r *bunTestRepository) TestPathes(ctx context.Context, UUIDs uuid.UUIDs) ([
 
 func (r *bunTestRepository) CreateTest(ctx context.Context, name string) (*models.Test, error) {
 	var test = models.Test{Name: name}
-	err := r.db.NewInsert().Model(&test).Returning("*").Scan(ctx)
+	err := r.db.NewInsert().Ignore().Model(&test).Returning("name").Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &carefulness.Conflict{Conflictor: "name"}
@@ -70,10 +55,12 @@ func (r *bunTestRepository) CreateTest(ctx context.Context, name string) (*model
 
 func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, quizUUIDs uuid.UUIDs) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		var testQuizzes []models.TestsQuizzies = lo.Map(quizUUIDs, func(u uuid.UUID, pos int) models.TestsQuizzies {
-			return models.TestsQuizzies{TestUUID: testUUID, Position: pos, QuizUUID: u}
+		var testQuizzes []models.TestsQuizzes = lo.Map(quizUUIDs, func(u uuid.UUID, pos int) models.TestsQuizzes {
+			return models.TestsQuizzes{TestUUID: testUUID, Position: pos, QuizUUID: u}
 		})
-		_, err := tx.NewInsert().Model(&testQuizzes).Exec(ctx)
+		_, err := tx.NewInsert().
+			Model(&testQuizzes).Ignore().
+			Exec(ctx)
 		if err != nil {
 			return err
 		}
@@ -84,9 +71,9 @@ func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uu
 
 /* func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, pathes []string) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		var testQuizzes []models.TestsQuizzies = make([]models.TestsQuizzies, len(pathes))
+		var testQuizzes []models.TestsQuizzes = make([]models.TestsQuizzes, len(pathes))
 		for pos, path := range pathes {
-			testQuizzes[pos] = models.TestsQuizzies{Position: pos, TestUUID: testUUID, QuizPath: path}
+			testQuizzes[pos] = models.TestsQuizzes{Position: pos, TestUUID: testUUID, QuizPath: path}
 		}
 		_, err := tx.NewInsert().Model(&testQuizzes).Exec(ctx)
 		if err != nil {
@@ -102,7 +89,7 @@ func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uu
 	notFound := make([]string, 0)
 	err := r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		for _, path := range pathes {
-			_, err := tx.NewDelete().Model(&models.TestsQuizzies{QuizPath: path, TestUUID: testUUID}).WherePK().Exec(ctx)
+			_, err := tx.NewDelete().Model(&models.TestsQuizzes{QuizPath: path, TestUUID: testUUID}).WherePK().Exec(ctx)
 			if err != nil {
 				if errors.Is(err, sql.ErrNoRows) {
 					notFound = append(notFound, path)
@@ -128,8 +115,9 @@ func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uu
 func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID uuid.UUID, quizUUIDs uuid.UUIDs) error {
 	notFound := 0
 
-	res, err := r.db.NewDelete().Model((*models.TestsQuizzies)(nil)).
-		Where("test_uuid = ?", testUUID).Where("quiz_uuid IN (?)", bun.List(quizUUIDs)).
+	res, err := r.db.NewDelete().Model((*models.TestsQuizzes)(nil)).
+		Where("test_uuid = ?", testUUID).
+		Where("quiz_uuid IN (?)", bun.List(quizUUIDs)).
 		Exec(ctx)
 	if err != nil {
 		return err
@@ -145,7 +133,7 @@ func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID u
 	notFound = len(quizUUIDs) - int(c)
 
 	if notFound > 0 {
-		return &NotInTestError{Count: notFound}
+		return &carefulness.NotInTestError{Count: notFound}
 	}
 
 	return nil
@@ -225,7 +213,7 @@ func (r *bunTestRepository) ImportTest(ctx context.Context, test exportutlis.Yam
 		}
 
 		for _, q := range test.Quizzes {
-			_, err := tx.NewInsert().Model(&models.TestsQuizzies{
+			_, err := tx.NewInsert().Model(&models.TestsQuizzes{
 				QuizUUID: q.UUID,
 				TestUUID: test.UUID,
 			}).Exec(ctx)

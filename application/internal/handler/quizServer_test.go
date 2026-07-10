@@ -49,9 +49,10 @@ func TestQuizHandler_Post(t *testing.T) {
 		require.NoError(t, err)
 
 		name := rand.Text()
-		body := `# quiz!
-			 there is a body!
-			 [yeah!]`
+		body :=
+			`# quiz!
+		there is a body!
+		[yeah!]`
 		reqJSON, _ := json.Marshal(contracts.PostQuizRequest{
 			Name: name,
 			Body: body,

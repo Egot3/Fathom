@@ -76,9 +76,14 @@ func (c *chiService) AddQuizzes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(req.QuizUUIDs) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	err = c.testRepo.BundleQuizzesToTest(ctx, testUUID, req.QuizUUIDs)
 	if err != nil {
-		logger.Info("couldn't append quizzes to test",
+		logger.Error("couldn't append quizzes to test",
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -353,7 +358,7 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Attempt to create testt with invalid nickname",
 			slog.String("test_name", name),
 		)
-		w.WriteHeader(422)
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "test name is too short"})
 		return
 	}
@@ -361,7 +366,7 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Attempt to create test with invalid nickname",
 			slog.String("test_name", name),
 		)
-		w.WriteHeader(422)
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "test name is too big"})
 		return
 	}
@@ -455,7 +460,7 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Attempt to create testt with invalid nickname",
 			slog.String("test_name", req.Name),
 		)
-		w.WriteHeader(422)
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "test name is too short"})
 		return
 	}
@@ -463,7 +468,7 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Attempt to create test with invalid nickname",
 			slog.String("test_name", req.Name),
 		)
-		w.WriteHeader(422)
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "test name is too big"})
 		return
 	}
@@ -473,7 +478,7 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 		logger.Info("couldn't create test",
 			slog.String("Error", err.Error()),
 		)
-		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
+		if conflict, ok := errors.AsType[*carefulness.Conflict](err); ok {
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(conflict.JSONError())
 			return
@@ -550,9 +555,19 @@ func (c *chiService) RemoveQuizzes(w http.ResponseWriter, r *http.Request) {
 
 	err = c.testRepo.PruneQuizzesFromTest(ctx, testUUID, req.QuizUUIDs)
 	if err != nil {
-		logger.Info("couldn't extend test",
+		logger.Info("couldn't prune quizzes from test",
 			slog.String("Error", err.Error()),
 		)
+		if notFound, ok := errors.AsType[*carefulness.NotInTestError](err); ok {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(notFound.JSONError())
+			return
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "none of the quizzes is in test"})
+			return
+		}
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't delete quiz from test"})
 		return
@@ -794,6 +809,10 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(422)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
 		return
+	}
+	if pageInt < 0 {
+		w.WriteHeader(422)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "page can't be less than zero"})
 	}
 
 	logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))

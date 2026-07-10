@@ -117,16 +117,16 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			r.Route("/{uuid}", func(r chi.Router) {
 				r.Use(middlewares.ParseUUID)
 
-				r.Group(func(r chi.Router) {
-					r.Use(middlewares.IsTeacherRights)
+				r.Use(middlewares.IsTeacherRights)
 
-					r.Delete("/", svc.DeleteTest)
-					r.Patch("/", svc.PatchTest)
-					r.Post("/quizzes", svc.AddQuizzes)
-					r.Delete("/quizzes", svc.RemoveQuizzes)
+				r.Get("/", svc.GetTest)
+				r.Delete("/", svc.DeleteTest)
+				r.Patch("/", svc.PatchTest)
+				r.Post("/quizzes", svc.AddQuizzes)
+				r.Delete("/quizzes", svc.RemoveQuizzes)
 
-					r.Get("/export", svc.ExportTest)
-				})
+				r.Get("/export", svc.ExportTest)
+
 			})
 		})
 

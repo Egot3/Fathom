@@ -5,7 +5,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type TestsQuizzies struct {
+type TestsQuizzes struct {
 	bun.BaseModel `bun:"table:tests_quizzes"`
 
 	TestUUID uuid.UUID `bun:"test_uuid,pk"`
