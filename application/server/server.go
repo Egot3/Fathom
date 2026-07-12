@@ -136,28 +136,35 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			r. // The r letter. Full stop
 				With(middleware.Maybe(
 					middlewares.NotRunning(svc.GetTestUUID),
-					middlewares.IsTeacherCondition,
-				), middlewares.ParseUUID).
+					func(r *http.Request) bool {
+						return !middlewares.IsTeacherCondition(r)
+					},
+				)).
 				Get("/{group_uuid}/{user_uuid}/{test_uuid}/{quiz_uuid}",
 					svc.GetAnswer)
+
+			r.Route("/{group_uuid}/{user_uuid}/running", func(r chi.Router) {
+				r.Use(middlewares.Running(svc.GetTestUUID))
+
+				r.Post("/{quiz_uuid}", svc.PostAnswer)
+				r.Post("/", svc.Totalize)
+			})
 
 			r.Group(func(r chi.Router) {
 				r.Use(middlewares.IsTeacherRights)
 
-				r.Get("/all/all/{test_uuid}", svc.GetGroupTotals)
-				r.Get("/{group_uuid}/all/{test_uuid}", svc.GetTestTotals)
-				r.Get("/{group_uuid}/{user_uuid}/{test_uuid}", svc.GetUserTotal)
-				r.Get("/{group_uuid}/{user_uuid}", svc.GetUserTotals)
+				r.Get("/all/all/{test_uuid}", svc.GetTestTotals)
+				r.Get("/{group_uuid}/all/{test_uuid}", svc.GetGroupTotals)
+				r.Get("/all/{user_uuid}", svc.GetUserTotals)
 			})
 
 			r.Route("/{group_uuid}/{user_uuid}/{test_uuid}", func(r chi.Router) {
 
-				r.With(middleware.Maybe(middlewares.UserRights, func(r *http.Request) bool {
+				r.Use(middleware.Maybe(middlewares.UserRights, func(r *http.Request) bool {
 					return !middlewares.IsTeacherCondition(r)
-				})).
-					Post("/{group_uuid}/{user_uuid}/{test_uuid}/{quiz_uuid}", svc.PostAnswer)
+				}))
 
-				r.Post("/{group_uuid}/{user_uuid}/{test_uuid}", svc.Totalize)
+				r.Get("/", svc.GetUserTotal)
 			})
 
 		})

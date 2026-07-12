@@ -3,7 +3,6 @@ package quizparser
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"math/rand/v2"
 	"strings"
 
@@ -18,7 +17,6 @@ func RadioParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 		trimmedLine := strings.TrimSpace(line)
 
 		if strings.HasPrefix(trimmedLine, "- [x]") {
-			log.Print("catched - [x]")
 			if quizP.Answer.Radio.ChoiceIdx != -1 {
 				return fmt.Errorf("radio can't have multiple answers")
 			}

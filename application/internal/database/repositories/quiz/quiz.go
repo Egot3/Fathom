@@ -114,7 +114,8 @@ func (r *bunQuizRepository) PatchQuiz(ctx context.Context, quizUUID uuid.UUID, p
 func (r *bunQuizRepository) CorrectAnswer(ctx context.Context, quizUUID uuid.UUID) (string, error) {
 	var answer string
 	err := r.db.NewSelect().Model((*models.Quiz)(nil)).
-		Where("uuid = ?", quizUUID).Scan(ctx, &answer)
+		Where("uuid = ?", quizUUID).Column("correct_answer").
+		Scan(ctx, &answer)
 	if err != nil {
 		return "", err
 	}

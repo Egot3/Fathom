@@ -3,7 +3,6 @@ package quizparser
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"math/rand/v2"
 	"strings"
 
@@ -34,8 +33,6 @@ func CheckParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 			break
 		}
 	}
-
-	log.Printf("%v with %v", len(quizP.Options.Check.Choices), len(quizP.Answer.Check.ChoiceIdxs))
 
 	if len(quizP.Options.Check.Choices) < 2 {
 		return fmt.Errorf("can't have less than 2 options for check")

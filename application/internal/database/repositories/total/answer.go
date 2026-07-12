@@ -3,6 +3,7 @@ package total
 import (
 	"context"
 	"database/sql"
+	"log"
 
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
@@ -20,7 +21,29 @@ func NewTotalRepository(i do.Injector) (TotalRepository, error) {
 } //created all of it just to live a good life in tests
 
 func (r *bunTotalRepository) SetAnswer(ctx context.Context, testUUID, groupUUID, userUUID, quizUUID uuid.UUID, answerValue string, score float32) error {
-	_, err := r.db.NewInsert().On("CONFLICT DO UPDATE").Model(&models.Answer{
+	e, err := r.db.NewSelect().Model(&models.User{
+		UUID: userUUID,
+	}).WherePK().Exists(ctx)
+	if err != nil {
+		return err
+	}
+	if !e {
+		log.Printf("user not found")
+		return sql.ErrNoRows
+	}
+
+	e, err = r.db.NewSelect().Model(&models.Group{
+		UUID: groupUUID,
+	}).WherePK().Exists(ctx)
+	if err != nil {
+		return err
+	}
+	if !e {
+		log.Printf("group not found")
+		return sql.ErrNoRows
+	}
+
+	_, err = r.db.NewInsert().On("CONFLICT DO UPDATE").Model(&models.Answer{
 		TestUUID:    testUUID,
 		UserUUID:    userUUID,
 		QuizUUID:    quizUUID,
@@ -50,10 +73,28 @@ func (r *bunTotalRepository) Answer(ctx context.Context, userUUID, testUUID, gro
 }
 
 func (r *bunTotalRepository) Totalize(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) error {
-	var userTotal int
+	var userTotal float64
 	var quizUUIDs uuid.UUIDs
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		err := tx.NewSelect().TableExpr("tests_quizzes AS tq").
+		e, err := tx.NewSelect().Model(&models.User{UUID: userUUID}).
+			WherePK().Exists(ctx)
+		if err != nil {
+			return err
+		}
+		if !e {
+			return sql.ErrNoRows
+		}
+
+		e, err = tx.NewSelect().Model(&models.Group{UUID: groupUUID}).
+			WherePK().Exists(ctx)
+		if err != nil {
+			return err
+		}
+		if !e {
+			return sql.ErrNoRows
+		}
+
+		err = tx.NewSelect().TableExpr("tests_quizzes AS tq").
 			Column("tq.quiz_uuid").
 			Where("tq.test_uuid = ?", testUUID).
 			Scan(ctx, &quizUUIDs)
@@ -74,7 +115,7 @@ func (r *bunTotalRepository) Totalize(ctx context.Context, userUUID, testUUID, g
 
 			err = tx.NewSelect().
 				TableExpr("users_groups_tests_quiz_answers AS a").
-				ColumnExpr("COALESCE(SUM(a.score), 0)").
+				ColumnExpr("COALESCE(SUM(a.score * 1.0), 0.0)").
 				Where("a.test_uuid = ?", testUUID).
 				Where("a.group_uuid = ?", groupUUID).
 				Where("a.user_uuid = ?", userUUID).
@@ -90,6 +131,7 @@ func (r *bunTotalRepository) Totalize(ctx context.Context, userUUID, testUUID, g
 			Set("score = EXCLUDED.score").
 			Model(&models.UserGroupsTests{UserUUID: userUUID, GroupUUID: groupUUID, TestUUID: testUUID, Score: userTotal}).
 			Exec(ctx)
+
 		return err
 	})
 }
