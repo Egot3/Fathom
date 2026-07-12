@@ -39,7 +39,7 @@ func (e *NotCachedError) Is(target error) bool {
 
 type concreteTestRunner struct {
 	mu         sync.RWMutex
-	quizzes    []*quiz.Quiz
+	quizzes    []quiz.Quiz
 	generation uint64
 	cancel     context.CancelFunc
 	timer      *time.Timer
@@ -60,9 +60,9 @@ func (tr *concreteTestRunner) CurrentTestUUID() uuid.UUID {
 }
 
 func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs, testUUID uuid.UUID) error {
-	quizzes := make([]*quiz.Quiz, len(quizPaths))
+	quizzes := make([]quiz.Quiz, len(quizPaths))
 	for i, path := range quizPaths {
-		if !filepath.IsLocal(path) {
+		if !filepath.IsAbs(path) {
 			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
 		}
 		buf, err := os.ReadFile(path)
@@ -73,8 +73,8 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
-		quizzes[i] = quiz
-
+		quiz.UUID = quizUUIDs[i]
+		quizzes[i] = *quiz
 	}
 
 	cctx, cancel := context.WithCancel(ctx)
@@ -123,6 +123,7 @@ func (tr *concreteTestRunner) cleanup(gen uint64) {
 			tr.cancel()
 			tr.cancel = nil
 		}
+		tr.TestUUID = uuid.Nil
 	}
 }
 
@@ -134,13 +135,13 @@ func (tr *concreteTestRunner) Get(quizUUID uuid.UUID) (*quiz.Quiz, error) {
 		return nil, ErrRunnerInactive
 	}
 
-	q, ok := lo.Find(tr.quizzes, func(quiz *quiz.Quiz) bool {
+	q, ok := lo.Find(tr.quizzes, func(quiz quiz.Quiz) bool {
 		return quiz.UUID == quizUUID
 	})
 	if !ok {
 		return nil, ErrQuizNotCached
 	}
-	return q, nil
+	return &q, nil
 }
 
 func (tr *concreteTestRunner) Stop() {
@@ -166,7 +167,7 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUID
 	}
 	tr.mu.RUnlock()
 
-	quizzes := make([]*quiz.Quiz, len(quizPaths))
+	quizzes := make([]quiz.Quiz, len(quizPaths))
 	for i, path := range quizPaths {
 		if !filepath.IsLocal(path) {
 			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
@@ -180,7 +181,7 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUID
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
 		quiz.UUID = quizUUIDs[i]
-		quizzes[i] = quiz
+		quizzes[i] = *quiz
 
 	}
 
@@ -204,7 +205,7 @@ func (tr *concreteTestRunner) RemoveQuiz(uuids uuid.UUIDs) error {
 	tr.mu.RUnlock() //just to keep up with upsert
 
 	oldL := len(tr.quizzes)
-	tr.quizzes = lo.Filter(tr.quizzes, func(quiz *quiz.Quiz, _ int) bool {
+	tr.quizzes = lo.Filter(tr.quizzes, func(quiz quiz.Quiz, _ int) bool {
 		return !slices.Contains(uuids, quiz.UUID)
 	})
 	nf := oldL - len(tr.quizzes) - len(uuids)

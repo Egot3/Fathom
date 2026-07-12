@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/egot3/fathom/internal/quiz"
@@ -46,8 +45,6 @@ func ParseQuizByBytes(fileBytes []byte) (*quiz.Quiz, error) {
 		q.Body += line + " "
 
 	}
-
-	log.Printf("quiz with: %v, and body: %v", reader.Text(), q.Body)
 	// each quiz has 1 typeof question
 	switch q.Meta.Kind {
 	case quiz.Input:

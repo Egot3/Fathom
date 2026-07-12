@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -81,17 +82,14 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var correct string
-	if c.runner.CurrentTestUUID() != testUUID {
-		correct, err = c.quizRepo.CorrectAnswer(ctx, quizUUID)
-		if err != nil {
-			logger.Error("couldn't get the right answer",
-				slog.String("Error", err.Error()),
-			)
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get correct answer"})
-			return
-		}
+	correct, err := c.quizRepo.CorrectAnswer(ctx, quizUUID)
+	if err != nil {
+		logger.Error("couldn't get the right answer",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get correct answer"})
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -153,6 +151,10 @@ func (c *chiService) GetGroupTotals(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
 		return
 	}
+
+	logger.Info("group totals retrieved",
+		slog.String("groupTotals", fmt.Sprintf("%+v", groupTotals)),
+	)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.Totals{
@@ -414,6 +416,11 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't set an answer because of unknown error"})
 		return
@@ -430,9 +437,9 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	groupUUID, err := uuid.Parse(chi.URLParam(r, "group_uuid"))
 	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
+		logger.Error("couldn't parse groupUUID in url",
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusBadRequest)
@@ -440,70 +447,33 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 	}
 	userUUID, err := uuid.Parse(chi.URLParam(r, "user_uuid"))
 	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	quizUUID, err := uuid.Parse(chi.URLParam(r, "quiz_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
+		logger.Error("couldn't parse userUUID in url",
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	currentTestUUID := c.runner.CurrentTestUUID()
 	logger = logger.With(
 		slog.String("group_uuid", groupUUID.String()),
 		slog.String("user_uuid", userUUID.String()),
-		slog.String("quiz_uuid", quizUUID.String()),
+		slog.String("currently_running_test_uuid", currentTestUUID.String()),
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
-	var req contracts.PostAnswerRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
+	err = c.answerRepo.Totalize(ctx, userUUID, currentTestUUID, groupUUID)
 	if err != nil {
-		logger.Error("Failed to parse body",
+		logger.Error("couldn't totalize",
 			slog.String("Error", err.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
 		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	err = c.answerRepo.Totalize(ctx, userUUID, c.runner.CurrentTestUUID(), groupUUID)
-	if err != nil {
-		logger.Error("couldn't set an answer",
-			slog.String("Error", err.Error()),
-		)
-
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't set an answer because of unknown error"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't totalize because of unknown error"})
 		return
 	}
 

@@ -17,5 +17,5 @@ type UserGroupsTests struct {
 	UserUUID uuid.UUID `bun:"user_uuid,pk" json:"user_uuid"`
 	User     *User     `bun:"rel:belongs-to,join:user_uuid=uuid"`
 
-	Score int `bun:"score" json:"score"`
+	Score float64 `bun:"score" json:"score"`
 }

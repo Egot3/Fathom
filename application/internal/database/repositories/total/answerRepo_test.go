@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"math"
 	mrand "math/rand/v2"
 	"testing"
 
@@ -53,12 +54,11 @@ func TestAnswer_Set(t *testing.T) {
 	require.NoError(t, err)
 
 	name := rand.Text()
-	groupUUID := uuid.UUID{}
+	var groupUUID uuid.UUID
 	err = db.NewInsert().Model(&models.Group{Name: name}).Returning("uuid").Scan(t.Context(), &groupUUID)
 	require.NoError(t, err)
 
 	var userUUID uuid.UUID
-
 	err = db.NewInsert().Model(&models.User{Nickname: rand.Text(), PasswordHash: []byte{}}).
 		Returning("uuid").
 		Scan(t.Context(), &userUUID)
@@ -82,22 +82,6 @@ func TestAnswer_Set(t *testing.T) {
 			userUUID:  userUUID,
 			groupUUID: groupUUID,
 			expectErr: false,
-		},
-		{
-			desc:      "Invalid test",
-			testUUID:  uuid.Nil,
-			quizUUID:  quiz.UUID,
-			userUUID:  userUUID,
-			groupUUID: groupUUID,
-			expectErr: true,
-		},
-		{
-			desc:      "Invalid quizPath",
-			testUUID:  testM.UUID,
-			quizUUID:  uuid.Nil,
-			userUUID:  userUUID,
-			groupUUID: groupUUID,
-			expectErr: true,
 		},
 		{
 			desc:      "Invalid user",
@@ -124,14 +108,6 @@ func TestAnswer_Set(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			desc:      "Invalid test and quiz",
-			testUUID:  uuid.Nil,
-			quizUUID:  uuid.Nil,
-			userUUID:  userUUID,
-			groupUUID: groupUUID,
-			expectErr: true,
-		},
-		{
 			desc:      "Invalid all",
 			testUUID:  uuid.Nil,
 			quizUUID:  uuid.Nil,
@@ -139,7 +115,7 @@ func TestAnswer_Set(t *testing.T) {
 			groupUUID: uuid.Nil,
 			expectErr: true,
 		},
-	}
+	} // no test and quiz as it's managed at upper layer
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Cleanup(func() {
@@ -149,7 +125,8 @@ func TestAnswer_Set(t *testing.T) {
 
 			err := r.SetAnswer(t.Context(), tC.testUUID, tC.groupUUID, tC.userUUID, tC.quizUUID, "", 1)
 			if tC.expectErr {
-				require.Error(t, err)
+				require.Error(t, err, err.Error())
+				require.ErrorIs(t, err, sql.ErrNoRows, err.Error())
 				return
 			}
 			require.NoError(t, err)
@@ -315,7 +292,7 @@ func TestAnswer_Totalization(t *testing.T) {
 		err := r.Totalize(t.Context(), userUUID, testM.UUID, groupUUID)
 		require.NoError(t, err)
 
-		var scoreR int
+		var scoreR float64
 		err = db.NewSelect().Model(&models.UserGroupsTests{
 			UserUUID:  userUUID,
 			GroupUUID: groupUUID,
@@ -323,7 +300,9 @@ func TestAnswer_Totalization(t *testing.T) {
 		}).Column("score").Scan(t.Context(), &scoreR)
 
 		require.NoError(t, err)
-		require.Equal(t, score, scoreR)
+		require.Condition(t, func() (success bool) {
+			return math.Abs(scoreR-float64(score)) < 0.1
+		})
 	})
 
 	t.Run("Totalize unknown", func(t *testing.T) {
@@ -351,7 +330,7 @@ func TestAnswer_Totalization(t *testing.T) {
 		err := r.Totalize(t.Context(), userUUID, testM.UUID, groupUUID)
 		require.NoError(t, err)
 
-		var scoreR int
+		var scoreR float64
 		err = db.NewSelect().Model(&models.UserGroupsTests{
 			UserUUID:  userUUID,
 			GroupUUID: groupUUID,
@@ -359,7 +338,9 @@ func TestAnswer_Totalization(t *testing.T) {
 		}).Column("score").Scan(t.Context(), &scoreR)
 
 		require.NoError(t, err)
-		require.Equal(t, score, scoreR)
+		require.Condition(t, func() (success bool) {
+			return math.Abs(scoreR-float64(score)) < 0.1
+		})
 
 		scoreN := mrand.Float32() * 256
 		var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}, Score: 1}
@@ -427,7 +408,7 @@ func TestAnswer_Totals(t *testing.T) {
 
 	_, err = db.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(t.Context())
 
-	score := mrand.IntN(256)
+	score := mrand.Float64() * 256
 	_, err = db.NewInsert().Model(&models.UserGroupsTests{
 		TestUUID:  testM.UUID,
 		GroupUUID: groupUUID,

@@ -25,3 +25,21 @@ func NotRunning(uuidGetter func() uuid.UUID) func(http.Handler) http.Handler {
 		})
 	}
 }
+
+func Running(uuidGetter func() uuid.UUID) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logger := logging.LoggerFromContext(r.Context())
+			logger = logger.With(slog.String("layer", "middleware"))
+
+			logger.Info("checking if test uuid is running")
+			if uuidGetter() != uuid.Nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			logger.Info("test uuid is not running")
+			w.WriteHeader(http.StatusLocked)
+		})
+	}
+}

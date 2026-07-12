@@ -21,7 +21,11 @@ var _ bun.BeforeAppendModelHook = (*Group)(nil)
 func (g *Group) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 	switch query.(type) {
 	case *bun.InsertQuery:
-		g.UUID = uuid.New() //compensating sqlite
+		var err error
+		g.UUID, err = uuid.NewV7() //compensating sqlite
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
