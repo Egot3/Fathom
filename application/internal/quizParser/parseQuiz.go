@@ -45,6 +45,8 @@ func ParseQuizByBytes(fileBytes []byte) (*quiz.Quiz, error) {
 		q.Body += line + " "
 
 	}
+	q.Body = strings.TrimSpace(q.Body)
+
 	// each quiz has 1 typeof question
 	switch q.Meta.Kind {
 	case quiz.Input:
