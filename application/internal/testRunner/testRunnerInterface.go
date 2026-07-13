@@ -19,4 +19,5 @@ type TestRunner interface {
 	Resume() error
 	Pause() error
 	CurrentTestUUID() uuid.UUID
+	Deadline() (*time.Time, error)
 }
