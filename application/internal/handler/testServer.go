@@ -703,7 +703,7 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 
 	test, err := c.testRepo.Test(ctx, req.TestUUID)
 	if err != nil {
-		logger.Info("couldn't get pathes for test",
+		logger.Error("couldn't get pathes for test",
 			slog.String("Error", err.Error()),
 		)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -716,6 +716,25 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	do, err := c.groupRepo.GroupsExist(ctx, req.GroupsUUIDs)
+	if err != nil {
+		logger.Error("couldn't check if groups exist",
+			slog.String("Error", err.Error()),
+		)
+
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't check if groups exist"})
+		return
+	}
+
+	if !do {
+		logger.Info("some of requested groups don't exist")
+
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "some of requested groups don't exist"})
+		return
+	}
+
 	quizPathes := make([]string, len(test.Quizzes))
 	quizUUIDs := make(uuid.UUIDs, len(test.Quizzes))
 	lo.ForEach(test.Quizzes, func(quiz models.Quiz, i int) {
@@ -723,7 +742,7 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 		quizUUIDs[i] = quiz.UUID
 	})
 
-	err = c.runner.Start(ctx, duration, quizPathes, quizUUIDs, test.UUID)
+	err = c.runner.Start(ctx, duration, quizPathes, quizUUIDs, req.GroupsUUIDs, test.UUID)
 	if err != nil {
 		logger.Error("unable to start test", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)                                            // all returned errors are user dependant anyways
@@ -1019,4 +1038,8 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 
 func (c *chiService) GetTestUUID() uuid.UUID {
 	return c.runner.CurrentTestUUID()
+}
+
+func (c *chiService) GetDeadline() (*time.Time, error) {
+	return c.runner.Deadline()
 }
