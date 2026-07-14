@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"mime"
 	"net/http"
 	"strconv"
@@ -782,6 +783,22 @@ func (c *chiService) GetQuizFromRunning(w http.ResponseWriter, r *http.Request) 
 		logger.Error("couldn't retrive quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		return
+	}
+
+	etag := strconv.FormatUint(quizC.Checksum, 10)
+	if deadline, err := c.runner.Deadline(); err == nil {
+
+		w.Header().Set("ETag", etag)
+		w.Header().Set("Cache-Control", fmt.Sprintf("private, max-age=%d, must-revalidate", int(math.Round(time.Until(*deadline).Hours()))))
+	} else {
+		logger.Warn("Couldn't cache quiz",
+			slog.String("Error", err.Error()),
+		)
+	}
+
+	if match := r.Header.Get("If-None-Match"); match == etag {
+		w.WriteHeader(http.StatusNotModified) // caching goes brr
 		return
 	}
 

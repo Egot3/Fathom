@@ -22,12 +22,13 @@ type Frontmatter struct {
 }
 
 type Quiz struct {
-	Meta    Frontmatter `json:"meta"`
-	Title   string      `json:"title"`
-	Body    string      `json:"body"`
-	UUID    uuid.UUID
-	Options QuizOptions `json:"options"`
-	Answer  QuizAnswers `json:"answers"`
+	Meta     Frontmatter `json:"meta"`
+	Title    string      `json:"title"`
+	Body     string      `json:"body"`
+	UUID     uuid.UUID
+	Checksum uint64
+	Options  QuizOptions `json:"options"`
+	Answer   QuizAnswers `json:"answers"`
 }
 
 func (q Quiz) EvaluateScore(answer QuizAnswers) float32 {
