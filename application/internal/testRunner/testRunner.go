@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
 	"github.com/samber/lo"
+	"github.com/zeebo/xxh3"
 )
 
 var (
@@ -75,11 +76,13 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		if err != nil {
 			return err
 		}
+
 		quiz, err := quizparser.ParseQuizByBytes(buf) //no reason to hold the lock when I/O and not writing to tr
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
 		quiz.UUID = quizUUIDs[i]
+		quiz.Checksum = xxh3.Hash(buf)
 		quizzes[i] = *quiz
 	}
 
