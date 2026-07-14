@@ -287,6 +287,14 @@ func (tr *concreteTestRunner) Resume() error {
 		return ErrRunnerInactive
 	}
 
+	if time.Until(tr.deadline) <= 0 {
+		tr.cancel()
+		tr.cancel = nil
+		tr.quizzes = nil
+		tr.isPaused = false
+		return ErrRunnerExpired
+	}
+
 	tr.timer.Reset(sincePause)
 
 	/* log.Printf("paused for: %v, now %v, new deadline: %v",
