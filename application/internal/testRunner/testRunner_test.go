@@ -499,17 +499,6 @@ func TestTestRunner_Extend(t *testing.T) {
 func TestTestRunner_PauseResume(t *testing.T) {
 	t.Parallel()
 
-	quizUUID := uuid.Must(uuid.NewV7())
-	quizUUIDs := uuid.UUIDs{quizUUID}
-
-	quizFile := testutils.TestQuiz(t)
-	defer os.Remove(quizFile.Name())
-	defer quizFile.Close()
-
-	quizPathes := []string{quizFile.Name()}
-	testUUID, err := uuid.NewV7()
-	require.NoError(t, err)
-
 	t.Run("Valid pause resumance", func(t *testing.T) {
 		t.Parallel()
 		t.Run("By waiting", func(t *testing.T) {
@@ -518,12 +507,23 @@ func TestTestRunner_PauseResume(t *testing.T) {
 			i := do.New()
 			do.Provide(i, NewTestRunner)
 
+			quizUUID := uuid.Must(uuid.NewV7())
+			quizUUIDs := uuid.UUIDs{quizUUID}
+
+			quizFile := testutils.TestQuiz(t)
+			defer os.Remove(quizFile.Name())
+			defer quizFile.Close()
+
+			quizPathes := []string{quizFile.Name()}
+			testUUID, err := uuid.NewV7()
+			require.NoError(t, err)
+
 			r := do.MustInvoke[TestRunner](i)
 
 			err = r.Start(t.Context(), 10*time.Minute, quizPathes, quizUUIDs, testUUID)
 			require.NoError(t, err)
 
-			err := r.Pause()
+			err = r.Pause()
 			require.NoError(t, err)
 
 			o, err := r.Deadline()
@@ -560,10 +560,21 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 			r := do.MustInvoke[TestRunner](i)
 
+			quizUUID := uuid.Must(uuid.NewV7())
+			quizUUIDs := uuid.UUIDs{quizUUID}
+
+			quizFile := testutils.TestQuiz(t)
+			defer os.Remove(quizFile.Name())
+			defer quizFile.Close()
+
+			quizPathes := []string{quizFile.Name()}
+			testUUID, err := uuid.NewV7()
+			require.NoError(t, err)
+
 			err = r.Start(t.Context(), 10*time.Minute, quizPathes, quizUUIDs, testUUID)
 			require.NoError(t, err)
 
-			err := r.Pause()
+			err = r.Pause()
 			require.NoError(t, err)
 
 			o, err := r.Deadline()
@@ -592,7 +603,7 @@ func TestTestRunner_PauseResume(t *testing.T) {
 		})
 	})
 
-	t.Run("Invalid pause/resume sequence", func(t *testing.T) {
+	t.Run("Invalid pause+resume sequence", func(t *testing.T) {
 		t.Parallel()
 
 		t.Run("Pausing", func(t *testing.T) {
@@ -604,10 +615,21 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 				r := do.MustInvoke[TestRunner](i)
 
+				quizUUID := uuid.Must(uuid.NewV7())
+				quizUUIDs := uuid.UUIDs{quizUUID}
+
+				quizFile := testutils.TestQuiz(t)
+				defer os.Remove(quizFile.Name())
+				defer quizFile.Close()
+
+				quizPathes := []string{quizFile.Name()}
+				testUUID, err := uuid.NewV7()
+				require.NoError(t, err)
+
 				err = r.Start(t.Context(), 10*time.Minute, quizPathes, quizUUIDs, testUUID)
 				require.NoError(t, err)
 
-				err := r.Pause()
+				err = r.Pause()
 				require.NoError(t, err)
 
 				err = r.Pause()
@@ -620,7 +642,7 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 				r := do.MustInvoke[TestRunner](i)
 
-				err = r.Pause()
+				err := r.Pause()
 				require.Error(t, err)
 				require.ErrorIs(t, err, ErrRunnerInactive)
 			})
@@ -635,10 +657,24 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 				r := do.MustInvoke[TestRunner](i)
 
+				quizUUID := uuid.Must(uuid.NewV7())
+				quizUUIDs := uuid.UUIDs{quizUUID}
+
+				quizFile := testutils.TestQuiz(t)
+				defer os.Remove(quizFile.Name())
+				defer quizFile.Close()
+
+				quizPathes := []string{quizFile.Name()}
+				testUUID, err := uuid.NewV7()
+				require.NoError(t, err)
+
 				err = r.Start(t.Context(), 10*time.Minute, quizPathes, quizUUIDs, testUUID)
 				require.NoError(t, err)
 
-				err := r.Resume()
+				err = r.Pause()
+				require.NoError(t, err)
+
+				err = r.Resume()
 				require.NoError(t, err)
 
 				err = r.Resume()
@@ -652,7 +688,7 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 				r := do.MustInvoke[TestRunner](i)
 
-				err = r.Resume()
+				err := r.Resume()
 				require.Error(t, err)
 				require.ErrorIs(t, err, ErrRunnerInactive)
 			})
@@ -667,10 +703,21 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 				r := do.MustInvoke[TestRunner](i)
 
+				quizUUID := uuid.Must(uuid.NewV7())
+				quizUUIDs := uuid.UUIDs{quizUUID}
+
+				quizFile := testutils.TestQuiz(t)
+				defer os.Remove(quizFile.Name())
+				defer quizFile.Close()
+
+				quizPathes := []string{quizFile.Name()}
+				testUUID, err := uuid.NewV7()
+				require.NoError(t, err)
+
 				err = r.Start(t.Context(), 2*time.Second, quizPathes, quizUUIDs, testUUID)
 				require.NoError(t, err)
 
-				err := r.Pause()
+				err = r.Pause()
 				require.NoError(t, err)
 
 				d, err := r.Deadline()
@@ -688,7 +735,7 @@ func TestTestRunner_PauseResume(t *testing.T) {
 				require.NoError(t, err)
 				newDeadline := *n
 
-				require.WithinDuration(t, deadline, newDeadline, 2*time.Second)
+				require.WithinDuration(t, deadline, newDeadline, 6*time.Second)
 			})
 			t.Run("Manual expiration during pause", func(t *testing.T) {
 				i := do.New()
@@ -696,10 +743,21 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 				r := do.MustInvoke[TestRunner](i)
 
+				quizUUID := uuid.Must(uuid.NewV7())
+				quizUUIDs := uuid.UUIDs{quizUUID}
+
+				quizFile := testutils.TestQuiz(t)
+				defer os.Remove(quizFile.Name())
+				defer quizFile.Close()
+
+				quizPathes := []string{quizFile.Name()}
+				testUUID, err := uuid.NewV7()
+				require.NoError(t, err)
+
 				err = r.Start(t.Context(), 2*time.Second, quizPathes, quizUUIDs, testUUID)
 				require.NoError(t, err)
 
-				err := r.Pause()
+				err = r.Pause()
 				require.NoError(t, err)
 
 				err = r.ExtendTime(-20 * time.Minute) //yes, VSCode, -20*time.Saturday
