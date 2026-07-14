@@ -1060,3 +1060,33 @@ func (c *chiService) GetTestUUID() uuid.UUID {
 func (c *chiService) GetDeadline() (*time.Time, error) {
 	return c.runner.Deadline()
 }
+
+func (c *chiService) GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	w.Header().Set("Content-Type", "application/json")
+
+	uuids, hash := c.runner.GetAll()
+
+	etag := strconv.FormatUint(hash, 10)
+	if deadline, err := c.runner.Deadline(); err == nil {
+
+		w.Header().Set("ETag", etag)
+		w.Header().Set("Cache-Control", fmt.Sprintf("private, max-age=%d, must-revalidate", int(math.Round(time.Until(*deadline).Hours()))))
+	} else {
+		logger.Warn("Couldn't cache quiz",
+			slog.String("Error", err.Error()),
+		)
+	}
+
+	if match := r.Header.Get("If-None-Match"); match == etag {
+		w.WriteHeader(http.StatusNotModified) // caching goes brrrrr
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contracts.GetQuizzesUUIDs{
+		UUIDs: uuids,
+	})
+}

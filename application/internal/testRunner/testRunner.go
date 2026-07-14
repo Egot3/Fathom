@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/egot3/fathom/internal/hashutils"
 	"github.com/egot3/fathom/internal/quiz"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
 	"github.com/google/uuid"
@@ -323,4 +324,18 @@ func (tr *concreteTestRunner) Deadline() (*time.Time, error) {
 
 func (tr *concreteTestRunner) AllowedGroupUUIDs() uuid.UUIDs {
 	return tr.GroupUUIDs
+}
+
+func (tr *concreteTestRunner) GetAll() (uuid.UUIDs, uint64) {
+	tr.mu.RLock()
+	quizzesLocal := tr.quizzes
+	tr.mu.RUnlock()
+
+	ultimateChecksum := make([]uint64, len(quizzesLocal))
+	quizzes := lo.Map(quizzesLocal, func(quiz quiz.Quiz, _ int) uuid.UUID {
+		ultimateChecksum = append(ultimateChecksum, quiz.Checksum)
+		return quiz.UUID
+	})
+
+	return quizzes, hashutils.HashHashes(ultimateChecksum)
 }
