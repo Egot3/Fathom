@@ -73,6 +73,7 @@ type TestService interface {
 	ListTests(w http.ResponseWriter, r *http.Request)
 	ExportTest(w http.ResponseWriter, r *http.Request)
 	ImportTest(w http.ResponseWriter, r *http.Request)
+	GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Request)
 }
 
 type TotalService interface {

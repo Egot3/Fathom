@@ -20,5 +20,7 @@ type TestRunner interface {
 	Pause() error
 	CurrentTestUUID() uuid.UUID
 	Deadline() (*time.Time, error)
+
 	AllowedGroupUUIDs() uuid.UUIDs
+	GetAll() (uuid.UUIDs, uint64)
 }
