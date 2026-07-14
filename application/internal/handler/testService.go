@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/egot3/fathom/internal/database/repositories/group"
 	"github.com/egot3/fathom/internal/database/repositories/quiz"
@@ -92,6 +94,8 @@ type Service interface {
 	TestService
 	TotalService
 	GetTestUUID() uuid.UUID
+	AllowedToTest(ctx context.Context, userUUID uuid.UUID) (bool, error)
+	GetDeadline() (*time.Time, error)
 }
 
 func NewTestService(i do.Injector) (Service, error) {

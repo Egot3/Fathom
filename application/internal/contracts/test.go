@@ -32,8 +32,9 @@ type RemoveQuizzesRequest struct {
 }
 
 type StartRequest struct {
-	Duration string    `json:"duration"`
-	TestUUID uuid.UUID `json:"test_uuids"`
+	Duration    string     `json:"duration"`
+	TestUUID    uuid.UUID  `json:"test_uuids"`
+	GroupsUUIDs uuid.UUIDs `json:"group_uuids"`
 }
 
 type GetQuizFromRunningResponse struct {

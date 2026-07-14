@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -479,4 +480,8 @@ func (c *chiService) ListGroups(w http.ResponseWriter, r *http.Request) {
 		Page:   pageInt,
 		Size:   sizeInt,
 	})
+}
+
+func (c *chiService) AllowedToTest(ctx context.Context, userUUID uuid.UUID) (bool, error) {
+	return c.groupRepo.IsInAny(ctx, c.runner.AllowedGroupUUIDs(), userUUID)
 }

@@ -1088,7 +1088,7 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		err := r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, testUUID)
+		err := r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
 		require.NoError(t, err)
 
 		_, err = db.NewInsert().Model(&models.GroupsUsers{
@@ -1221,7 +1221,7 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		err := r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, testUUID)
+		err := r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
 		require.NoError(t, err)
 
 		_, err = db.NewInsert().Model(&models.GroupsUsers{
@@ -1329,7 +1329,7 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		err = r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, testUUID)
+		err = r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
 		require.NoError(t, err)
 
 		_, err = db.NewInsert().Model(&models.GroupsUsers{
@@ -1457,7 +1457,7 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		err = r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, testUUID)
+		err = r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
 		require.NoError(t, err)
 
 		_, err = db.NewInsert().Model(&models.GroupsUsers{

@@ -48,6 +48,7 @@ type concreteTestRunner struct {
 	deadline   time.Time
 	pausedAt   time.Time
 	TestUUID   uuid.UUID
+	GroupUUIDs uuid.UUIDs
 }
 
 func NewTestRunner(i do.Injector) (TestRunner, error) {
@@ -60,7 +61,7 @@ func (tr *concreteTestRunner) CurrentTestUUID() uuid.UUID {
 	return tr.TestUUID
 }
 
-func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs, testUUID uuid.UUID) error {
+func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID) error {
 	if len(quizPaths) != len(quizUUIDs) {
 		return ErrBadQuizzes
 	}
@@ -315,4 +316,8 @@ func (tr *concreteTestRunner) Deadline() (*time.Time, error) {
 	}
 
 	return &tr.deadline, nil
+}
+
+func (tr *concreteTestRunner) AllowedGroupUUIDs() uuid.UUIDs {
+	return tr.GroupUUIDs
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type TestRunner interface {
-	Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs, testUUID uuid.UUID) error
+	Start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID) error
 	Get(quizUUID uuid.UUID) (*quiz.Quiz, error)
 	cleanup(gen uint64)
 	Stop()
@@ -20,4 +20,5 @@ type TestRunner interface {
 	Pause() error
 	CurrentTestUUID() uuid.UUID
 	Deadline() (*time.Time, error)
+	AllowedGroupUUIDs() uuid.UUIDs
 }
