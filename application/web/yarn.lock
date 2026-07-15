@@ -61,7 +61,7 @@
 
 "@internationalized/date@3.12.0":
   version "3.12.0"
-  resolved "https://registry.yarnpkg.com/@internationalized/date/-/date-3.12.0.tgz#cdcd12adf36e1ccb05ec7b964f4857e7ec62137d"
+  resolved "https://registry.npmjs.org/@internationalized/date/-/date-3.12.0.tgz"
   integrity sha512-/PyIMzK29jtXaGU23qTvNZxvBXRtKbNnGDFD+PY6CZw/Y8Ex8pFUzkuCJCG9aOqmShjqhS9mPqP6Dk5onQY8rQ==
   dependencies:
     "@swc/helpers" "^0.5.0"
@@ -210,12 +210,12 @@
 
 "@skeletonlabs/skeleton-common@4.15.2":
   version "4.15.2"
-  resolved "https://registry.yarnpkg.com/@skeletonlabs/skeleton-common/-/skeleton-common-4.15.2.tgz#dcd3ab8d7f174a50a407a1effbfffcd070b56672"
+  resolved "https://registry.npmjs.org/@skeletonlabs/skeleton-common/-/skeleton-common-4.15.2.tgz"
   integrity sha512-y7KZn++Av8UHdoeaaguQ7zIS1HlK7Y5jyPDnHy65wJ60iS97fMtQV0kGhqVoYCWhor+xrjbAFjWtaPOPPDEMYA==
 
 "@skeletonlabs/skeleton-svelte@^4.15.2":
   version "4.15.2"
-  resolved "https://registry.yarnpkg.com/@skeletonlabs/skeleton-svelte/-/skeleton-svelte-4.15.2.tgz#64bea345881c2ac90f4eb1ffe930c678b8d27ac9"
+  resolved "https://registry.npmjs.org/@skeletonlabs/skeleton-svelte/-/skeleton-svelte-4.15.2.tgz"
   integrity sha512-vZkRhR701EOHVXVKh/NFRSY8D9LPBvmdNFdtfgqO7TEg77sypJUvERl2dxErTLY1QjVklVpjsHRCTaSLn+1Ntg==
   dependencies:
     "@internationalized/date" "3.12.0"
@@ -250,7 +250,7 @@
 
 "@skeletonlabs/skeleton@^4.15.2":
   version "4.15.2"
-  resolved "https://registry.yarnpkg.com/@skeletonlabs/skeleton/-/skeleton-4.15.2.tgz#23624e6a7aca413ed5dc5fa5bff0a63573cba77e"
+  resolved "https://registry.npmjs.org/@skeletonlabs/skeleton/-/skeleton-4.15.2.tgz"
   integrity sha512-5O23Py76nw56aoieV2b2T7MJ6xS0DwDjUULpwLnCXxXOnmzADEoWoQxb/ABbqg04IMOygtRzK3HO22I1+kFsog==
 
 "@sveltejs/acorn-typescript@^1.0.10":
@@ -275,14 +275,21 @@
 
 "@swc/helpers@^0.5.0":
   version "0.5.23"
-  resolved "https://registry.yarnpkg.com/@swc/helpers/-/helpers-0.5.23.tgz#19287d0d86d962b111376039a50c792902c9a86a"
+  resolved "https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.23.tgz"
   integrity sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw==
   dependencies:
     tslib "^2.8.0"
 
+"@tailwindcss/forms@^0.5.11":
+  version "0.5.11"
+  resolved "https://registry.yarnpkg.com/@tailwindcss/forms/-/forms-0.5.11.tgz#e77039e96fa7b87c3d001a991f77f9418e666700"
+  integrity sha512-h9wegbZDPurxG22xZSoWtdzc41/OlNEUQERNqI/0fOwa2aVlWGu7C35E/x6LDyD3lgtztFSSjKZyuVM0hxhbgA==
+  dependencies:
+    mini-svg-data-uri "^1.2.3"
+
 "@tailwindcss/node@4.3.2":
   version "4.3.2"
-  resolved "https://registry.yarnpkg.com/@tailwindcss/node/-/node-4.3.2.tgz#2ba563b05ff662b9172c9645d78a5edd59f96eb3"
+  resolved "https://registry.npmjs.org/@tailwindcss/node/-/node-4.3.2.tgz"
   integrity sha512-yWP/sqEcBLaD8JuA6zNwxoYKr75qxTioYwlRwekj5Jr/I5GXnoJfjetH/psLUIv74cYTH2lBUEzBkinthoYcBg==
   dependencies:
     "@jridgewell/remapping" "^2.3.5"
@@ -330,7 +337,7 @@
 
 "@tailwindcss/oxide-linux-x64-gnu@4.3.2":
   version "4.3.2"
-  resolved "https://registry.yarnpkg.com/@tailwindcss/oxide-linux-x64-gnu/-/oxide-linux-x64-gnu-4.3.2.tgz#424276287610607303a35f52f2a172b95af4898a"
+  resolved "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-gnu/-/oxide-linux-x64-gnu-4.3.2.tgz"
   integrity sha512-kqCZpSKOBEJO4mz7OqWoofBZeXTAwaVGPj0ErAj7CojmhKpWVWVOnrt9dE8odoIraZq4oj3ausM37kXi+Tow8w==
 
 "@tailwindcss/oxide-linux-x64-musl@4.3.2":
@@ -362,7 +369,7 @@
 
 "@tailwindcss/oxide@4.3.2":
   version "4.3.2"
-  resolved "https://registry.yarnpkg.com/@tailwindcss/oxide/-/oxide-4.3.2.tgz#82157fb0d5bebf1188234855c5b7dc754da54065"
+  resolved "https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.3.2.tgz"
   integrity sha512-z8ZgnzX8gdNoWLBLqBPoh/sjnxkwvf9ZuWjnO0l0yIzbLa5/9S+eC5QxGZKRobVHIC3/1BoMWjHblqWjcgFgag==
   optionalDependencies:
     "@tailwindcss/oxide-android-arm64" "4.3.2"
@@ -380,7 +387,7 @@
 
 "@tailwindcss/vite@^4.3.2":
   version "4.3.2"
-  resolved "https://registry.yarnpkg.com/@tailwindcss/vite/-/vite-4.3.2.tgz#35787e4d450a6b2430693245483441cfd78bf612"
+  resolved "https://registry.npmjs.org/@tailwindcss/vite/-/vite-4.3.2.tgz"
   integrity sha512-eHpMeX4JXfVNJDEcsouTeCBubJBTcTLigeaw/NTUW6PB5ATKKXdyonnXgTBX2VuRbjz1hjfz6C5XAhr52ImQXA==
   dependencies:
     "@tailwindcss/node" "4.3.2"
@@ -418,7 +425,7 @@
 
 "@zag-js/accordion@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/accordion/-/accordion-1.39.1.tgz#e91f07f772111d6487591ee6408de7eb5eeac681"
+  resolved "https://registry.npmjs.org/@zag-js/accordion/-/accordion-1.39.1.tgz"
   integrity sha512-GA3m7gRTm3weSe1eMlHIsTNztcjZ6joIaRgxxKil7q/UX0xIVVGDy0aCr6oo7FAuoMiOOBVurYXILpFZ30nOXA==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -429,26 +436,26 @@
 
 "@zag-js/anatomy@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/anatomy/-/anatomy-1.39.1.tgz#b94c17c878ce6d0ee765e24ebdf97c30e3e84e90"
+  resolved "https://registry.npmjs.org/@zag-js/anatomy/-/anatomy-1.39.1.tgz"
   integrity sha512-p2iFAs2pVQgv5iCDAftA7g9Z/fUYXW94dRIGk415TSbkp/YDENydm/JtRoNctp302UIx4Eeuc5QBR+7h5kuISA==
 
 "@zag-js/aria-hidden@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/aria-hidden/-/aria-hidden-1.39.1.tgz#921cd316a936a9083ff3297fb55a3ac6db37aaf0"
+  resolved "https://registry.npmjs.org/@zag-js/aria-hidden/-/aria-hidden-1.39.1.tgz"
   integrity sha512-wiwcz3N086qBMEU3VKfHhcvGm6Jm1PIcDXys/jEqiKPtHoYZhDip0n0cPOoasss/A1oS39QFVdk3WpLXGu3Izw==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
 
 "@zag-js/auto-resize@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/auto-resize/-/auto-resize-1.39.1.tgz#fb5e824b28bf8abc2e7d81aee2dfee3181f7ae66"
+  resolved "https://registry.npmjs.org/@zag-js/auto-resize/-/auto-resize-1.39.1.tgz"
   integrity sha512-ditIo9mW7fapq+4yx3/8hMpMZlWaoOy66EOzUz8dSVqnxnTWAjnTICu/9zFh8pkWerlzGTtDOJPP1oZ8S/rgVg==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
 
 "@zag-js/avatar@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/avatar/-/avatar-1.39.1.tgz#f764959c78ebf51bd8a994fbd8da4616d915a36c"
+  resolved "https://registry.npmjs.org/@zag-js/avatar/-/avatar-1.39.1.tgz"
   integrity sha512-LWrgJ0bebnXPSL+uehA9z6BlCD/MZEOQBJqH/F2QQFSAAZXUUDKtzVDmc+UtwjDsHXqqTghi+v2atQJHNMcJ2g==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -459,7 +466,7 @@
 
 "@zag-js/carousel@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/carousel/-/carousel-1.39.1.tgz#ff79e682d759e6e6bfd3038b2eb2dcebd459f2cb"
+  resolved "https://registry.npmjs.org/@zag-js/carousel/-/carousel-1.39.1.tgz"
   integrity sha512-5z5z3IldUgZ/R+KZLNQDoJFNTXzYd28YOmgfWH61Vvyv+RarX8kwZW8ajW/fNiqcWXyhW3/VMU0lArrfjbQVtQ==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -471,7 +478,7 @@
 
 "@zag-js/collapsible@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/collapsible/-/collapsible-1.39.1.tgz#3b8b685db6ccc410e36a7e2958b6db68bac69368"
+  resolved "https://registry.npmjs.org/@zag-js/collapsible/-/collapsible-1.39.1.tgz"
   integrity sha512-Zgccg/t7M8i0JVwZPPgW7XB7kGhTO475hsmwkF/8CYLqBBckVDHUARp2we24hENCm/98eez6R0eDEmE+tldFWA==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -482,14 +489,14 @@
 
 "@zag-js/collection@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/collection/-/collection-1.39.1.tgz#98a80b1e79e3a7c39c3c89e9172cb6f45f7de7c4"
+  resolved "https://registry.npmjs.org/@zag-js/collection/-/collection-1.39.1.tgz"
   integrity sha512-fyOyKmP7MRo0/U8mBmB7KgHRXHhXP27LCcasy3x+qTAQtuEfYG1EPhKuj07oBWlX/2qfcKYn2R3YopHcqFcCiA==
   dependencies:
     "@zag-js/utils" "1.39.1"
 
 "@zag-js/combobox@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/combobox/-/combobox-1.39.1.tgz#615f7a8230824c660546a34a1735f3c348366fdc"
+  resolved "https://registry.npmjs.org/@zag-js/combobox/-/combobox-1.39.1.tgz"
   integrity sha512-fmStpG+k4xrxCzqUX0ssnOMeoSietWm5ir3qmEZcagzNqNycAXMvOELAIeyXi87Kut6aDGhxLOV7o395HVXl/w==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -505,7 +512,7 @@
 
 "@zag-js/core@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/core/-/core-1.39.1.tgz#f2429023b6d367936e2eb053e53312575db08c0c"
+  resolved "https://registry.npmjs.org/@zag-js/core/-/core-1.39.1.tgz"
   integrity sha512-Yp0r49QLYXe2j7fgyAiilH4umXFydCnr5hcRDwJU+sxvUAlq00JQIJIEK2pT6k8cJiNNsFEV5WkOX7jsqpAX2A==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
@@ -513,7 +520,7 @@
 
 "@zag-js/date-picker@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/date-picker/-/date-picker-1.39.1.tgz#517a4c9a6c01b6ba1876e41b1896e690339360db"
+  resolved "https://registry.npmjs.org/@zag-js/date-picker/-/date-picker-1.39.1.tgz"
   integrity sha512-t9q1H0aZQJkbzKTR2Bn5vMwaoFoirxekiSxw8ju0F0vr4Kg4BJ9yueOQm5I2wALKnJbZu4Ua5MgzlrDF3CQt3A==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -528,12 +535,12 @@
 
 "@zag-js/date-utils@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/date-utils/-/date-utils-1.39.1.tgz#e4222288ece0c3eefb9c372e8e529400c29cba2c"
+  resolved "https://registry.npmjs.org/@zag-js/date-utils/-/date-utils-1.39.1.tgz"
   integrity sha512-i4SvBhru2Yz/zsHT0XvyFhf4a+pAKYkWXeVfU0RvF2S6mPTfgaMFF9ZNPq5Sy8K31EtAa6AVXcybYaYnibn1FA==
 
 "@zag-js/dialog@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/dialog/-/dialog-1.39.1.tgz#20bab9d6a47f1deff09545fda7a99018605ffdf2"
+  resolved "https://registry.npmjs.org/@zag-js/dialog/-/dialog-1.39.1.tgz"
   integrity sha512-q+HTmfuRDRZthln9mb7i52wdltQOZlw3+nw3a2uygEe9xuEtHBwUz31XJzkn2UWQqhAt7cC39OwykhNLKrfkqA==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -548,7 +555,7 @@
 
 "@zag-js/dismissable@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/dismissable/-/dismissable-1.39.1.tgz#6c11b1d502fa27850c475acfdc18911482adbffb"
+  resolved "https://registry.npmjs.org/@zag-js/dismissable/-/dismissable-1.39.1.tgz"
   integrity sha512-7/soy93Ersd5qedhSL/+CDcZ9gNTQV0ooDcqKtM8b4IxwD4rgWwGsewJY+tbKmOqaZobwa0YcWV2+YGgI23ESw==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
@@ -557,14 +564,14 @@
 
 "@zag-js/dom-query@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/dom-query/-/dom-query-1.39.1.tgz#4181356dbe5797395ce8594b03e2edd19d29109d"
+  resolved "https://registry.npmjs.org/@zag-js/dom-query/-/dom-query-1.39.1.tgz"
   integrity sha512-k01aXeUWLyJfB61CODaXj4PLhYmVpnVMFrC+3nk/XCn1MW7my8L/8KVg0m4W8n+X9MhpaLWsZDmK/dwED/3qSw==
   dependencies:
     "@zag-js/types" "1.39.1"
 
 "@zag-js/file-upload@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/file-upload/-/file-upload-1.39.1.tgz#38953665f16e3949b74916ef97855b20ff8cab46"
+  resolved "https://registry.npmjs.org/@zag-js/file-upload/-/file-upload-1.39.1.tgz"
   integrity sha512-cErPOnPwPyneUXpelsfm75DKn0/4SI8aqQnlbrqo522PEqAQyDfDdBsqebGgKWG3F0A++kKFp9LO9A5zCrw5gA==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -577,14 +584,14 @@
 
 "@zag-js/file-utils@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/file-utils/-/file-utils-1.39.1.tgz#49757dedcc95538f245bca076ff541a9de56b85c"
+  resolved "https://registry.npmjs.org/@zag-js/file-utils/-/file-utils-1.39.1.tgz"
   integrity sha512-ll/W5o74SMmoAS+l7PkmmGjPj4PLCSG/cwQh1Y/+LpaSev0YiR3Nk2OzRIIPtm3NivYVxKGawaCOf1RvT/82LQ==
   dependencies:
     "@zag-js/i18n-utils" "1.39.1"
 
 "@zag-js/floating-panel@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/floating-panel/-/floating-panel-1.39.1.tgz#f704b61230a102c606ad0c34747ef05b061ea53d"
+  resolved "https://registry.npmjs.org/@zag-js/floating-panel/-/floating-panel-1.39.1.tgz"
   integrity sha512-IfPbf3pwJGqBWHec/rPzpdPjfMCLed59LlEophvRy49FEdksv8eN6nr9DXl2wWZEoQhH99scXfLMbtEZsPsFWg==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -598,28 +605,28 @@
 
 "@zag-js/focus-trap@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/focus-trap/-/focus-trap-1.39.1.tgz#fc52ec6cbaec0cf12b519d17b0abdaaefcf3320d"
+  resolved "https://registry.npmjs.org/@zag-js/focus-trap/-/focus-trap-1.39.1.tgz"
   integrity sha512-2ZzVefHMotvtxUo/gP4R45Szw/EPaPkTKEHaug6/il62SPDbkFODF+5r1zXyLbLuwCHq0apvQasg/ONLihwlXw==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
 
 "@zag-js/focus-visible@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/focus-visible/-/focus-visible-1.39.1.tgz#0319e109d7870a50aa7d1c6b2e3ca7a093f50754"
+  resolved "https://registry.npmjs.org/@zag-js/focus-visible/-/focus-visible-1.39.1.tgz"
   integrity sha512-iEuTOYHE8HRn/7ULC9c9BTTWo0C0MJRCbYVxbh/d7v8qAuq4CS76pdfceNo3KeWbb968T+yiG6q0AjiHsr8IOw==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
 
 "@zag-js/i18n-utils@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/i18n-utils/-/i18n-utils-1.39.1.tgz#c6b19fd2c6f2c683363a5e778be98b7fc4985382"
+  resolved "https://registry.npmjs.org/@zag-js/i18n-utils/-/i18n-utils-1.39.1.tgz"
   integrity sha512-TKRLQQlHgJ4cxsHo3tZPtbFjGu9m1UPtfezRGFKq7A8czhdqRhaCpaWF849cd6dI7x6rWvvTan858gOFpyANnQ==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
 
 "@zag-js/interact-outside@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/interact-outside/-/interact-outside-1.39.1.tgz#4ecf82b4515d72c0285a8a04735117c406b4c138"
+  resolved "https://registry.npmjs.org/@zag-js/interact-outside/-/interact-outside-1.39.1.tgz"
   integrity sha512-LnSbA+txMsFmzNPn84QKH01x2yJv4At/eKHn6rT2PyxXkJQIh8PvCTS3zVz4Syw11cmhcXt2eRwhzx8yImV92w==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
@@ -627,7 +634,7 @@
 
 "@zag-js/listbox@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/listbox/-/listbox-1.39.1.tgz#f9f6f8f8367b66ce15012dd7ede78a6840c1a061"
+  resolved "https://registry.npmjs.org/@zag-js/listbox/-/listbox-1.39.1.tgz"
   integrity sha512-Mz0UpdXobdTQTyjM+Avgi7pDVB2dKyaUHqw3TloeleQL3VwTqClclkwHXtLYYE+oXa0zOet37wI9mzfaYx9iZQ==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -640,12 +647,12 @@
 
 "@zag-js/live-region@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/live-region/-/live-region-1.39.1.tgz#fe67a117fa5493d39b4bfc18c447f78de4fb0837"
+  resolved "https://registry.npmjs.org/@zag-js/live-region/-/live-region-1.39.1.tgz"
   integrity sha512-E7YNd0QGzJ2n1ZhnI2smv+klwifsNRf9QaDCx7quVJCVYywpupsBK4R25KN75S1z8XaK+jAy6HYKj8DIhYjYeg==
 
 "@zag-js/menu@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/menu/-/menu-1.39.1.tgz#4270e51be6fb35340e2dec3af39bacaaab76d333"
+  resolved "https://registry.npmjs.org/@zag-js/menu/-/menu-1.39.1.tgz"
   integrity sha512-bRDGLGkiGhzNtORBXkbBQV/xp2zEkwpYIepfWCaUoFwKUmx7GGnShTBFxJyq0u2D4IkS9GOwcqm20EhMv6V+TA==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -660,7 +667,7 @@
 
 "@zag-js/pagination@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/pagination/-/pagination-1.39.1.tgz#2cc77157490e1bcd0fef4344115fd7cc2de0a58b"
+  resolved "https://registry.npmjs.org/@zag-js/pagination/-/pagination-1.39.1.tgz"
   integrity sha512-3Q1B9/g3ajhvXjuGffJ7otyXcXK5+uhdbE5A9CZa4bsW3pf25L9Cp+ZAjdXQMDc8T4jhZJAKFmDJfQgtr1oEIw==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -671,7 +678,7 @@
 
 "@zag-js/popover@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/popover/-/popover-1.39.1.tgz#d21a995d8bce9fa5e9c428a749e3e6c9899d4139"
+  resolved "https://registry.npmjs.org/@zag-js/popover/-/popover-1.39.1.tgz"
   integrity sha512-aO3ExO/O7Sa3ovdozFI6SujhNOpYdCca4bImnAiovDL8DY8zN3UNQebu35IQvw9/aRsx9VKSJL1AqzJJUImFRw==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -687,7 +694,7 @@
 
 "@zag-js/popper@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/popper/-/popper-1.39.1.tgz#9d355fbfaa2c882ea857542e7d6d4e3a5e9ac768"
+  resolved "https://registry.npmjs.org/@zag-js/popper/-/popper-1.39.1.tgz"
   integrity sha512-h0UMY2dXJNfM3OvMQ9t9LzlmwvpCgjloz2IvU1txY3r32UIy7ve1H70zkKagLtLRxFTuWmhumYUPULPo/6a1DA==
   dependencies:
     "@floating-ui/dom" "^1.7.6"
@@ -696,7 +703,7 @@
 
 "@zag-js/progress@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/progress/-/progress-1.39.1.tgz#52761c9c4601fd2752eee31d71f0d25cbf8550b7"
+  resolved "https://registry.npmjs.org/@zag-js/progress/-/progress-1.39.1.tgz"
   integrity sha512-1IHyOw8DqPs3YH149Oj7W9a5oEfY5pc9GAVOPGbzYxVK/W8d/NIjVxa565I3J5cDJ0s6z3FrMSXMWUwr1ML4tw==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -707,7 +714,7 @@
 
 "@zag-js/radio-group@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/radio-group/-/radio-group-1.39.1.tgz#21d6c1603e8518d43dd091017177a41e50647a4e"
+  resolved "https://registry.npmjs.org/@zag-js/radio-group/-/radio-group-1.39.1.tgz"
   integrity sha512-+sC9xcAyY/GbY+8HpKlbPgSyOxBLUSB18s6fe6K1wdmyom4PM0nmhLouuxisbFZYHOyfQwAOMo+ainRENB2hzQ==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -719,7 +726,7 @@
 
 "@zag-js/rating-group@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/rating-group/-/rating-group-1.39.1.tgz#22a2ec2a55313138cb110d932e8a11024c4517b5"
+  resolved "https://registry.npmjs.org/@zag-js/rating-group/-/rating-group-1.39.1.tgz"
   integrity sha512-IfdxWmM+3zpztx/HcE3bWob72sZNb1+BzK4tSySLVyjeqs8OzLDzrCbKqt10DmibnNOvpbjbq4eX4P5hV9YN7Q==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -730,26 +737,26 @@
 
 "@zag-js/rect-utils@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/rect-utils/-/rect-utils-1.39.1.tgz#3030d1e5378885a3fbe5cdecd1c54c5c255142a9"
+  resolved "https://registry.npmjs.org/@zag-js/rect-utils/-/rect-utils-1.39.1.tgz"
   integrity sha512-5gJ0PzeUme76xTWG+4XythWgmGgDKV4XAxEUaB3KKDtXgjDHwtu7PwKLIzFtlaaSf/U23PY+RNVBVCYg1GmZog==
 
 "@zag-js/remove-scroll@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/remove-scroll/-/remove-scroll-1.39.1.tgz#63b904b84fabc01c00509940371ab84575b1f946"
+  resolved "https://registry.npmjs.org/@zag-js/remove-scroll/-/remove-scroll-1.39.1.tgz"
   integrity sha512-uZfPR3Gl9sQFo+tJ7kbuwsBhw+RIZwWFnMDgrz5LIwSNGN6hsyC4HGOxe29clkWQ2X2AjqqmEMETwgX7Jg+wxA==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
 
 "@zag-js/scroll-snap@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/scroll-snap/-/scroll-snap-1.39.1.tgz#9fb6c28bea4251b5fcde84c2fa7973dd4ea704ca"
+  resolved "https://registry.npmjs.org/@zag-js/scroll-snap/-/scroll-snap-1.39.1.tgz"
   integrity sha512-AzCc8MAAVqkiK5Y0cJZ24OIBZDQrUmEexACMuR6M5yZmlcEbS0EA/d6Wq+LSR1JMVTD4B+UwcMj1D3vJQ90ZTw==
   dependencies:
     "@zag-js/dom-query" "1.39.1"
 
 "@zag-js/slider@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/slider/-/slider-1.39.1.tgz#523a42b7b620af8a121869816f2c094115e9af00"
+  resolved "https://registry.npmjs.org/@zag-js/slider/-/slider-1.39.1.tgz"
   integrity sha512-OEA9R7Ly5cw+6ANofnMpuHH3rAo8gZEnxy7iEwePu11pq2RCnt8DSj2V+uqU+dTq15Uup1LSzRgJfTnAC4Z85A==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -760,7 +767,7 @@
 
 "@zag-js/steps@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/steps/-/steps-1.39.1.tgz#b75494bac5abc49e5fa1c0bf8848146389d99d07"
+  resolved "https://registry.npmjs.org/@zag-js/steps/-/steps-1.39.1.tgz"
   integrity sha512-DC6swMpwITTB0DyCSxlpWyPNSUN9ul9jz4N6aAyQ0L1IK/noF/YYTZRAcXNSRzN4iutO/2mFGGbwGq/oVf+gPA==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -771,14 +778,14 @@
 
 "@zag-js/store@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/store/-/store-1.39.1.tgz#3e8819e45435815c913feeda1281ecdf6056254c"
+  resolved "https://registry.npmjs.org/@zag-js/store/-/store-1.39.1.tgz"
   integrity sha512-zFpwP4lhiBVD9987rwAfZNVa2/f/xx4mhbCE1EEw31zxLAozY2jONeJ3UzPP05VbzKlRHBcvkaXAJQQGegTwFA==
   dependencies:
     proxy-compare "3.0.1"
 
 "@zag-js/svelte@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/svelte/-/svelte-1.39.1.tgz#64d56dd68992c6b24f2bbab39668ff57f567a29a"
+  resolved "https://registry.npmjs.org/@zag-js/svelte/-/svelte-1.39.1.tgz"
   integrity sha512-ZOyZjyvjePZdrkNTy5fa92ijeeID9e+3LRGziKGIII3JSEvwfkG/Buf8W84N8VHFxi0G0GcKmgVCDgKHyGQYoQ==
   dependencies:
     "@zag-js/core" "1.39.1"
@@ -787,7 +794,7 @@
 
 "@zag-js/switch@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/switch/-/switch-1.39.1.tgz#aabb976567ad187fd91f8a815725d5c764e41ea3"
+  resolved "https://registry.npmjs.org/@zag-js/switch/-/switch-1.39.1.tgz"
   integrity sha512-ikeQ42c0vyyPLeyW9U0dvcqTV1Ekpx5jZ050R905HGJ2GeWE0uBGuHbMpTG5U6Pwb0a+TMzqAr+jMsquVTCwzg==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -799,7 +806,7 @@
 
 "@zag-js/tabs@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/tabs/-/tabs-1.39.1.tgz#c6e4f325304e76e53c4b70a435a2e50106d96a56"
+  resolved "https://registry.npmjs.org/@zag-js/tabs/-/tabs-1.39.1.tgz"
   integrity sha512-P2RThO1gX9SFsNqrAGPsXJxrjn5YqP6MFs9mdExU+tzzZyVjJQADkAmh98C0eEaCb6HKLpJZ/17hrnLDhm1Tig==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -810,7 +817,7 @@
 
 "@zag-js/tags-input@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/tags-input/-/tags-input-1.39.1.tgz#8442edf6b63619ac389779e645ce7231b31196c5"
+  resolved "https://registry.npmjs.org/@zag-js/tags-input/-/tags-input-1.39.1.tgz"
   integrity sha512-tc0+bd9FiUJwa+wY2hSVVGHLIBC3C3rOZX/4zjchRMs1xgl92c1/tYbytXny7ABB8ZMHveG7MtgDppVF4VkwBg==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -824,7 +831,7 @@
 
 "@zag-js/toast@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/toast/-/toast-1.39.1.tgz#ddc5fab110fe2ffb5811d7a2faab0c0806a24a5a"
+  resolved "https://registry.npmjs.org/@zag-js/toast/-/toast-1.39.1.tgz"
   integrity sha512-K7ndEfBTKDds10iQKCQUmin74s6V4BEIypAIyQxs18gQB9TCn5+wff886JAzecIKPY97PDQHDKjYR71yzRC7/g==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -836,7 +843,7 @@
 
 "@zag-js/toggle-group@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/toggle-group/-/toggle-group-1.39.1.tgz#c783b43386ba06c8c8a8e27ed8c3561013b0cf0e"
+  resolved "https://registry.npmjs.org/@zag-js/toggle-group/-/toggle-group-1.39.1.tgz"
   integrity sha512-KS4Bo17foMKXVBhQjocRf4GQxMV4pMXclTo14IWjldaHs2HIrNJ0Ar0Ri+vo47BBKBNsXs4HuNvfbMdQj94wEA==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -847,7 +854,7 @@
 
 "@zag-js/tooltip@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/tooltip/-/tooltip-1.39.1.tgz#ada413e93200c71ebecba708ef6787965505f4ac"
+  resolved "https://registry.npmjs.org/@zag-js/tooltip/-/tooltip-1.39.1.tgz"
   integrity sha512-IsxFj7l8kPciwIyYJWlmQ7mhXocbjXxLj3m9z099slYOF7lApA33/ndY32w9ptrI4/nUh2nldzw6eRfSpVnuOA==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -860,7 +867,7 @@
 
 "@zag-js/tree-view@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/tree-view/-/tree-view-1.39.1.tgz#463e7f273150144e2199694075a4d3e50a8d22d7"
+  resolved "https://registry.npmjs.org/@zag-js/tree-view/-/tree-view-1.39.1.tgz"
   integrity sha512-sm6qUZjO0OaqBqO5s55KU+l5p1wXfUVScoen7BYVoFBuROH7qAZJi8YMclGvnnlyV506i8Hk0qqWnLg0F38jCA==
   dependencies:
     "@zag-js/anatomy" "1.39.1"
@@ -872,14 +879,14 @@
 
 "@zag-js/types@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/types/-/types-1.39.1.tgz#dc94ae25576576e5d4f9c215ac6ca9f8829f9935"
+  resolved "https://registry.npmjs.org/@zag-js/types/-/types-1.39.1.tgz"
   integrity sha512-w3vVpgxmdJvMDvv19DXTtFI6kJL6TXw//U0Z1BAc3rnDA9orcB9Ryw4uMNvIzFA607CgssyJcWDaQ/M3yAcbJw==
   dependencies:
     csstype "3.2.3"
 
 "@zag-js/utils@1.39.1":
   version "1.39.1"
-  resolved "https://registry.yarnpkg.com/@zag-js/utils/-/utils-1.39.1.tgz#5108f9972b68d4c33b79843aea914a671ef71970"
+  resolved "https://registry.npmjs.org/@zag-js/utils/-/utils-1.39.1.tgz"
   integrity sha512-9k741cH7L655Ua3tedTkuMblcXVXVgCLTB9svp9oTjA7oatpOpYF4z43kgAQVjyThNXMJ7AvtO4C80ajQLTScg==
 
 acorn@^8.12.1:
@@ -980,7 +987,7 @@ color-name@~1.1.4:
 
 csstype@3.2.3:
   version "3.2.3"
-  resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.2.3.tgz#ec48c0f3e993e50648c86da559e2610995cf989a"
+  resolved "https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz"
   integrity sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==
 
 deepmerge@^4.3.1:
@@ -1015,7 +1022,7 @@ electron-to-chromium@^1.5.389:
 
 enhanced-resolve@5.21.6:
   version "5.21.6"
-  resolved "https://registry.yarnpkg.com/enhanced-resolve/-/enhanced-resolve-5.21.6.tgz#aa207b43cf658e6ab3ba06896edc00c13c3127c6"
+  resolved "https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-5.21.6.tgz"
   integrity sha512-aNnGCvbJ/RIyWo1IuhNdVjnNF+EjH9wpzpNHt+ci/m9He9LJvUN8wrCcXjp9cWsGNAuvSpVFTx/vraAFQ8qGjQ==
   dependencies:
     graceful-fs "^4.2.4"
@@ -1062,7 +1069,7 @@ fsevents@~2.3.3:
 
 graceful-fs@^4.2.4:
   version "4.2.11"
-  resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.11.tgz#4183e4e8bf08bb6e05bbb2f7d2e0c8f712ca40e3"
+  resolved "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz"
   integrity sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==
 
 has-flag@^4.0.0:
@@ -1114,7 +1121,7 @@ jest-matcher-utils@29.2.2:
 
 jiti@^2.7.0:
   version "2.7.0"
-  resolved "https://registry.yarnpkg.com/jiti/-/jiti-2.7.0.tgz#974228f2f4ca2bc21885a1797b45fea68e950c64"
+  resolved "https://registry.npmjs.org/jiti/-/jiti-2.7.0.tgz"
   integrity sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==
 
 lightningcss-android-arm64@1.32.0:
@@ -1219,6 +1226,11 @@ melt@^0.44.0:
     jest-axe "^9.0.0"
     runed "^0.23.3"
 
+mini-svg-data-uri@^1.2.3:
+  version "1.4.4"
+  resolved "https://registry.npmjs.org/mini-svg-data-uri/-/mini-svg-data-uri-1.4.4.tgz"
+  integrity sha512-r9deDe9p5FJUPZAk3A59wGH7Ii9YrjjWw0jmw/liSbHl2CHiyXj6FcDXDu2K3TjVAXqiJdaw3xxwlZZr9E6nHg==
+
 mri@^1.1.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/mri/-/mri-1.2.0.tgz"
@@ -1263,6 +1275,16 @@ postcss@^8.5.16, postcss@^8.5.19:
     picocolors "^1.1.1"
     source-map-js "^1.2.1"
 
+prettier-plugin-svelte@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/prettier-plugin-svelte/-/prettier-plugin-svelte-4.1.1.tgz#d230133b2ea3d566f21b11b763fd372fb9268958"
+  integrity sha512-wXvbXMjSvb4C9ENWTHXyd+ihakKCsJ6rJhLP6/8HFNj4GkZr48jqL9PoKsl2sk7SyCZRTnJ7O2TTowUpOxP/KA==
+
+prettier@^3.9.5:
+  version "3.9.5"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.9.5.tgz#4fec97736e33b9d0b620b48914fe93b530e835ad"
+  integrity sha512-/FVl766LpUfB5vXgCYOYa0MeV/441Ia99AeICQIQFTY/Nw0roZwULcXpku5i1/m5kt/baz+s4Zogspd839HSMg==
+
 pretty-format@^29.2.1, pretty-format@^29.7.0:
   version "29.7.0"
   resolved "https://registry.npmjs.org/pretty-format/-/pretty-format-29.7.0.tgz"
@@ -1274,7 +1296,7 @@ pretty-format@^29.2.1, pretty-format@^29.7.0:
 
 proxy-compare@3.0.1:
   version "3.0.1"
-  resolved "https://registry.yarnpkg.com/proxy-compare/-/proxy-compare-3.0.1.tgz#3262cff3a25a6dedeaa299f6cf2369d6f7588a94"
+  resolved "https://registry.npmjs.org/proxy-compare/-/proxy-compare-3.0.1.tgz"
   integrity sha512-V9plBAt3qjMlS1+nC8771KNf6oJ12gExvaxnNzN/9yVRLdTv/lc+oJlnSzrdYDAvBfTStPCoiaCOTmTs0adv7Q==
 
 react-is@^18.0.0:
@@ -1378,12 +1400,12 @@ tabbable@^6.4.0:
 
 tailwindcss@4.3.2, tailwindcss@^4.3.2:
   version "4.3.2"
-  resolved "https://registry.yarnpkg.com/tailwindcss/-/tailwindcss-4.3.2.tgz#408ee67d767a0fef7b174674bb9c5ce136a5ace1"
+  resolved "https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.3.2.tgz"
   integrity sha512-WtctNNSH8A9jlMIqxzuYumOHU5uGZyRv0Q5svQl+oEPy5w84YpBxdb7MdqyiSPQge5jTJ6zFQLq0PFygdccSBA==
 
 tapable@^2.3.3:
   version "2.3.3"
-  resolved "https://registry.yarnpkg.com/tapable/-/tapable-2.3.3.tgz#5da7c9992c46038221267985ab28421a8879f160"
+  resolved "https://registry.npmjs.org/tapable/-/tapable-2.3.3.tgz"
   integrity sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==
 
 tinyglobby@^0.2.17:

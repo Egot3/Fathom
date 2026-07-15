@@ -1,4 +1,18 @@
 @import "tailwindcss";
+@plugin '@tailwindcss/forms';
 @import "@skeletonlabs/skeleton";
 @import "@skeletonlabs/skeleton-svelte";
 @import "@skeletonlabs/skeleton/themes/catppuccin";
+
+.select,
+.input,
+.textarea,
+.input-group {
+  background-color: var(--color-surface-50-950);
+  color: var(--color-surface-950-50);
+}
+
+#app {
+  height: 100vh;
+  width: 100vw;
+}
