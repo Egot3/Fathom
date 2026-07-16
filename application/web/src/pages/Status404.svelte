@@ -5,7 +5,7 @@
 
 <div class="flex flex-col items-center justify-center gap-y-5 z-30">
     <p class="text-7xl">Page not found!</p>
-    <a type="button" class="btn text-2xl preset-outlined-error-500" href="/home">Take me home!</a>
+    <a type="button" class="btn text-2xl preset-filled-error-500 text-surface-50 pb-2" href="/home">Take me home!</a>
 </div>
     
 </div>
