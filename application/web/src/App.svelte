@@ -1,31 +1,27 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-    import type { Component } from 'svelte';
-  import Login from "./pages/Login.svelte";
-  import Status404 from "./pages/Status404.svelte";
+	import { onMount } from "svelte";
+	import type { Component } from "svelte";
+	import Login from "./pages/Login.svelte";
+	import Status404 from "./pages/Status404.svelte";
 
-  const regex = /^https?:\/\/[^\/]+\/([^?#]+)/
+	const regex = /^https?:\/\/[^\/]+\/([^?#]+)/;
 
-  let currentURL = $state('')
+	let currentURL = $state("");
 
-  let slug = $derived(
-    regex.exec(currentURL)?.[1] ?? ""
-  )
+	let hier_part = $derived(regex.exec(currentURL)?.[1] ?? "");
 
-  $inspect(slug)
+	$inspect(hier_part);
 
-  onMount(()=>{
-    currentURL = window.location.href
-  })
+	onMount(() => {
+		currentURL = window.location.href;
+	});
 
-  const pages = new Map<string, Component>([
-    ["login", Login],
-  ])
+	const pages = new Map<string, Component>([["login", Login]]);
 </script>
 
-{#if pages.has(slug)}
-  {@const ActivePage = pages.get(slug)}
-  <ActivePage />
+{#if pages.has(hier_part)}
+	{@const ActivePage = pages.get(hier_part)}
+	<ActivePage />
 {:else}
-  <Status404 />
+	<Status404 />
 {/if}
