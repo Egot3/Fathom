@@ -4,7 +4,7 @@
 	import { Popover, Portal, usePopover } from "@skeletonlabs/skeleton-svelte";
 	import type { LoginRequest, LoginResponse } from "../lib/contracts/user";
 	import type { JSONError } from "../lib/statuses/jsonerror";
-	import { setUser, user } from "../lib/contexts/user";
+	import { setUser } from "../lib/contexts/user";
 
 	const passwordPopover = usePopover({ id: "password" });
 	const loginPopover = usePopover({ id: "login" });
