@@ -8,8 +8,10 @@
 
 	const passwordPopover = usePopover({ id: "password" });
 	const loginPopover = usePopover({ id: "login" });
+	const mainPopover = usePopover({ id: "main" });
 
-	let login = $state("");
+	const params = new URLSearchParams(window.location.search);
+	let login = $state(params.get("login") ?? "");
 	let password = $state("");
 
 	let statusMessage = $state("");
@@ -17,12 +19,19 @@
 	let loginMessage = $state("");
 
 	let passwordState = $state(InputStatus.Idle);
-	let loginState = $state(InputStatus.Idle);
+	let loginState = $derived(
+		login == ""
+			? InputStatus.Idle
+			: login.length < 3
+				? InputStatus.Punish
+				: InputStatus.Treat,
+	);
 
 	let passwordClass = $derived(ClassForStatus(passwordState));
 	let loginClass = $derived(ClassForStatus(loginState));
 
-	async function SubmitLogin() {
+	async function SubmitLogin(e: Event) {
+		e.preventDefault();
 		const body: LoginRequest = {
 			nickname: login,
 			password: password,
@@ -43,7 +52,7 @@
 
 			if (!response.ok) {
 				statusMessage = ((await response.json()) as JSONError).error; // then they say that front is better
-				return;
+				return false;
 			}
 
 			const userData = (await response.json()) as LoginResponse;
@@ -56,13 +65,15 @@
 			}
 
 			statusMessage = "couldn't send login because of unknown error";
+			mainPopover().setOpen(true);
+			return false;
 		}
+
+		return false;
 	}
 </script>
 
-<div
-	class="h-full w-full items-center justify-center flex flex-col text-surface-50-950"
->
+<div class="h-full w-full items-center justify-center flex text-surface-50-950">
 	<div
 		class="h-4/5 w-1/2 bg-surface-950-50 rounded-2xl p-2.5 overflow-scroll flex items-center"
 	>
@@ -185,42 +196,36 @@
 					</Portal>
 				</Popover>
 
-				<!-- 				<label class="flex items-center space-x-2 w-fit pr-2">
-					chat, is this UX moment?
-					<button
-						{...toggle.trigger}
-						type="button"
-						aria-label="toggle stay logged-in"
-					>
-						<Maximize size="28">
-							{#if toggle.value}
-								<Check size="18" x="3" y="3" />
-							{:else}
-								<X size="18" x="3" y="3" />
-							{/if}
-						</Maximize>
-					</button>
-					<b>Stay logged-in</b>
-				</label> -->
+				<Popover.Provider value={mainPopover}>
+					<Popover.Anchor class="self-center w-full flex justify-center gap-0">
+						<button
+							type="submit"
+							class="btn btn-lg w-4/5 preset-filled-primary-500"
+							disabled={!(
+								passwordState == InputStatus.Treat &&
+								loginState == InputStatus.Treat
+							)}
+						>
+							Sign in
+						</button>
+					</Popover.Anchor>
 
-				<button
-					type="submit"
-					class="btn btn-lg w-4/5 preset-filled-primary-500 self-center"
-					disabled={!(
-						passwordState == InputStatus.Treat &&
-						loginState == InputStatus.Treat
-					)}
-				>
-					Login
-				</button>
-
-				<a
-					class="btn btn-lg w-2/5 leading-[0.75] preset-outlined-primary-500 self-center"
-					href={"register?login=" + login} // no, I didn't forget the password, form vals stay in history
-				>
-					Register instead
-				</a>
+					<Popover.Positioner>
+						<Popover.Content
+							class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50 z-1"
+						>
+							<Popover.Title tabindex={-1}>{statusMessage}</Popover.Title>
+						</Popover.Content>
+					</Popover.Positioner>
+				</Popover.Provider>
 			</div>
+
+			<a
+				class="btn btn-lg w-2/5 leading-[0.75] preset-outlined-primary-500 self-center"
+				href={"register?login=" + login} // no, I didn't forget the password, form vals stay in history
+			>
+				Register instead
+			</a>
 		</form>
 	</div>
 </div>
