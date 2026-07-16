@@ -3,6 +3,7 @@
 	import type { Component } from "svelte";
 	import Login from "./pages/Login.svelte";
 	import Status404 from "./pages/Status404.svelte";
+	import Register from "./pages/Register.svelte";
 
 	const regex = /^https?:\/\/[^\/]+\/([^?#]+)/;
 
@@ -16,7 +17,10 @@
 		currentURL = window.location.href;
 	});
 
-	const pages = new Map<string, Component>([["login", Login]]);
+	const pages = new Map<string, Component>([
+		["login", Login],
+		["register", Register],
+	]);
 </script>
 
 {#if pages.has(hier_part)}

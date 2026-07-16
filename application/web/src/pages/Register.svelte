@@ -2,23 +2,28 @@
 	import { ClassForStatus, InputStatus } from "../lib/statuses/input";
 	import { CheckPassword } from "../lib/passwordUtils/checkPassword";
 	import { Popover, Portal, usePopover } from "@skeletonlabs/skeleton-svelte";
-	import type { LoginRequest, LoginResponse } from "../lib/contracts/user";
+	import type {
+		RegisterRequest,
+		RegisterResponse,
+	} from "../lib/contracts/user";
 	import type { JSONError } from "../lib/statuses/jsonerror";
 	import { setUser } from "../lib/contexts/user";
 
 	const passwordPopover = usePopover({ id: "password" });
 	const loginPopover = usePopover({ id: "login" });
+	const repeatedPopover = usePopover({ id: "repeated" });
 	const mainPopover = usePopover({ id: "main" });
 
 	const params = new URLSearchParams(window.location.search);
 	let login = $state(params.get("login") ?? "");
 	let password = $state("");
+	let repeated = $state("");
 
 	let statusMessage = $state("");
 	let passwordMessage = $state("");
 	let loginMessage = $state("");
+	let repeatedMessage = $state("");
 
-	let passwordState = $state(InputStatus.Idle);
 	let loginState = $derived(
 		login == ""
 			? InputStatus.Idle
@@ -26,20 +31,24 @@
 				? InputStatus.Punish
 				: InputStatus.Treat,
 	);
+	let passwordState = $state(InputStatus.Idle);
+	let repeatedState = $state(InputStatus.Idle);
 
 	let passwordClass = $derived(ClassForStatus(passwordState));
 	let loginClass = $derived(ClassForStatus(loginState));
+	let repeatedClass = $derived(ClassForStatus(repeatedState));
 
 	async function SubmitLogin(e: Event) {
 		e.preventDefault();
-		const body: LoginRequest = {
+
+		const body: RegisterRequest = {
 			nickname: login,
 			password: password,
 		};
 
 		try {
 			const response = await fetch(
-				import.meta.env.DOMAIN + "/api/v1/user/login",
+				import.meta.env.DOMAIN + "/api/v1/user/register",
 				{
 					method: "POST",
 					headers: {
@@ -52,24 +61,20 @@
 
 			if (!response.ok) {
 				statusMessage = ((await response.json()) as JSONError).error; // then they say that front is better
-				return false;
+				return;
 			}
 
-			const userData = (await response.json()) as LoginResponse;
+			const userData = (await response.json()) as RegisterResponse;
 			setUser(userData.user);
 			window.location.href = "/home";
 		} catch (err) {
-			console.log("Couldn't fetch login for user: ", err);
+			console.log("Couldn't fetch register for user: ", err);
 			if (err instanceof Error) {
-				statusMessage = "couldn't send login because of in-browser error";
+				statusMessage = "couldn't send register because of in-browser error";
 			}
 
-			statusMessage = "couldn't send login because of unknown error";
-			mainPopover().setOpen(true);
-			return false;
+			statusMessage = "couldn't send register because of unknown error";
 		}
-
-		return false;
 	}
 </script>
 
@@ -82,7 +87,7 @@
 			class="w-full flex flex-col h-full justify-center"
 		>
 			<h1 class="self-center text-6xl justify-self-start m-4 font-bold">
-				Log in
+				Register
 			</h1>
 			<div class="flex flex-col msx-w-md space-y-4 mx-auto w-full">
 				<label class="label">
@@ -149,6 +154,7 @@
 								onfocus={(e: FocusEvent) => {
 									passwordPopover().setOpen(false);
 									passwordState = InputStatus.Idle;
+									repeatedState = InputStatus.Idle;
 									return;
 								}}
 								onkeydown={() => {
@@ -170,43 +176,61 @@
 					</Popover.Provider>
 				</label>
 
-				<Popover>
-					<Popover.Trigger
-						class="btn preset-filled self-start text-xs text-primary-500 -mt-3.5 h-fit p-0.75"
-						>Forgot password?</Popover.Trigger
-					>
-					<Portal>
+				<label class="label">
+					<span class="label-text">Password repeated</span>
+					<Popover.Provider value={repeatedPopover}>
+						<Popover.Anchor>
+							<input
+								id="password_repeated"
+								bind:value={repeated}
+								class={"input border-2 " + repeatedClass}
+								type="password"
+								placeholder="supersecurePaSSwoRD!"
+								onblur={(e: FocusEvent) => {
+									if (password != repeated) {
+										repeatedMessage = "passwords are not equal!";
+										repeatedState = InputStatus.Punish;
+										repeatedPopover().setOpen(true);
+										return;
+									}
+
+									repeatedState = InputStatus.Treat;
+								}}
+								onfocus={(e: FocusEvent) => {
+									repeatedPopover().setOpen(false);
+									repeatedState = InputStatus.Idle;
+									return;
+								}}
+								onkeydown={() => {
+									if (password == repeated) {
+										repeatedState = InputStatus.Treat;
+									}
+								}}
+							/>
+						</Popover.Anchor>
+
 						<Popover.Positioner>
 							<Popover.Content
-								class="card w-96 p-4 bg-surface-100-900 shadow-xl"
+								class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50 z-1"
 							>
-								<Popover.Title
-									>Nicely ask your teacher/hoster/provicer to kindly confirm
-									your identity and awesomly forge you another one. If YOU are
-									the hoster/provider address the docs</Popover.Title
-								>
-								<!-- TODO, docs link -->
-								<Popover.Arrow
-									class="[--arrow-size:--spacing(2)] [--arrow-background:var(--color-surface-100-900)]"
-								>
-									<Popover.ArrowTip />
-								</Popover.Arrow>
+								<Popover.Title tabindex={-1}>{repeatedMessage}</Popover.Title>
 							</Popover.Content>
 						</Popover.Positioner>
-					</Portal>
-				</Popover>
+					</Popover.Provider>
+				</label>
 
 				<Popover.Provider value={mainPopover}>
 					<Popover.Anchor class="self-center w-full flex justify-center gap-0">
 						<button
 							type="submit"
-							class="btn btn-lg w-4/5 preset-filled-primary-500"
+							class="btn btn-lg w-4/5 preset-filled-primary-500 self-center"
 							disabled={!(
 								passwordState == InputStatus.Treat &&
-								loginState == InputStatus.Treat
+								loginState == InputStatus.Treat &&
+								repeatedState == InputStatus.Treat
 							)}
 						>
-							Sign in
+							Sign up
 						</button>
 					</Popover.Anchor>
 
@@ -218,15 +242,14 @@
 						</Popover.Content>
 					</Popover.Positioner>
 				</Popover.Provider>
-			</div>
 
-			<a
-				class="btn btn-lg w-2/5 leading-[0.75] preset-outlined-primary-500 self-center"
-				href={"register?login=" + login} // no, I didn't forget the password, form vals stay in history
-			>
-				Register instead
-			</a>
+				<a
+					class="btn btn-lg w-2/5 leading-[0.75] preset-outlined-primary-500 self-center"
+					href={"login?login=" + login} // no, I didn't forget the password, form vals stay in history
+				>
+					Log in instead
+				</a>
+			</div>
 		</form>
 	</div>
 </div>
-<!-- login via github is forbidden by law -->

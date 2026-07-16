@@ -15,4 +15,19 @@ type LoginResponse = {
 	user: User;
 };
 
-export type { User, LoginRequest, LoginResponse };
+type RegisterRequest = {
+	password: string;
+	nickname: string;
+};
+
+type RegisterResponse = {
+	user: User;
+};
+
+export type {
+	User,
+	LoginRequest,
+	LoginResponse,
+	RegisterRequest,
+	RegisterResponse,
+};
