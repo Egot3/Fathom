@@ -1,33 +1,23 @@
 <script lang="ts">
-	import { Check, Maximize, X } from "@lucide/svelte";
-	import { Toggle } from "melt/builders";
-	import { InputStatus } from "../lib/statuses/input";
+	import { ClassForStatus, InputStatus } from "../lib/statuses/input";
 	import { CheckPassword } from "../lib/passwordUtils/checkPassword";
 	import { Popover, Portal, usePopover } from "@skeletonlabs/skeleton-svelte";
 
-	const toggle = new Toggle();
-	const passwordPopover = usePopover({ id: "1" });
+	const passwordPopover = usePopover({ id: "password" });
+	const loginPopover = usePopover({ id: "login" });
 
 	let login = $state("");
 	let password = $state("");
-	let stayLoggedIn = $derived(toggle.value);
 
 	let statusMessage = $state("");
 	let passwordMessage = $state("");
+	let loginMessage = $state("");
 
 	let passwordState = $state(InputStatus.Idle);
 	let loginState = $state(InputStatus.Idle);
 
-	let passwordClass = $derived.by(() => {
-		switch (passwordState) {
-			case InputStatus.Idle:
-				return "";
-			case InputStatus.Punish:
-				return "border-error-300";
-			case InputStatus.Treat:
-				return "border-success-300";
-		}
-	});
+	let passwordClass = $derived(ClassForStatus(passwordState));
+	let loginClass = $derived(ClassForStatus(loginState));
 
 	async function SubmitLogin(
 		event: SubmitEvent & { currentTarget: HTMLFormElement },
@@ -48,12 +38,43 @@
 			<div class="flex flex-col msx-w-md space-y-4 mx-auto w-full">
 				<label class="label">
 					<span class="label-text">Login</span>
-					<input
-						class="input border-2"
-						type="text"
-						placeholder="myoryourlogin"
-						bind:value={login}
-					/>
+					<Popover.Provider value={loginPopover}>
+						<Popover.Anchor>
+							<input
+								class={"input border-2 " + loginClass}
+								type="text"
+								placeholder="myoryourlogin"
+								bind:value={login}
+								onblur={(e: FocusEvent) => {
+									if (login.length < 3) {
+										loginState = InputStatus.Punish;
+										loginMessage = "can't have length of login less than 3";
+										loginPopover().setOpen(true);
+										return;
+									}
+									loginState = InputStatus.Treat;
+								}}
+								onfocus={(e: FocusEvent) => {
+									loginPopover().setOpen(false);
+									loginState = InputStatus.Idle;
+									return;
+								}}
+								onkeydown={() => {
+									if (login.length >= 3) {
+										loginState = InputStatus.Treat;
+									}
+								}}
+							/>
+						</Popover.Anchor>
+
+						<Popover.Positioner>
+							<Popover.Content
+								class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50"
+							>
+								<Popover.Title tabindex={-1}>{loginMessage}</Popover.Title>
+							</Popover.Content>
+						</Popover.Positioner>
+					</Popover.Provider>
 				</label>
 				<label class="label">
 					<span class="label-text">Password</span>
@@ -81,14 +102,20 @@
 									passwordState = InputStatus.Idle;
 									return;
 								}}
+								onkeydown={() => {
+									const err = CheckPassword(password);
+									if (err == "") {
+										passwordState = InputStatus.Treat;
+									}
+								}}
 							/>
 						</Popover.Anchor>
 
 						<Popover.Positioner>
 							<Popover.Content
-								class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50"
+								class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50 z-1"
 							>
-								<Popover.Title>{passwordMessage}</Popover.Title>
+								<Popover.Title tabindex={-1}>{passwordMessage}</Popover.Title>
 							</Popover.Content>
 						</Popover.Positioner>
 					</Popover.Provider>
@@ -115,6 +142,10 @@
 				<button
 					type="submit"
 					class="btn btn-lg w-4/5 preset-filled-primary-500 self-center"
+					disabled={!(
+						passwordState == InputStatus.Treat &&
+						loginState == InputStatus.Treat
+					)}
 				>
 					Login
 				</button>
