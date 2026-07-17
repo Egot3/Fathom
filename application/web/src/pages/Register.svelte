@@ -7,7 +7,8 @@
 		RegisterResponse,
 	} from "../lib/contracts/user";
 	import type { JSONError } from "../lib/statuses/jsonerror";
-	import { setUser } from "../lib/contexts/user";
+	import { SetUser } from "../lib/bgdata/user.svelte";
+	import { TokenizedFetch } from "../lib/contracts/tokenizedFetch";
 
 	const passwordPopover = usePopover({ id: "password" });
 	const loginPopover = usePopover({ id: "login" });
@@ -47,8 +48,8 @@
 		};
 
 		try {
-			const response = await fetch(
-				import.meta.env.DOMAIN + "/api/v1/user/register",
+			const response = await TokenizedFetch(
+				"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/register",
 				{
 					method: "POST",
 					headers: {
@@ -61,11 +62,16 @@
 
 			if (!response.ok) {
 				statusMessage = ((await response.json()) as JSONError).error; // then they say that front is better
-				return;
+				return false;
 			}
 
 			const userData = (await response.json()) as RegisterResponse;
-			setUser(userData.user);
+
+			SetUser({
+				UUID: userData.user.UUID,
+				isTeacher: userData.user.is_teacher,
+				nickname: userData.user.nickname,
+			});
 			window.location.href = "/home";
 		} catch (err) {
 			console.log("Couldn't fetch register for user: ", err);
@@ -74,6 +80,7 @@
 			}
 
 			statusMessage = "couldn't send register because of unknown error";
+			mainPopover().setOpen(true);
 		}
 	}
 </script>
@@ -157,7 +164,7 @@
 									repeatedState = InputStatus.Idle;
 									return;
 								}}
-								onkeydown={() => {
+								onkeyup={() => {
 									const err = CheckPassword(password);
 									if (err == "") {
 										passwordState = InputStatus.Treat;
@@ -201,7 +208,8 @@
 									repeatedState = InputStatus.Idle;
 									return;
 								}}
-								onkeydown={() => {
+								onkeyup={() => {
+									console.log("keydown");
 									if (password == repeated) {
 										repeatedState = InputStatus.Treat;
 									}
