@@ -51,6 +51,7 @@ type concreteTestRunner struct {
 	pausedAt   time.Time
 	TestUUID   uuid.UUID
 	GroupUUIDs uuid.UUIDs
+	checksum   uint64
 }
 
 func NewTestRunner(i do.Injector) (TestRunner, error) {
@@ -204,7 +205,14 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUID
 	if tr.cancel == nil { //TOCTOU
 		return ErrRunnerInactive
 	}
-	tr.quizzes = slices.Clone(quizzes)
+	tr.quizzes = append(tr.quizzes, quizzes...)
+
+	ultimateChecksum := make([]uint64, len(tr.quizzes))
+	lo.ForEach(tr.quizzes, func(quiz quiz.Quiz, _ int) {
+		ultimateChecksum = append(ultimateChecksum, quiz.Checksum)
+	})
+
+	tr.checksum = hashutils.HashHashes(ultimateChecksum)
 
 	return nil
 }
@@ -326,16 +334,18 @@ func (tr *concreteTestRunner) AllowedGroupUUIDs() uuid.UUIDs {
 	return tr.GroupUUIDs
 }
 
-func (tr *concreteTestRunner) GetAll() (uuid.UUIDs, uint64) {
+func (tr *concreteTestRunner) GetAll() uuid.UUIDs {
 	tr.mu.RLock()
 	quizzesLocal := tr.quizzes
 	tr.mu.RUnlock()
 
-	ultimateChecksum := make([]uint64, len(quizzesLocal))
 	quizzes := lo.Map(quizzesLocal, func(quiz quiz.Quiz, _ int) uuid.UUID {
-		ultimateChecksum = append(ultimateChecksum, quiz.Checksum)
 		return quiz.UUID
 	})
 
-	return quizzes, hashutils.HashHashes(ultimateChecksum)
+	return quizzes
+}
+
+func (tr *concreteTestRunner) Checksum() uint64 {
+	return tr.checksum
 }

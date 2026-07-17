@@ -15,7 +15,7 @@ function SetUser(newUser: userData) {
 
 function GetUser(): userData | null {
 	if (GetTokenExpiration() < new Date()) {
-		window.localStorage.removeItem(UserKey);
+		// window.localStorage.removeItem(UserKey); //pretty unnecessary, as this info is cosmetic and not real auth
 		return null;
 	}
 	console.log("getting user");

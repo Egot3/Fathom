@@ -1067,9 +1067,9 @@ func (c *chiService) GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Reque
 	)
 	w.Header().Set("Content-Type", "application/json")
 
-	uuids, hash := c.runner.GetAll()
+	checksum := c.runner.Checksum()
 
-	etag := strconv.FormatUint(hash, 10)
+	etag := strconv.FormatUint(checksum, 10)
 	if deadline, err := c.runner.Deadline(); err == nil {
 
 		w.Header().Set("ETag", etag)
@@ -1084,6 +1084,8 @@ func (c *chiService) GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusNotModified) // caching goes brrrrr
 		return
 	}
+
+	uuids := c.runner.GetAll()
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.GetQuizzesUUIDs{
