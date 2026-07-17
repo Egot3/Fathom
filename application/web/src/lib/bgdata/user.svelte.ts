@@ -14,6 +14,10 @@ function SetUser(newUser: userData) {
 }
 
 function GetUser(): userData | null {
+	if (GetTokenExpiration() < new Date()) {
+		window.localStorage.removeItem(UserKey);
+		return null;
+	}
 	console.log("getting user");
 	if (user == null) {
 		console.log("user is null");

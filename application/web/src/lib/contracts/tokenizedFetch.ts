@@ -8,7 +8,6 @@ export async function TokenizedFetch(
 
 	const sessionControl = res.headers.get("Session-Control");
 
-	console.log("s control: ", sessionControl);
 	if (sessionControl) {
 		SetTokenExpiration(new Date(Date.now() + parseInt(sessionControl, 10)));
 	}
