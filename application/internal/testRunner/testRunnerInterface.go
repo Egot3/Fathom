@@ -22,5 +22,6 @@ type TestRunner interface {
 	Deadline() (*time.Time, error)
 
 	AllowedGroupUUIDs() uuid.UUIDs
-	GetAll() (uuid.UUIDs, uint64)
+	GetAll() uuid.UUIDs
+	Checksum() uint64
 }
