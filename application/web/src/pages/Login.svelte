@@ -4,7 +4,8 @@
 	import { Popover, Portal, usePopover } from "@skeletonlabs/skeleton-svelte";
 	import type { LoginRequest, LoginResponse } from "../lib/contracts/user";
 	import type { JSONError } from "../lib/statuses/jsonerror";
-	import { setUser } from "../lib/contexts/user";
+	import { TokenizedFetch } from "../lib/contracts/tokenizedFetch";
+	import { GetUser, SetUser } from "../lib/bgdata/user.svelte";
 
 	const passwordPopover = usePopover({ id: "password" });
 	const loginPopover = usePopover({ id: "login" });
@@ -38,8 +39,8 @@
 		};
 
 		try {
-			const response = await fetch(
-				import.meta.env.DOMAIN + "/api/v1/user/login",
+			const response = await TokenizedFetch(
+				"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/login",
 				{
 					method: "POST",
 					headers: {
@@ -56,7 +57,12 @@
 			}
 
 			const userData = (await response.json()) as LoginResponse;
-			setUser(userData.user);
+
+			SetUser({
+				UUID: userData.user.UUID,
+				isTeacher: userData.user.is_teacher,
+				nickname: userData.user.nickname,
+			});
 			window.location.href = "/home";
 		} catch (err) {
 			console.log("Couldn't fetch login for user: ", err);
