@@ -8,6 +8,7 @@ import (
 	"github.com/egot3/fathom/internal/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/samber/do/v2"
 )
 
@@ -15,7 +16,14 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 	r := chi.NewRouter()
 	svc := do.MustInvoke[handler.Service](i)
 
-	r.Use(middlewares.BodySizer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://localhost:5173", "http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "ETag", "If-None-Match"},
+		ExposedHeaders:   []string{"Link", "ETag", "If-None-Match", "Session-Control"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}), middlewares.BodySizer)
 
 	r.Method("GET", "/health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

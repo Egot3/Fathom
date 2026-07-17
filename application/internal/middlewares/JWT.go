@@ -3,8 +3,9 @@ package middlewares
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math"
 	"net/http"
-	"strings"
 	"time"
 
 	jwtutils "github.com/egot3/fathom/internal/JWTutils"
@@ -13,21 +14,13 @@ import (
 
 func JWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authorization := r.Header.Get("Authorization")
-		if authorization == "" {
+		authorization, err := r.Cookie("jwt_token")
+		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		dismanteledAuth := strings.Split(authorization, " ")
-		if len(dismanteledAuth) != 2 || dismanteledAuth[0] != "Bearer" {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		token := dismanteledAuth[1]
-
-		claims, err := jwtutils.ValidateToken(token)
+		claims, err := jwtutils.ValidateToken(authorization.Value)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			cookie := &http.Cookie{
@@ -47,7 +40,7 @@ func JWT(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 
-		newToken, err := jwtutils.RemintToken(token)
+		newToken, err := jwtutils.RemintToken(authorization.Value)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			cookie := &http.Cookie{
@@ -70,5 +63,6 @@ func JWT(next http.Handler) http.Handler {
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
 		})
+		w.Header().Set("Session-Control", fmt.Sprintf("max-age: %d", int(math.Trunc(jwtutils.JWTTTL.Seconds()))))
 	})
 }
