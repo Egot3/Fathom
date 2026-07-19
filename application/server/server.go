@@ -19,7 +19,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://localhost:5173", "http://localhost:5173"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "ETag", "If-None-Match"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "ETag", "If-None-Match", "Session-Control"},
 		ExposedHeaders:   []string{"Link", "ETag", "If-None-Match", "Session-Control"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -130,37 +130,29 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			r.Route("/{uuid}", func(r chi.Router) {
 				r.Use(middlewares.ParseUUID)
 
-				r.Use(middlewares.IsTeacherRights)
-
 				r.Get("/", svc.GetTest)
-				r.Delete("/", svc.DeleteTest)
-				r.Patch("/", svc.PatchTest)
-				r.Post("/quizzes", svc.AddQuizzes)
-				r.Delete("/quizzes", svc.RemoveQuizzes)
 
-				r.Get("/export", svc.ExportTest)
+				r.Group(func(r chi.Router) {
+					r.Use(middlewares.IsTeacherRights)
 
+					r.Delete("/", svc.DeleteTest)
+					r.Patch("/", svc.PatchTest)
+					r.Post("/quizzes", svc.AddQuizzes)
+					r.Delete("/quizzes", svc.RemoveQuizzes)
+
+					r.Get("/export", svc.ExportTest)
+				})
 			})
 		})
 
 		r.Route("/total", func(r chi.Router) {
 			r.Use(middlewares.JWT)
-			r.Use(middleware.Maybe(
-				middlewares.IsInGroup(svc.GetTestUUID, svc.AllowedToTest, svc.GetDeadline), func(r *http.Request) bool {
-					return !middlewares.IsTeacherCondition(r)
-				}))
-
-			r. // The r letter. Full stop
-				With(middleware.Maybe(
-					middlewares.NotRunning(svc.GetTestUUID),
-					func(r *http.Request) bool {
-						return !middlewares.IsTeacherCondition(r)
-					},
-				)).
-				Get("/{group_uuid}/{user_uuid}/{test_uuid}/{quiz_uuid}",
-					svc.GetAnswer)
 
 			r.Route("/{group_uuid}/{user_uuid}/running", func(r chi.Router) {
+				r.Use(middleware.Maybe(
+					middlewares.IsInGroup(svc.GetTestUUID, svc.AllowedToTest, svc.GetDeadline), func(r *http.Request) bool {
+						return !middlewares.IsTeacherCondition(r)
+					}))
 				r.Use(middlewares.Running(svc.GetTestUUID))
 
 				r.Post("/{quiz_uuid}", svc.PostAnswer)
@@ -168,11 +160,19 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			})
 
 			r.Group(func(r chi.Router) {
+				r.Use(middleware.Maybe(middlewares.UserRights, func(r *http.Request) bool {
+					return !middlewares.IsTeacherCondition(r)
+				}))
+				r.Get("/all/{user_uuid}", svc.GetUserTotals)
+				r.Get("/{group_uuid}/{user_uuid}/{test_uuid}/{quiz_uuid}",
+					svc.GetAnswer)
+			})
+
+			r.Group(func(r chi.Router) {
 				r.Use(middlewares.IsTeacherRights)
 
 				r.Get("/all/all/{test_uuid}", svc.GetTestTotals)
 				r.Get("/{group_uuid}/all/{test_uuid}", svc.GetGroupTotals)
-				r.Get("/all/{user_uuid}", svc.GetUserTotals)
 			})
 
 			r.Route("/{group_uuid}/{user_uuid}/{test_uuid}", func(r chi.Router) {

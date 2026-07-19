@@ -49,6 +49,7 @@ var serveCmd = &cobra.Command{
 		db.RegisterModel((*models.GroupsUsers)(nil))
 		db.RegisterModel((*models.UserGroupsTests)(nil))
 		db.RegisterModel((*models.GroupsUsers)(nil))
+		db.RegisterModel((*models.TestsQuizzes)(nil))
 
 		do.Provide(i, testrunner.NewTestRunner)
 

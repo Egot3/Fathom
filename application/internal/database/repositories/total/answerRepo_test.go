@@ -549,14 +549,17 @@ func TestAnswer_Totals(t *testing.T) {
 		t.Parallel()
 		t.Run("Valid", func(t *testing.T) {
 			t.Parallel()
-			totals, err := r.AllTotals(t.Context(), userUUID)
+			totals, total, err := r.AllTotals(t.Context(), userUUID, 0, 1)
 			require.NoError(t, err)
+			require.Equal(t, 1, total)
 			require.Len(t, totals, 1)
 			require.Equal(t, totals[0].Score, score)
 		})
 		t.Run("Invalid", func(t *testing.T) {
 			t.Parallel()
-			totals, err := r.AllTotals(t.Context(), uuid.Nil)
+			totals, total, err := r.AllTotals(t.Context(), uuid.Nil, 0, 1)
+			require.Equal(t, 1, total)
+
 			require.Error(t, err)
 			require.Nil(t, totals)
 		})
@@ -571,7 +574,7 @@ func BenchmarkTotals_Errors(b *testing.B) {
 	RegisterModels(db)
 	b.Run("Not found", func(b *testing.B) {
 		for b.Loop() {
-			r.AllTotals(b.Context(), uuid.Nil)
+			r.AllTotals(b.Context(), uuid.Nil, 0, 1)
 		}
 	})
 }

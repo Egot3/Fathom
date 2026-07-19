@@ -180,7 +180,7 @@ func (c *chiService) ListQuizzes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
+	logger = logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
 
 	quizzes, total, err := c.quizRepo.ListQuizzes(ctx, pageInt, sizeInt)
 	if err != nil {

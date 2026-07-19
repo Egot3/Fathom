@@ -37,6 +37,9 @@ type PostAnswerRequest struct {
 
 type Totals struct {
 	Totals []models.UserGroupsTests `json:"totals"`
+	Total  int                      `json:"total"`
+	Page   int                      `json:"page"`
+	Size   int                      `json:"size"`
 }
 
 type Total struct {
