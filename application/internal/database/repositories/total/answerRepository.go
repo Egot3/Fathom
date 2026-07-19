@@ -13,7 +13,7 @@ type TotalRepository interface {
 	AnswerScore(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (float32, error)
 	GroupTestTotals(ctx context.Context, testUUID, groupUUID uuid.UUID) ([]models.UserGroupsTests, error)
 	TestTotals(ctx context.Context, testUUID uuid.UUID) ([]models.UserGroupsTests, error)
-	AllTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error)
+	AllTotals(ctx context.Context, userUUID uuid.UUID, page, size int) ([]models.UserGroupsTests, int, error)
 	Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (*models.UserGroupsTests, error)
 	Answer(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (string, error)
 }

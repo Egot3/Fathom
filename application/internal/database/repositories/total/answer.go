@@ -187,19 +187,21 @@ func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, grou
 } */
 
 // beta
-func (r *bunTotalRepository) AllTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error) {
+func (r *bunTotalRepository) AllTotals(ctx context.Context, userUUID uuid.UUID, page, size int) ([]models.UserGroupsTests, int, error) {
 	var totals []models.UserGroupsTests
-	err := r.db.NewSelect().Model(&totals).
-		Where("user_uuid = ?", userUUID).Scan(ctx)
+	total, err := r.db.NewSelect().Model(&totals).
+		Where("user_uuid = ?", userUUID).
+		Offset(page * size).Limit(size).
+		ScanAndCount(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	if len(totals) == 0 {
-		return nil, sql.ErrNoRows
+		return nil, 0, sql.ErrNoRows
 	}
 
-	return totals, nil
+	return totals, total, nil
 }
 
 func (r *bunTotalRepository) TestTotals(ctx context.Context, testUUID uuid.UUID) ([]models.UserGroupsTests, error) {

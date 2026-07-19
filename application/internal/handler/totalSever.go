@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
@@ -290,7 +291,34 @@ func (c *chiService) GetUserTotals(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
-	userTotals, err := c.answerRepo.AllTotals(ctx, userUUID)
+	err = r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
+		return
+	}
+
+	pageInt, err := strconv.Atoi(r.Form.Get("page"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
+		return
+	}
+	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
+		return
+	}
+	if sizeInt <= 0 {
+		w.WriteHeader(422)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
+		return
+	}
+
+	logger = logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
+
+	userTotals, total, err := c.answerRepo.AllTotals(ctx, userUUID, pageInt, sizeInt)
 	if err != nil {
 		logger.Error("couldn't get an answer",
 			slog.String("Error", err.Error()),
@@ -298,7 +326,7 @@ func (c *chiService) GetUserTotals(w http.ResponseWriter, r *http.Request) {
 
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Requested answer is not found"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "there is no totals to list"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -309,6 +337,7 @@ func (c *chiService) GetUserTotals(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.Totals{
 		Totals: userTotals,
+		Total:  total,
 	})
 }
 

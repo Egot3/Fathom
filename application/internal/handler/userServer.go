@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -196,6 +198,9 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
+
+	mAge := int(math.Trunc(jwtutils.JWTTTL.Seconds()))
+	w.Header().Set("Session-Control", fmt.Sprintf("max-age=%d", mAge))
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.RegisterResponse{
@@ -429,6 +434,9 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
+
+	mAge := int(math.Trunc(jwtutils.JWTTTL.Seconds()))
+	w.Header().Set("Session-Control", fmt.Sprintf("max-age=%d", mAge))
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(contracts.RegisterResponse{
