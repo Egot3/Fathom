@@ -14,6 +14,7 @@ function SetUser(newUser: userData) {
 }
 
 function GetUser(): userData | null {
+	console.log("Token expiration: ", GetTokenExpiration());
 	if (GetTokenExpiration() < new Date()) {
 		// window.localStorage.removeItem(UserKey); //pretty unnecessary, as this info is cosmetic and not real auth
 		return null;
@@ -33,11 +34,11 @@ function GetUser(): userData | null {
 }
 
 let tokenExpiration: Date = $state(new Date(Date.now() - 1));
-const ExpKey = "tokenExpiration";
+const TokenExpKey = "tokenExpiration";
 
 function GetTokenExpiration(): Date {
 	if (tokenExpiration < new Date()) {
-		const cached = window.localStorage.getItem(ExpKey);
+		const cached = window.localStorage.getItem(TokenExpKey);
 		if (cached == null) {
 			return tokenExpiration;
 		}
@@ -49,7 +50,8 @@ function GetTokenExpiration(): Date {
 }
 
 function SetTokenExpiration(newExp: Date) {
-	window.localStorage.setItem(ExpKey, newExp.toISOString());
+	console.log("new token exp: ", newExp);
+	window.localStorage.setItem(TokenExpKey, newExp.toISOString());
 	tokenExpiration = newExp;
 }
 

@@ -68,7 +68,7 @@
 			const userData = (await response.json()) as RegisterResponse;
 
 			SetUser({
-				UUID: userData.user.UUID,
+				UUID: userData.user.uuid,
 				isTeacher: userData.user.is_teacher,
 				nickname: userData.user.nickname,
 			});
