@@ -33,6 +33,15 @@ function GetUser(): userData | null {
 	return user;
 }
 
+function GetUserOrRedirect(): userData {
+	const u = GetUser();
+	if (u == null) {
+		window.location.href = "/login";
+		return null as never; // holy hell
+	}
+	return u;
+}
+
 let tokenExpiration: Date = $state(new Date(Date.now() - 1));
 const TokenExpKey = "tokenExpiration";
 
@@ -55,4 +64,10 @@ function SetTokenExpiration(newExp: Date) {
 	tokenExpiration = newExp;
 }
 
-export { SetUser, GetUser, GetTokenExpiration, SetTokenExpiration };
+export {
+	SetUser,
+	GetUser,
+	GetTokenExpiration,
+	SetTokenExpiration,
+	GetUserOrRedirect,
+};
