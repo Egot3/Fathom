@@ -1,5 +1,5 @@
 type User = {
-	UUID: string;
+	uuid: string;
 	nickname: string;
 	is_teacher: boolean;
 	created_at: string;

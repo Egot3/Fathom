@@ -56,10 +56,11 @@
 				return false;
 			}
 
-			const userData = (await response.json()) as LoginResponse;
+			const rj = await response.json();
+			const userData = rj as LoginResponse;
 
 			SetUser({
-				UUID: userData.user.UUID,
+				UUID: userData.user.uuid,
 				isTeacher: userData.user.is_teacher,
 				nickname: userData.user.nickname,
 			});

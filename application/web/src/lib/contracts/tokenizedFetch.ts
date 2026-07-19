@@ -1,5 +1,7 @@
 import { GetUser, SetTokenExpiration } from "../bgdata/user.svelte";
 
+const maxAgeRegex = /max-age=(\d+)/;
+
 export async function TokenizedFetch(
 	url: RequestInfo | URL,
 	opts?: RequestInit,
@@ -7,9 +9,17 @@ export async function TokenizedFetch(
 	const res = await fetch(url, { ...opts, credentials: "include" });
 
 	const sessionControl = res.headers.get("Session-Control");
+	console.log("session control: ", sessionControl);
 
-	if (sessionControl) {
-		SetTokenExpiration(new Date(Date.now() + parseInt(sessionControl, 10)));
+	if (sessionControl != null) {
+		const reg = maxAgeRegex.exec(sessionControl);
+		if (reg == null || reg.length < 2) {
+			return res;
+		}
+		const maxAge = parseInt(reg[1], 10);
+
+		console.log("max age", maxAge);
+		SetTokenExpiration(new Date(Date.now() + maxAge * 1000));
 	}
 
 	return res;
