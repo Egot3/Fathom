@@ -10,7 +10,7 @@
 	>
 		<div
 			id="current"
-			class="row-start-1 row-end-8 col-start-1 col-end-5 bg-surface-700-300 rounded-2xl grid justify-center pb-4 pt-2"
+			class="row-start-1 row-end-8 col-start-1 col-end-5 bg-surface-700-300 rounded-2xl p-4"
 		>
 			<PreviousTests />
 		</div>
