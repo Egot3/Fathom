@@ -3,7 +3,6 @@ package contracts
 import (
 	"time"
 
-	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/quiz"
 	"github.com/google/uuid"
 )
@@ -23,6 +22,15 @@ type Answer struct {
 	SubmittedAt time.Time `json:"submitted_at"`
 }
 
+type Total struct {
+	GroupUUID uuid.UUID `json:"group_uuid" bun:"group_uuid"`
+	TestUUID  uuid.UUID `json:"test_uuid" bun:"test_uuid"`
+	UserUUID  uuid.UUID `json:"user_uuid" bun:"user_uuid"`
+	GroupName string    `json:"group_name" bun:"group_name"`
+	TestName  string    `json:"test_name" bun:"test_name"`
+	Score     float64   `json:"score" bun:"score"`
+}
+
 type GetAnswerResponse struct {
 	Answer Answer `json:"answer"`
 }
@@ -35,13 +43,13 @@ type PostAnswerRequest struct {
 	Value quiz.QuizAnswers `json:"answer"`
 }
 
-type Totals struct {
-	Totals []models.UserGroupsTests `json:"totals"`
-	Total  int                      `json:"total"`
-	Page   int                      `json:"page"`
-	Size   int                      `json:"size"`
+type TotalsResponse struct {
+	Totals []Total `json:"totals"`
+	Total  int     `json:"total"`
+	Page   int     `json:"page"`
+	Size   int     `json:"size"`
 }
 
-type Total struct {
-	Total models.UserGroupsTests `json:"total"`
+type TotalResponse struct {
+	Total Total `json:"total"`
 }

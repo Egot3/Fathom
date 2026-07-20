@@ -558,8 +558,9 @@ func TestAnswer_Totals(t *testing.T) {
 		t.Run("Invalid", func(t *testing.T) {
 			t.Parallel()
 			totals, total, err := r.AllTotals(t.Context(), uuid.Nil, 0, 1)
-			require.Equal(t, 1, total)
+			require.Len(t, totals, 0)
 
+			require.Equal(t, 0, total)
 			require.Error(t, err)
 			require.Nil(t, totals)
 		})

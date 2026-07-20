@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
@@ -154,17 +155,17 @@ func (r *bunTotalRepository) AnswerScore(ctx context.Context, userUUID, testUUID
 	return score, nil
 }
 
-func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (*models.UserGroupsTests, error) {
-	var total models.UserGroupsTests
-	err := r.db.NewSelect().Model(&total).
+func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (*contracts.Total, error) {
+	var total *contracts.Total
+	err := r.db.NewSelect().Model((*models.UserGroupsTests)(nil)).
 		Where("test_uuid = ?", testUUID).
 		Where("user_uuid = ?", userUUID).
-		Where("group_uuid = ?", groupUUID).Scan(ctx)
+		Where("group_uuid = ?", groupUUID).Scan(ctx, total)
 	if err != nil {
 		return nil, err
 	}
 
-	return &total, nil
+	return total, nil
 }
 
 // those unholy twins are ABSOLUTLY THE SAME
@@ -187,12 +188,15 @@ func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, grou
 } */
 
 // beta
-func (r *bunTotalRepository) AllTotals(ctx context.Context, userUUID uuid.UUID, page, size int) ([]models.UserGroupsTests, int, error) {
-	var totals []models.UserGroupsTests
-	total, err := r.db.NewSelect().Model(&totals).
-		Where("user_uuid = ?", userUUID).
-		Offset(page * size).Limit(size).
-		ScanAndCount(ctx)
+func (r *bunTotalRepository) AllTotals(ctx context.Context, userUUID uuid.UUID, page, size int) ([]contracts.Total, int, error) {
+	var totals []contracts.Total
+	total, err := r.db.NewSelect().TableExpr("users_groups_tests AS ugt").
+		Where("ugt.user_uuid = ?", userUUID).
+		ColumnExpr("ugt.score AS score").
+		Join("JOIN groups AS g").JoinOn("g.uuid = ugt.group_uuid").ColumnExpr("g.name AS group_name").
+		Join("JOIN tests AS t").JoinOn("t.uuid = ugt.test_uuid").ColumnExpr("t.name AS test_name").
+		Offset(page*size).Limit(size).
+		ScanAndCount(ctx, &totals)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -204,10 +208,10 @@ func (r *bunTotalRepository) AllTotals(ctx context.Context, userUUID uuid.UUID, 
 	return totals, total, nil
 }
 
-func (r *bunTotalRepository) TestTotals(ctx context.Context, testUUID uuid.UUID) ([]models.UserGroupsTests, error) {
-	var totals []models.UserGroupsTests
-	err := r.db.NewSelect().Model(&totals).
-		Where("test_uuid = ?", testUUID).Scan(ctx)
+func (r *bunTotalRepository) TestTotals(ctx context.Context, testUUID uuid.UUID) ([]contracts.Total, error) {
+	var totals []contracts.Total
+	err := r.db.NewSelect().Model((*models.UserGroupsTests)(nil)).
+		Where("test_uuid = ?", testUUID).Scan(ctx, &totals)
 	if err != nil {
 		return nil, err
 	}
@@ -219,11 +223,11 @@ func (r *bunTotalRepository) TestTotals(ctx context.Context, testUUID uuid.UUID)
 	return totals, nil
 }
 
-func (r *bunTotalRepository) GroupTestTotals(ctx context.Context, testUUID, groupUUID uuid.UUID) ([]models.UserGroupsTests, error) {
-	var totals []models.UserGroupsTests
-	err := r.db.NewSelect().Model(&totals).
+func (r *bunTotalRepository) GroupTestTotals(ctx context.Context, testUUID, groupUUID uuid.UUID) ([]contracts.Total, error) {
+	var totals []contracts.Total
+	err := r.db.NewSelect().Model((*models.UserGroupsTests)(nil)).
 		Where("test_uuid = ?", testUUID).
-		Where("group_uuid = ?", groupUUID).Scan(ctx)
+		Where("group_uuid = ?", groupUUID).Scan(ctx, &totals)
 	if err != nil {
 		return nil, err
 	}

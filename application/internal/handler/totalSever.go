@@ -158,7 +158,7 @@ func (c *chiService) GetGroupTotals(w http.ResponseWriter, r *http.Request) {
 	)
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.Totals{
+	json.NewEncoder(w).Encode(contracts.TotalsResponse{
 		Totals: groupTotals,
 	})
 }
@@ -202,7 +202,7 @@ func (c *chiService) GetTestTotals(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.Totals{
+	json.NewEncoder(w).Encode(contracts.TotalsResponse{
 		Totals: testTotals,
 	})
 }
@@ -264,7 +264,7 @@ func (c *chiService) GetUserTotal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.Total{
+	json.NewEncoder(w).Encode(contracts.TotalResponse{
 		Total: *userTotal,
 	})
 }
@@ -335,9 +335,11 @@ func (c *chiService) GetUserTotals(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.Totals{
+	json.NewEncoder(w).Encode(contracts.TotalsResponse{
 		Totals: userTotals,
 		Total:  total,
+		Page:   pageInt,
+		Size:   sizeInt,
 	})
 }
 

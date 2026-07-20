@@ -380,7 +380,7 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, rec.Code, "there was an early body consumtion")
 
-		var bodyContract contracts.Totals
+		var bodyContract contracts.TotalsResponse
 		err = json.NewDecoder(rec.Body).Decode(&bodyContract)
 		require.NoError(t, err)
 
@@ -569,7 +569,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, rec.Code, "there was an early body consumtion")
 
-		var bodyContract contracts.Totals
+		var bodyContract contracts.TotalsResponse
 		err = json.NewDecoder(rec.Body).Decode(&bodyContract)
 		require.NoError(t, err)
 
@@ -749,7 +749,7 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, rec.Code, string(body))
 
-		var bodyContract contracts.Total
+		var bodyContract contracts.TotalResponse
 		err = json.Unmarshal(body, &bodyContract)
 		require.NoError(t, err)
 
@@ -955,7 +955,7 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, rec.Code, string(body))
 
-		var bodyContract contracts.Totals
+		var bodyContract contracts.TotalsResponse
 		err = json.Unmarshal(body, &bodyContract)
 		require.NoError(t, err)
 
