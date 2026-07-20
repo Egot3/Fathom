@@ -69,6 +69,7 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		return ErrBadQuizzes
 	}
 
+	ultimateChecksum := make([]uint64, len(tr.quizzes))
 	quizzes := make([]quiz.Quiz, len(quizPaths))
 	for i, path := range quizPaths {
 		if !filepath.IsAbs(path) {
@@ -85,6 +86,7 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		}
 		quiz.UUID = quizUUIDs[i]
 		quiz.Checksum = xxh3.Hash(buf)
+		ultimateChecksum = append(ultimateChecksum, quiz.Checksum)
 		quizzes[i] = *quiz
 	}
 
@@ -98,6 +100,7 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		tr.timer.Stop()
 	}
 
+	tr.checksum = hashutils.HashHashes(ultimateChecksum)
 	tr.TestUUID = testUUID
 	tr.cancel = cancel
 	tr.quizzes = quizzes
@@ -135,6 +138,7 @@ func (tr *concreteTestRunner) cleanup(gen uint64) {
 			tr.cancel = nil
 		}
 		tr.TestUUID = uuid.Nil
+		tr.checksum = 0
 	}
 }
 
@@ -230,6 +234,14 @@ func (tr *concreteTestRunner) RemoveQuiz(uuids uuid.UUIDs) error {
 	tr.quizzes = lo.Filter(tr.quizzes, func(quiz quiz.Quiz, _ int) bool {
 		return !slices.Contains(uuids, quiz.UUID)
 	})
+
+	ultimateChecksum := make([]uint64, len(tr.quizzes))
+	lo.ForEach(tr.quizzes, func(quiz quiz.Quiz, _ int) {
+		ultimateChecksum = append(ultimateChecksum, quiz.Checksum)
+	})
+
+	tr.checksum = hashutils.HashHashes(ultimateChecksum)
+
 	nf := len(uuids) - (oldL - len(tr.quizzes))
 
 	if nf != 0 {
