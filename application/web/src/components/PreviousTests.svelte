@@ -51,9 +51,9 @@
 				<tbody>
 					{#each paginatedTotals.totals as total}
 						<tr>
-							<td>{total.testName}</td>
+							<td>{total.test_name}</td>
 							<!-- 10.5 rem = 168px -->
-							<td>{total.groupName}</td>
+							<td>{total.group_name}</td>
 							<td>{total.score}</td>
 						</tr>
 					{/each}

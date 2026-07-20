@@ -11,10 +11,14 @@ type rawTotal = {
 };
 
 type testTotal = {
-	testName: string;
-	groupName: string;
-	userName: string;
+	test_name: string;
+	group_name: string;
+	user_name: string;
 	score: number;
+
+	test_uuid: string;
+	group_uuid: string;
+	user_uuid: string;
 };
 
 export type TotalsOrError = { totals: testTotal[]; total: number } | JSONError;
@@ -45,24 +49,9 @@ export async function GetTotalsForUser(
 		return (await rawRes.json()) as JSONError;
 	}
 
-	const rawTotals = (await rawRes.json()) as {
-		totals: rawTotal[];
+	const totals = (await rawRes.json()) as {
+		totals: testTotal[];
 		total: number;
 	};
-	const testsTotalPromises: Promise<testTotal>[] = rawTotals.totals.map(
-		async (v) => {
-			const testResp = await GetTest(v.test_uuid);
-			const groupResp = await GetGroup(v.group_uuid);
-			return {
-				testName: testResp.test.name,
-				groupName: groupResp.group.name,
-				score: v.score,
-			} as testTotal;
-		},
-	);
-
-	return {
-		totals: await Promise.all(testsTotalPromises),
-		total: rawTotals.total,
-	};
+	return totals;
 }
