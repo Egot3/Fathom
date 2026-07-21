@@ -33,7 +33,7 @@ type RemoveQuizzesRequest struct {
 
 type StartRequest struct {
 	Duration    string     `json:"duration"`
-	TestUUID    uuid.UUID  `json:"test_uuids"`
+	TestUUID    uuid.UUID  `json:"test_uuid"`
 	GroupsUUIDs uuid.UUIDs `json:"group_uuids"`
 }
 
@@ -54,4 +54,8 @@ type ExportTestRequest struct {
 
 type GetQuizzesUUIDs struct {
 	UUIDs uuid.UUIDs `json:"quiz_uuids"`
+}
+
+type RunningInfoResponse struct {
+	Test models.Test `json:"test"`
 }

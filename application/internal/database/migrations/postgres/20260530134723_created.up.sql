@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS "users_groups_tests" (
     "test_uuid"  UUID REFERENCES tests(uuid) ON DELETE CASCADE,
     "group_uuid" UUID REFERENCES groups(uuid) ON DELETE CASCADE,
     "user_uuid"  UUID REFERENCES users(uuid) ON DELETE CASCADE,
+    "finalized_at" TEXT NOT NULL,
+
     "score"      FLOAT NOT NULL,
     
     PRIMARY KEY("test_uuid","group_uuid","user_uuid")

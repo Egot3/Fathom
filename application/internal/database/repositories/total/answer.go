@@ -192,9 +192,10 @@ func (r *bunTotalRepository) AllTotals(ctx context.Context, userUUID uuid.UUID, 
 	var totals []contracts.Total
 	total, err := r.db.NewSelect().TableExpr("users_groups_tests AS ugt").
 		Where("ugt.user_uuid = ?", userUUID).
-		ColumnExpr("ugt.score AS score").
+		ColumnExpr("ugt.score AS score, ugt.test_uuid AS test_uuid, ugt.group_uuid AS group_uuid").
 		Join("JOIN groups AS g").JoinOn("g.uuid = ugt.group_uuid").ColumnExpr("g.name AS group_name").
 		Join("JOIN tests AS t").JoinOn("t.uuid = ugt.test_uuid").ColumnExpr("t.name AS test_name").
+		OrderBy("ugt.finalized_at", bun.OrderDesc).
 		Offset(page*size).Limit(size).
 		ScanAndCount(ctx, &totals)
 	if err != nil {
