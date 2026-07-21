@@ -1068,6 +1068,10 @@ func (c *chiService) GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 
 	checksum := c.runner.Checksum()
+	if checksum == 0 {
+		w.WriteHeader(http.StatusLocked)
+		return
+	}
 
 	etag := strconv.FormatUint(checksum, 10)
 	if deadline, err := c.runner.Deadline(); err == nil {
@@ -1090,5 +1094,31 @@ func (c *chiService) GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.GetQuizzesUUIDs{
 		UUIDs: uuids,
+	})
+}
+
+func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	w.Header().Set("Content-Type", "application/json")
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	testUUID := c.runner.CurrentTestUUID()
+	if testUUID == uuid.Nil {
+		w.WriteHeader(http.StatusLocked)
+		return
+	}
+
+	test, err := c.testRepo.Test(ctx, testUUID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't select running test info"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contracts.RunningInfoResponse{
+		Test: *test,
 	})
 }

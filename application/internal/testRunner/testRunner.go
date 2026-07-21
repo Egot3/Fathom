@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/egot3/fathom/internal/hashutils"
+	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/quiz"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
 	"github.com/google/uuid"
@@ -69,6 +71,15 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		return ErrBadQuizzes
 	}
 
+	logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "runner"),
+		slog.String("duration", duration.String()),
+		slog.Any("quizPathes", quizPaths),
+		slog.Any("quizUUIDs", quizUUIDs.Strings()),
+		slog.Any("groupUUIDs", groupUUIDs.Strings()),
+		slog.String("testUUID", testUUID.String()),
+	)
+
+	logger.Debug("starting runner...")
 	ultimateChecksum := make([]uint64, len(tr.quizzes))
 	quizzes := make([]quiz.Quiz, len(quizPaths))
 	for i, path := range quizPaths {
@@ -90,19 +101,14 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		quizzes[i] = *quiz
 	}
 
-	cctx, cancel := context.WithCancel(ctx)
-
 	tr.mu.Lock()
-	if tr.cancel != nil {
-		tr.cancel()
-	}
+
 	if tr.timer != nil {
 		tr.timer.Stop()
 	}
 
 	tr.checksum = hashutils.HashHashes(ultimateChecksum)
 	tr.TestUUID = testUUID
-	tr.cancel = cancel
 	tr.quizzes = quizzes
 	tr.isPaused = false
 	tr.deadline = time.Now().Add(duration)
@@ -113,15 +119,12 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 	tr.timer = time.AfterFunc(time.Until(tr.deadline), func() {
 		tr.cleanup(gen)
 	})
-	localTimer := tr.timer
 	tr.mu.Unlock()
 
 	go func() {
 
-		<-cctx.Done()
-		if localTimer.Stop() {
-			tr.cleanup(gen)
-		}
+		<-tr.timer.C
+		tr.cleanup(gen)
 
 	}()
 
