@@ -16,8 +16,7 @@ import (
 
 func JWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := logging.LoggerFromContext(r.Context())
-		logger.With(slog.String("layer", "middleware"))
+		logger := logging.LoggerFromContext(r.Context()).With(slog.String("layer", "middleware"))
 
 		authorization, err := r.Cookie("jwt_token")
 		if err != nil {
@@ -39,13 +38,12 @@ func JWT(next http.Handler) http.Handler {
 			}
 			http.SetCookie(w, cookie)
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad token"})
+			return
 		}
 		logger.Debug("token validated")
 
-		rctx := r.Context()
-		ctx := context.WithValue(rctx, "claims", *claims)
-
-		next.ServeHTTP(w, r.WithContext(ctx))
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, "claims", *claims)
 
 		newToken, err := jwtutils.RemintToken(authorization.Value)
 		if err != nil {
@@ -60,6 +58,7 @@ func JWT(next http.Handler) http.Handler {
 			}
 			http.SetCookie(w, cookie)
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad token"})
+			return
 		}
 		logger.Debug("token reminted", slog.String("newToken", newToken))
 
@@ -77,5 +76,8 @@ func JWT(next http.Handler) http.Handler {
 
 		w.Header().Set("Session-Control", fmt.Sprintf("max-age=%d", mAge))
 		logger.Debug("Sent Session-Control header")
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+
 	})
 }
