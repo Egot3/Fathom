@@ -18,15 +18,16 @@
 		</div>
 		<div
 			id="previous_results"
-			class="row-start-8 row-end-13 col-start-1 col-end-13 bg-surface-700-300 rounded-2xl p-4 flex flex-col"
+			class="row-start-8 row-end-13 col-start-1 col-end-13 bg-surface-700-300 rounded-2xl p-8 flex flex-col"
 		>
-			<h2 class="self-center text-2xl">Previous Results</h2>
+			<h2 class="self-center text-2xl font-bold">Previous results</h2>
 			<PreviousTests />
 		</div>
 		<div
 			id="self"
-			class="row-start-1 row-end-8 col-start-5 col-end-13 bg-surface-700-300 rounded-2xl"
+			class="row-start-1 row-end-8 col-start-5 col-end-13 flex flex-col bg-surface-700-300 rounded-2xl p-8"
 		>
+			<h2 class="text-2xl font-bold">You are</h2>
 			<SelfInfo />
 		</div>
 	</div>
