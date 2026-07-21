@@ -20,11 +20,12 @@ func ValidateToken(tokenString string) (*Claims, error) {
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(*Claims)
-	if ok && token.Valid {
-		return claims, nil
+	if token.Valid {
+		claims, ok := token.Claims.(*Claims)
+		if ok {
+			return claims, nil
+		}
 	}
 
 	return nil, jwt.ErrTokenInvalidClaims
 }
-
