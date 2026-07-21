@@ -69,6 +69,7 @@
 					{pageSize}
 					{page}
 					onPageChange={(event) => (page = event.page)}
+					class="rounded-xl"
 				>
 					<Pagination.PrevTrigger>
 						<ArrowLeftIcon class="size-4" />

@@ -53,7 +53,7 @@
 <div class="card preset-filled-surface-700-300 max-w-md overflow-hidden">
 	<article class="space-y-4 p-4">
 		<div class="flex gap-2 items-center">
-			<h2 class="self-center text-2xl">Currently running</h2>
+			<h2 class="self-center text-2xl font-bold">Currently running</h2>
 			<button
 				bind:this={reload}
 				class="ml-auto mt-1"
@@ -76,6 +76,9 @@
 					<div>{currentlyRunning.error}</div>
 				{:else}
 					<p>Test {currentlyRunning.Name}</p>
+					<a class="mb-auto btn preset-filled-primary-500" href="/participate"
+						>Join?</a
+					>
 				{/if}
 			{/if}
 		{/await}
