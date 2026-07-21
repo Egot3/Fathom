@@ -7,6 +7,7 @@
 		type TotalsOrError,
 	} from "../lib/contracts/totals";
 	import { GetUserOrRedirect } from "../lib/bgdata/user.svelte";
+	import { IsJSONError } from "../lib/statuses/jsonerror";
 
 	let height = $state(0);
 
@@ -34,9 +35,11 @@
 	bind:clientHeight={height}
 >
 	{#await paginatedTotalPromises}
-		<div></div>
+		<div
+			class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
+		></div>
 	{:then paginatedTotals}
-		{#if "error" in paginatedTotals}
+		{#if IsJSONError(paginatedTotals)}
 			<div>{paginatedTotals.error}</div>
 		{:else}
 			<table class="table table-auto self-start">

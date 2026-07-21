@@ -1,6 +1,4 @@
 import type { JSONError } from "../statuses/jsonerror";
-import { GetGroup } from "./group";
-import { GetTest } from "./test";
 import { TokenizedFetch } from "./tokenizedFetch";
 
 type rawTotal = {
@@ -10,7 +8,7 @@ type rawTotal = {
 	score: number;
 };
 
-type testTotal = {
+export type TestTotal = {
 	test_name: string;
 	group_name: string;
 	user_name: string;
@@ -21,37 +19,44 @@ type testTotal = {
 	user_uuid: string;
 };
 
-export type TotalsOrError = { totals: testTotal[]; total: number } | JSONError;
+export type TotalsOrError = { totals: TestTotal[]; total: number } | JSONError;
 
 export async function GetTotalsForUser(
 	userUUID: string,
 	page: number,
 	size: number,
 ): Promise<TotalsOrError> {
-	const rawRes = await TokenizedFetch(
-		"http://" +
-			import.meta.env.VITE_DOMAIN +
-			"/api/v1/total/all/" +
-			userUUID +
-			"?page=" +
-			page +
-			"&size=" +
-			size,
-		{
-			method: "GET",
-			headers: {
-				Accept: "application/json",
+	try {
+		const rawRes = await TokenizedFetch(
+			"http://" +
+				import.meta.env.VITE_DOMAIN +
+				"/api/v1/total/all/" +
+				userUUID +
+				"?page=" +
+				page +
+				"&size=" +
+				size,
+			{
+				method: "GET",
+				headers: {
+					Accept: "application/json",
+				},
 			},
-		},
-	);
+		);
 
-	if (!rawRes.ok) {
-		return (await rawRes.json()) as JSONError;
+		if (!rawRes.ok) {
+			return (await rawRes.json()) as JSONError;
+		}
+
+		const totals = (await rawRes.json()) as {
+			totals: TestTotal[];
+			total: number;
+		};
+		return totals;
+	} catch (err) {
+		console.log(err);
+		return {
+			error: "network error",
+		} as JSONError;
 	}
-
-	const totals = (await rawRes.json()) as {
-		totals: testTotal[];
-		total: number;
-	};
-	return totals;
 }

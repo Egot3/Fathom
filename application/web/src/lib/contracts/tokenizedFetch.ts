@@ -1,6 +1,6 @@
 import { GetUser, SetTokenExpiration } from "../bgdata/user.svelte";
 
-const maxAgeRegex = /max-age=(\d+)/;
+export const maxAgeRegex = /max-age=(\d+)/;
 
 export async function TokenizedFetch(
 	url: RequestInfo | URL,
