@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CurrentlyRunning from "../components/CurrentlyRunning.svelte";
 	import PreviousTests from "../components/PreviousTests.svelte";
+	import SelfInfo from "../components/SelfInfo.svelte";
 </script>
 
 <div
@@ -25,6 +26,8 @@
 		<div
 			id="self"
 			class="row-start-1 row-end-8 col-start-5 col-end-13 bg-surface-700-300 rounded-2xl"
-		></div>
+		>
+			<SelfInfo />
+		</div>
 	</div>
 </div>
