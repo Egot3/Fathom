@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CurrentlyRunning from "../components/CurrentlyRunning.svelte";
 	import PreviousTests from "../components/PreviousTests.svelte";
 </script>
 
@@ -12,12 +13,15 @@
 			id="current"
 			class="row-start-1 row-end-8 col-start-1 col-end-5 bg-surface-700-300 rounded-2xl p-4"
 		>
-			<PreviousTests />
+			<CurrentlyRunning />
 		</div>
 		<div
 			id="previous_results"
-			class="row-start-8 row-end-13 col-start-1 col-end-13 bg-surface-700-300 rounded-2xl"
-		></div>
+			class="row-start-8 row-end-13 col-start-1 col-end-13 bg-surface-700-300 rounded-2xl p-4 flex flex-col"
+		>
+			<h2 class="self-center text-2xl">Previous Results</h2>
+			<PreviousTests />
+		</div>
 		<div
 			id="self"
 			class="row-start-1 row-end-8 col-start-5 col-end-13 bg-surface-700-300 rounded-2xl"
