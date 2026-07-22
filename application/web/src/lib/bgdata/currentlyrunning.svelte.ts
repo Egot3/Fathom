@@ -2,7 +2,6 @@ import {
 	FetchCurrentlyRunningQuizUUIDs,
 	FetchCurrentlyRunningTestInfo,
 } from "../contracts/test";
-import { TokenizedFetch } from "../contracts/tokenizedFetch";
 import { IsJSONError, type JSONError } from "../statuses/jsonerror";
 
 export type ETagInfo = {
@@ -14,6 +13,8 @@ type currentlyRunningData = {
 	UUID: string;
 	Name: string;
 	QuizUUIDs: string[];
+	IsPaused: boolean;
+	Deadline: Date;
 };
 
 let currentlyRunning: currentlyRunningData | null = $state(null);
@@ -35,9 +36,11 @@ export async function GetCurrentlyRunning(): Promise<NullableTestOrError> {
 		return testInfoResponse;
 	}
 
-	const cr = {
-		UUID: testInfoResponse.uuid,
-		Name: testInfoResponse.name,
+	const cr: currentlyRunningData = {
+		UUID: testInfoResponse.test.uuid,
+		Name: testInfoResponse.test.name,
+		Deadline: testInfoResponse.deadline,
+		IsPaused: testInfoResponse.isPaused,
 		QuizUUIDs: [] as string[],
 	};
 
