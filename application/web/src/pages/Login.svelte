@@ -59,6 +59,7 @@
 			const rj = await response.json();
 			const userData = rj as LoginResponse;
 
+			console.log("is teacher?: ", userData.user.is_teacher);
 			SetUser({
 				UUID: userData.user.uuid,
 				isTeacher: userData.user.is_teacher,
