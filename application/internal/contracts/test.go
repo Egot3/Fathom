@@ -1,6 +1,8 @@
 package contracts
 
 import (
+	"time"
+
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/quiz"
 	"github.com/google/uuid"
@@ -57,5 +59,7 @@ type GetQuizzesUUIDs struct {
 }
 
 type RunningInfoResponse struct {
-	Test models.Test `json:"test"`
+	Test     models.Test `json:"test"`
+	Deadline time.Time   `json:"deadline"`
+	IsPaused bool        `json:"is_paused"`
 }

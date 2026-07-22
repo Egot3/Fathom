@@ -154,8 +154,7 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger = logger.With(slog.String("nickname", req.Nickname),
-		slog.String("password", req.Password))
+	logger = logger.With(slog.String("nickname", req.Nickname))
 	ctx = logging.WithLogger(r.Context(), logger)
 
 	user, err := c.userRepo.Login(ctx, req.Nickname, []byte(req.Password))

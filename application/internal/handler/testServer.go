@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"time"
 
+	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
@@ -853,7 +854,25 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 
 	logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
 
-	tests, total, err := c.testRepo.ListTests(ctx, pageInt, sizeInt)
+	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	if !ok {
+		logger.Error("Failed to retrieve jwt claims")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve jwt's claims"})
+		return
+	}
+
+	var tests []models.Test
+	var total int
+	if claims.IsTeacher {
+		logger.Debug("got teacher request")
+		tests, total, err = c.testRepo.ListTestsAdvanced(ctx, pageInt, sizeInt)
+		logger.Debug("got advanced tests info", slog.Any("tests", tests))
+	} else {
+		logger.Debug("got pupil request", slog.Any("claims", claims))
+		tests, total, err = c.testRepo.ListTests(ctx, pageInt, sizeInt)
+	}
+
 	if err != nil {
 		logger.Error("couldn't select tests for listing", slog.String("Error", err.Error()))
 		if gone, ok := errors.AsType[carefulness.Gone](err); ok {
@@ -1110,6 +1129,13 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	deadline, err := c.runner.Deadline()
+	if err != nil {
+		w.WriteHeader(http.StatusLocked)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get deadline"})
+		return
+	}
+
 	test, err := c.testRepo.Test(ctx, testUUID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -1119,6 +1145,8 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.RunningInfoResponse{
-		Test: *test,
+		Test:     *test,
+		Deadline: *deadline,
+		IsPaused: c.runner.IsPaused(),
 	})
 }

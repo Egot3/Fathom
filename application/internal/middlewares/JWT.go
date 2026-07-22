@@ -40,7 +40,7 @@ func JWT(next http.Handler) http.Handler {
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad token"})
 			return
 		}
-		logger.Debug("token validated")
+		logger.Debug("token validated", slog.Any("claims", *claims))
 
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "claims", *claims)

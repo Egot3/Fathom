@@ -325,13 +325,15 @@ func (tr *concreteTestRunner) Resume() error {
 
 	tr.timer.Reset(sincePause)
 
-	/* log.Printf("paused for: %v, now %v, new deadline: %v",
-	sincePause.String(),
-	time.Now().Format(time.TimeOnly),
-	tr.deadline.Format(time.TimeOnly)) */
-
 	tr.isPaused = false
 	return nil
+}
+
+func (tr *concreteTestRunner) IsPaused() bool {
+	tr.mu.RLock()
+	defer tr.mu.Unlock()
+
+	return tr.isPaused
 }
 
 func (tr *concreteTestRunner) Deadline() (*time.Time, error) {

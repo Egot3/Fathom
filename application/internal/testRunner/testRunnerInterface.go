@@ -18,6 +18,7 @@ type TestRunner interface {
 	ExtendTime(duration time.Duration) error
 	Resume() error
 	Pause() error
+	IsPaused() bool
 	CurrentTestUUID() uuid.UUID
 	Deadline() (*time.Time, error)
 
