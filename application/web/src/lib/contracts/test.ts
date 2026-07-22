@@ -1,5 +1,6 @@
 import type { ETagInfo } from "../bgdata/currentlyrunning.svelte";
 import type { JSONError } from "../statuses/jsonerror";
+import type { Quiz } from "./quiz";
 import { maxAgeRegex, TokenizedFetch } from "./tokenizedFetch";
 
 type Test = {
@@ -7,6 +8,7 @@ type Test = {
 	name: string;
 	created_at: Date;
 	updated_at: Date;
+	quizzes: Quiz[];
 };
 
 type GetTestResponse = {
@@ -148,6 +150,44 @@ export async function FetchCurrentlyRunningQuizUUIDs(
 		console.log("couldn't fetch current test info due to unknown error: ", e);
 		return {
 			error: "got network error while fetching current test",
+		} as JSONError;
+	}
+}
+
+export type TestsOrError = { tests: Test[]; total: number } | JSONError;
+
+export async function FetchAllTests(
+	page: number,
+	size: number,
+): Promise<TestsOrError> {
+	try {
+		const rawRes = await TokenizedFetch(
+			"http://" +
+				import.meta.env.VITE_DOMAIN +
+				"/api/v1/test/" +
+				"?page=" +
+				page +
+				"&size=" +
+				size,
+			{
+				method: "GET",
+				headers: {
+					Accept: "application/json",
+				},
+			},
+		);
+
+		if (!rawRes.ok) {
+			return (await rawRes.json()) as JSONError;
+		}
+
+		const totals = (await rawRes.json()) as { tests: Test[]; total: number };
+		console.log("totals: ", totals);
+		return totals;
+	} catch (err) {
+		console.log(err);
+		return {
+			error: "network error",
 		} as JSONError;
 	}
 }

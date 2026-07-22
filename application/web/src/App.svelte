@@ -44,7 +44,7 @@
 	{#if requestor == null && !publicRoutes.has(hier_part)}
 		{sendToLogin()}
 	{:else}
-		{#if !requestor?.isTeacher && !teacherRoutes.has(hier_part)}
+		{#if !requestor?.isTeacher && teacherRoutes.has(hier_part)}
 			{sendToHome()}
 		{:else}
 			{@const ActivePage = pages.get(hier_part)}
