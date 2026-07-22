@@ -19,4 +19,5 @@ type TestRepository interface {
 	ListTests(ctx context.Context, page, size int) ([]models.Test, int, error)
 	ExistsByUUID(ctx context.Context, testUUID uuid.UUID) (bool, error)
 	ImportTest(ctx context.Context, test exportutlis.YamlTest) error
+	ListTestsAdvanced(ctx context.Context, page, size int) ([]models.Test, int, error)
 }

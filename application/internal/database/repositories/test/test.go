@@ -197,6 +197,19 @@ func (r *bunTestRepository) ListTests(ctx context.Context, page, size int) ([]mo
 	return tests, total, nil
 }
 
+func (r *bunTestRepository) ListTestsAdvanced(ctx context.Context, page, size int) ([]models.Test, int, error) {
+	tests := make([]models.Test, size)
+	total, err := r.db.NewSelect().Model(&tests).
+		Relation("Quizzes").
+		OrderBy("uuid", bun.OrderAsc).
+		Limit(size).Offset(page * size).ScanAndCount(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return tests, total, nil
+}
+
 func (r *bunTestRepository) ExistsByUUID(ctx context.Context, testUUID uuid.UUID) (bool, error) {
 	return r.db.NewSelect().Model((*models.Test)(nil)).
 		Where("uuid = ?", testUUID).Exists(ctx)

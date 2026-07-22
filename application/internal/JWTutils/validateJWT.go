@@ -21,8 +21,7 @@ func ValidateToken(tokenString string) (*Claims, error) {
 	}
 
 	if token.Valid {
-		claims, ok := token.Claims.(*Claims)
-		if ok {
+		if claims, ok := token.Claims.(*Claims); ok {
 			return claims, nil
 		}
 	}

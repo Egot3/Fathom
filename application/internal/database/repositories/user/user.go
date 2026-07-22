@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/egot3/fathom/internal/carefulness"
+	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
@@ -46,6 +48,8 @@ func (r *bunUserRepository) Register(ctx context.Context, name string, passwordH
 }
 
 func (r *bunUserRepository) Login(ctx context.Context, nickname string, password []byte) (*models.User, error) {
+	logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "repository"))
+
 	var user models.User
 	err := r.db.NewSelect().Model(&user).
 		Where("nickname = ?", nickname).
@@ -54,18 +58,14 @@ func (r *bunUserRepository) Login(ctx context.Context, nickname string, password
 		return nil, err
 	}
 
+	logger.Debug("Got user", slog.Any("user", user))
+
 	err = bcrypt.CompareHashAndPassword(user.PasswordHash, password)
 	if err != nil {
 		return nil, sql.ErrNoRows // will be sql.ErrNoRows
 	}
-	return &models.User{
-		UUID:      user.UUID,
-		Nickname:  user.Nickname,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		DeletedAt: user.DeletedAt,
-		IsTeacher: user.IsTeacher,
-	}, nil
+	user.PasswordHash = nil
+	return &user, nil
 }
 
 func (r *bunUserRepository) Exists(ctx context.Context, uuid uuid.UUID) (bool, error) {
