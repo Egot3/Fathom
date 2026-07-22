@@ -6,6 +6,7 @@
 	import Register from "./pages/Register.svelte";
 	import Home from "./pages/Home.svelte";
 	import { GetUser } from "./lib/bgdata/user.svelte";
+	import Treachery from "./pages/Treachery.svelte";
 
 	const regex = /^https?:\/\/[^\/]+\/([^?#]+)/;
 
@@ -22,23 +23,33 @@
 		["login", Login],
 		["register", Register],
 		["home", Home],
+		["teachery", Treachery],
 	]);
 
 	const publicRoutes = new Set(["login", "register"]);
+	const teacherRoutes = new Set(["teachery"]);
 
 	const sendToLogin = () => {
 		window.location.href = "/login";
+	};
+	const sendToHome = () => {
+		window.location.href = "/home";
 	};
 
 	console.log(GetUser());
 </script>
 
 {#if pages.has(hier_part)}
-	{#if GetUser() == null && !publicRoutes.has(hier_part)}
+	{@const requestor = GetUser()}
+	{#if requestor == null && !publicRoutes.has(hier_part)}
 		{sendToLogin()}
 	{:else}
-		{@const ActivePage = pages.get(hier_part)}
-		<ActivePage />
+		{#if !requestor?.isTeacher && !teacherRoutes.has(hier_part)}
+			{sendToHome()}
+		{:else}
+			{@const ActivePage = pages.get(hier_part)}
+			<ActivePage />
+		{/if}
 	{/if}
 {:else}
 	<Status404 />

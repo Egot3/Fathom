@@ -11,6 +11,8 @@ type Test = {
 
 type GetTestResponse = {
 	test: Test;
+	deadline: string;
+	is_paused: boolean;
 };
 
 type GetQuizUUIDsResponse = {
@@ -32,7 +34,7 @@ export async function FetchTest(testUUID: string): Promise<Test> {
 }
 
 export async function FetchCurrentlyRunningTestInfo(): Promise<
-	Test | JSONError | null
+	{ test: Test; deadline: Date; isPaused: boolean } | JSONError | null
 > {
 	try {
 		const res = await TokenizedFetch(
@@ -45,7 +47,12 @@ export async function FetchCurrentlyRunningTestInfo(): Promise<
 			return (await res.json()) as JSONError;
 		}
 
-		return ((await res.json()) as GetTestResponse).test;
+		const respJSON = (await res.json()) as GetTestResponse;
+		return {
+			test: respJSON.test,
+			deadline: new Date(respJSON.deadline),
+			isPaused: respJSON.is_paused,
+		};
 	} catch (e) {
 		console.log("couldn't fetch current test info due to unknown error: ", e);
 		return {
