@@ -14,7 +14,11 @@ import (
 
 var verbose bool
 
-var PathToConfig = "/home/ETS/.config/fathom/config.yaml"
+var PathToConfig string
+
+func LoadPath() {
+	PathToConfig = os.Getenv("PATH_TO_CONFIG")
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "fampls",

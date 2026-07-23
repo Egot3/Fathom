@@ -3,6 +3,7 @@ module github.com/egot3/fathom
 go 1.26.3
 
 require (
+	github.com/go-chi/cors v1.2.2
 	github.com/stretchr/testify v1.11.1
 	github.com/zeebo/xxh3 v1.1.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.5
@@ -12,8 +13,8 @@ require (
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-chi/cors v1.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/mattn/go-sqlite3 v1.14.34 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
@@ -89,7 +90,7 @@ require (
 	github.com/uptrace/bun/driver/sqliteshim v1.2.18
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa // indirect
-	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sync v0.21.0
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
 )
