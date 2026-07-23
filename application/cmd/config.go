@@ -19,6 +19,8 @@ var configCmd = &cobra.Command{
 	Args: cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 
+		log.Printf("path to config: %v", PathToConfig)
+
 		cfg := config.Config{}
 		data, err := os.ReadFile(PathToConfig)
 		if err != nil {
