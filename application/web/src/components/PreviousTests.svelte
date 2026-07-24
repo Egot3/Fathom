@@ -31,7 +31,7 @@
 </script>
 
 <div
-	class="grid gap-4 w-full place-items-center h-full overflow-scroll"
+	class="grid gap-4 w-full place-items-center h-full overflow-auto"
 	bind:clientHeight={height}
 >
 	{#await paginatedTotalPromises}

@@ -21,6 +21,7 @@ type GetQuizUUIDsResponse = {
 	quiz_uuids: string[];
 };
 
+// redo
 export async function FetchTest(testUUID: string): Promise<Test> {
 	const rawRes = await TokenizedFetch(
 		"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + testUUID,
