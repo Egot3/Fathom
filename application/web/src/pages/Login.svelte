@@ -2,8 +2,12 @@
 	import { ClassForStatus, InputStatus } from "../lib/statuses/input";
 	import { CheckPassword } from "../lib/passwordUtils/checkPassword";
 	import { Popover, Portal, usePopover } from "@skeletonlabs/skeleton-svelte";
-	import type { LoginRequest, LoginResponse } from "../lib/contracts/user";
-	import type { JSONError } from "../lib/statuses/jsonerror";
+	import {
+		FetchLogin,
+		type LoginRequest,
+		type LoginResponse,
+	} from "../lib/contracts/user";
+	import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
 	import { TokenizedFetch } from "../lib/contracts/tokenizedFetch";
 	import { GetUser, SetUser } from "../lib/bgdata/user.svelte";
 
@@ -33,57 +37,29 @@
 
 	async function SubmitLogin(e: Event) {
 		e.preventDefault();
-		const body: LoginRequest = {
-			nickname: login,
-			password: password,
-		};
 
-		try {
-			const response = await TokenizedFetch(
-				"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/login",
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Accept: "application/json",
-					},
-					body: JSON.stringify(body),
-				},
-			);
-
-			if (!response.ok) {
-				statusMessage = ((await response.json()) as JSONError).error; // then they say that front is better
-				return false;
-			}
-
-			const rj = await response.json();
-			const userData = rj as LoginResponse;
-
-			console.log("is teacher?: ", userData.user.is_teacher);
-			SetUser({
-				UUID: userData.user.uuid,
-				isTeacher: userData.user.is_teacher,
-				nickname: userData.user.nickname,
-			});
-			window.location.href = "/home";
-		} catch (err) {
-			console.log("Couldn't fetch login for user: ", err);
-			if (err instanceof Error) {
-				statusMessage = "couldn't send login because of in-browser error";
-			}
-
-			statusMessage = "couldn't send login because of unknown error";
+		const loginResp = await FetchLogin(login, password);
+		if (IsJSONError(loginResp)) {
+			statusMessage = loginResp.error;
 			mainPopover().setOpen(true);
-			return false;
+			return;
 		}
 
-		return false;
+		console.log("is teacher?: ", loginResp.user.is_teacher);
+		SetUser({
+			UUID: loginResp.user.uuid,
+			isTeacher: loginResp.user.is_teacher,
+			nickname: loginResp.user.nickname,
+		});
+		window.location.href = "/home";
+
+		return null as never;
 	}
 </script>
 
 <div class="h-full w-full items-center justify-center flex text-surface-50-950">
 	<div
-		class="h-4/5 w-1/2 bg-surface-950-50 rounded-2xl p-2.5 overflow-scroll flex items-center"
+		class="h-4/5 w-1/2 bg-surface-950-50 rounded-2xl p-2.5 overflow-auto flex items-center"
 	>
 		<form
 			onsubmit={SubmitLogin}
@@ -229,10 +205,10 @@
 			</div>
 
 			<a
-				class="btn btn-lg w-2/5 leading-[0.75] preset-outlined-primary-500 self-center"
+				class="btn btn-lg w-2/5 leading-[0.75] text-xl preset-outlined-primary-500 self-center"
 				href={"register?login=" + login} // no, I didn't forget the password, form vals stay in history
 			>
-				Register instead
+				Register
 			</a>
 		</form>
 	</div>

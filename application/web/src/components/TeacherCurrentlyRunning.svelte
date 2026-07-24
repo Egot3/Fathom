@@ -44,8 +44,10 @@
 				</div>
 			{/if}
 		{/if}
-		<div class="mt-auto flex space-x-1">
-			<button class="btn preset-filled-primary-500">Start test</button>
+		<div
+			class="mt-auto flex flex-col lg:flex-row space-x-0 lg:space-x-1 space-y-1 lg:space-y-0"
+		>
+			<button class="btn preset-filled-primary-500">Start new</button>
 
 			<button class="btn preset-outlined-error-500" disabled={!loaded}
 				>End test</button

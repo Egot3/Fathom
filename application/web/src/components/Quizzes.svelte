@@ -3,8 +3,8 @@
 	import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
 	import { Pagination } from "@skeletonlabs/skeleton-svelte";
 	import { IsJSONError } from "../lib/statuses/jsonerror";
-	import { FetchAllTests, type TestsOrError } from "../lib/contracts/test";
 	import CreateTest from "./CreateTest.svelte";
+	import { FetchAllQuizzes, type QuizzesOrError } from "../lib/contracts/quiz";
 
 	let height = $state(0);
 
@@ -12,52 +12,50 @@
 	let pageSize = $derived(Math.trunc((height - 39 - 45 - 40) / 39));
 
 	let time: number;
-	const paginatedTestPromises = $derived.by(() => {
+	const paginatedQuizPromises = $derived.by(() => {
 		const p = page;
 		const ps = pageSize;
 
 		console.log("detected change");
 		clearTimeout(time);
 
-		return new Promise<TestsOrError>((resolve) => {
+		return new Promise<QuizzesOrError>((resolve) => {
 			time = setTimeout(() => {
-				resolve(FetchAllTests(p - 1, ps));
+				resolve(FetchAllQuizzes(p - 1, ps));
 			}, 500);
 		});
 	});
-
-	let creatingTest = $state(false);
 </script>
 
 <div
 	class="grid gap-4 w-full place-items-center h-full overflow-auto"
 	bind:clientHeight={height}
 >
-	{#await paginatedTestPromises}
+	{#await paginatedQuizPromises}
 		<div
 			class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
 		></div>
-	{:then paginatedTests}
-		{#if IsJSONError(paginatedTests)}
-			<div>{paginatedTests.error}</div>
+	{:then paginatedQuizzes}
+		{#if IsJSONError(paginatedQuizzes)}
+			<div>{paginatedQuizzes.error}</div>
 		{:else}
-			{#if paginatedTests.total == 0}
+			{#if paginatedQuizzes.total == 0}
 				<CreateTest />
 			{:else}
 				<table class="table table-auto self-start">
 					<thead>
 						<tr class="text-surface-100-900">
-							<th>Test</th>
-							<th>Quiz count</th>
+							<th>Quiz path</th>
+							<th>Max score</th>
 						</tr>
 					</thead>
 
 					<tbody>
-						{#each paginatedTests.tests as test}
+						{#each paginatedQuizzes.quizzes as quiz}
 							<tr>
-								<td>{test.name}</td>
+								<td>{quiz.path}</td>
 								<!-- 10.5 rem = 168px -->
-								<td>{test.quizzes?.length ?? 0}</td>
+								<td>{quiz.score}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -65,7 +63,7 @@
 
 				<div class="flex justify-between items-center gap-4 w-full self-end">
 					<Pagination
-						count={paginatedTests?.total ?? 0}
+						count={paginatedQuizzes?.total ?? 0}
 						{pageSize}
 						{page}
 						onPageChange={(event) => (page = event.page)}
