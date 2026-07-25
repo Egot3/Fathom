@@ -3,73 +3,68 @@
 	import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
 	import { Pagination } from "@skeletonlabs/skeleton-svelte";
 	import { IsJSONError } from "../lib/statuses/jsonerror";
-	import { FetchAllTests, type TestsOrError } from "../lib/contracts/test";
-	import CreateTest from "./CreateDialog.svelte";
-	import CreateDialog from "./CreateDialog.svelte";
-	import CreateTestForm from "./CreateTestForm.svelte";
+	import { FetchAllQuizzes, type QuizzesOrError } from "../lib/contracts/quiz";
+	import { CheckIcon } from "@lucide/svelte";
+	import { SvelteSet } from "svelte/reactivity";
+
+	let { chosen = $bindable(new SvelteSet<string>()) as SvelteSet<string> } =
+		$props();
+	$inspect(chosen);
 
 	let height = $state(0);
 
 	let page = $state(1);
-	let pageSize = $derived(Math.trunc((height - 39 - 45) / 39));
+	let pageSize = $state(5);
 
 	let time: number;
-	const paginatedTestPromises = $derived.by(() => {
+	const paginatedQuizPromises = $derived.by(() => {
 		const p = page;
 		const ps = pageSize;
 
 		console.log("detected change");
 		clearTimeout(time);
 
-		return new Promise<TestsOrError>((resolve) => {
+		return new Promise<QuizzesOrError>((resolve) => {
 			time = setTimeout(() => {
-				resolve(FetchAllTests(p - 1, ps));
+				resolve(FetchAllQuizzes(p - 1, ps));
 			}, 500);
 		});
 	});
-
-	let creatingTest = $state(false);
 </script>
 
 <div
 	class="grid gap-4 w-full place-items-center h-full overflow-auto"
 	bind:clientHeight={height}
 >
-	{#await paginatedTestPromises}
+	{#await paginatedQuizPromises}
 		<div
 			class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
 		></div>
-	{:then paginatedTests}
-		{#if IsJSONError(paginatedTests)}
-			<div>{paginatedTests.error}</div>
+	{:then paginatedQuizzes}
+		{#if IsJSONError(paginatedQuizzes)}
+			<div>{paginatedQuizzes.error}</div>
 		{:else}
-			{#if paginatedTests.total == 0}
-				<CreateDialog title="Create your first test"
-					><CreateTestForm /></CreateDialog
-				>
-			{:else}
-				<table class="table table-auto self-start">
-					<thead>
-						<tr class="text-surface-100-900">
-							<th>Test</th>
-							<th>Quiz count</th>
-						</tr>
-					</thead>
-
-					<tbody>
-						{#each paginatedTests.tests as test}
-							<tr>
-								<td>{test.name}</td>
-								<!-- 10.5 rem = 168px -->
-								<td>{test.quizzes?.length ?? 0}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+			{#if paginatedQuizzes.total != 0}
+				{#each paginatedQuizzes.quizzes as quiz}
+					<button
+						type="button"
+						class={`chip capitalize preset-outlined-surface-400-600 ${chosen.has(quiz.uuid) ? "preset-tonal-primary" : ""}`}
+						onclick={() => {
+							if (chosen.has(quiz.uuid)) {
+								chosen.delete(quiz.uuid);
+							} else {
+								chosen.add(quiz.uuid);
+							}
+						}}
+					>
+						{#if chosen.has(quiz.uuid)}<CheckIcon size={14} />{/if}
+						<span>{quiz.path}</span>
+					</button>
+				{/each}
 
 				<div class="flex justify-between items-center gap-4 w-full self-end">
 					<Pagination
-						count={paginatedTests?.total ?? 0}
+						count={paginatedQuizzes?.total ?? 0}
 						{pageSize}
 						{page}
 						onPageChange={(event) => (page = event.page)}

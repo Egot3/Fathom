@@ -3,7 +3,6 @@
 	import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
 	import { Pagination } from "@skeletonlabs/skeleton-svelte";
 	import { IsJSONError } from "../lib/statuses/jsonerror";
-	import CreateTest from "./CreateTest.svelte";
 	import { FetchAllQuizzes, type QuizzesOrError } from "../lib/contracts/quiz";
 
 	let height = $state(0);
@@ -40,7 +39,7 @@
 			<div>{paginatedQuizzes.error}</div>
 		{:else}
 			{#if paginatedQuizzes.total == 0}
-				<CreateTest />
+				<!-- <CreateDialog title="Create your first quiz" /> -->
 			{:else}
 				<table class="table table-auto self-start">
 					<thead>
