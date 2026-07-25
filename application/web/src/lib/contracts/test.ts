@@ -192,3 +192,45 @@ export async function FetchAllTests(
 		} as JSONError;
 	}
 }
+
+type PostTestRequest = {
+	name: string;
+	quizzes: string[];
+};
+
+export async function FetchTestPost(
+	name: string,
+	quizzes: string[],
+): Promise<JSONError | null> {
+	const body: PostTestRequest = {
+		name: name,
+		quizzes: quizzes,
+	};
+	const bodyString = JSON.stringify(body);
+	try {
+		const response = await TokenizedFetch(
+			"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				},
+				body: bodyString,
+			},
+		);
+
+		if (!response.ok) {
+			return (await response.json()) as JSONError;
+		}
+
+		return null;
+	} catch (err) {
+		console.log("Couldn't fetch login for user: ", err);
+		if (err instanceof Error) {
+			return { error: "couldn't send login because of in-browser error" };
+		}
+
+		return { error: "couldn't send login because of unknown error" };
+	}
+}

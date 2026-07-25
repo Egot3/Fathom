@@ -4,12 +4,14 @@
 	import { Pagination } from "@skeletonlabs/skeleton-svelte";
 	import { IsJSONError } from "../lib/statuses/jsonerror";
 	import { FetchAllTests, type TestsOrError } from "../lib/contracts/test";
-	import CreateTest from "./CreateTest.svelte";
+	import CreateTest from "./CreateDialog.svelte";
+	import CreateDialog from "./CreateDialog.svelte";
+	import CreateTestForm from "./CreateTestForm.svelte";
 
 	let height = $state(0);
 
 	let page = $state(1);
-	let pageSize = $derived(Math.trunc((height - 39 - 45 - 40) / 39));
+	let pageSize = $derived(Math.trunc((height - 39 - 45) / 39));
 
 	let time: number;
 	const paginatedTestPromises = $derived.by(() => {
@@ -42,7 +44,9 @@
 			<div>{paginatedTests.error}</div>
 		{:else}
 			{#if paginatedTests.total == 0}
-				<CreateTest />
+				<CreateDialog title="Create your first test"
+					><CreateTestForm /></CreateDialog
+				>
 			{:else}
 				<table class="table table-auto self-start">
 					<thead>
