@@ -6,9 +6,6 @@ on:
       path:
         required: false # so if I would use "" it would go to ghcr.io/<user>/<repo>
         type: string
-    secrets:
-      GITHUB_TOKEN:
-        required: true
 
 jobs:
   build:
