@@ -160,8 +160,14 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -286,8 +292,14 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 					nil,
 				)
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+				req.AddCookie(&http.Cookie{
+					Name:     "jwt_token",
+					Value:    token,
+					Path:     "/",
+					Expires:  time.Now().Add(jwtutils.JWTTTL),
+					HttpOnly: true,
+					SameSite: http.SameSiteLaxMode,
+				})
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -372,8 +384,14 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -476,8 +494,14 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 					nil,
 				)
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+				req.AddCookie(&http.Cookie{
+					Name:     "jwt_token",
+					Value:    token,
+					Path:     "/",
+					Expires:  time.Now().Add(jwtutils.JWTTTL),
+					HttpOnly: true,
+					SameSite: http.SameSiteLaxMode,
+				})
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -561,8 +585,14 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -652,8 +682,14 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 					nil,
 				)
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+				req.AddCookie(&http.Cookie{
+					Name:     "jwt_token",
+					Value:    token,
+					Path:     "/",
+					Expires:  time.Now().Add(jwtutils.JWTTTL),
+					HttpOnly: true,
+					SameSite: http.SameSiteLaxMode,
+				})
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -739,8 +775,14 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -860,8 +902,14 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 					nil,
 				)
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+				req.AddCookie(&http.Cookie{
+					Name:     "jwt_token",
+					Value:    token,
+					Path:     "/",
+					Expires:  time.Now().Add(jwtutils.JWTTTL),
+					HttpOnly: true,
+					SameSite: http.SameSiteLaxMode,
+				})
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -945,8 +993,14 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1038,8 +1092,14 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 					nil,
 				)
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+				req.AddCookie(&http.Cookie{
+					Name:     "jwt_token",
+					Value:    token,
+					Path:     "/",
+					Expires:  time.Now().Add(jwtutils.JWTTTL),
+					HttpOnly: true,
+					SameSite: http.SameSiteLaxMode,
+				})
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -1118,8 +1178,14 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1186,8 +1252,14 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1284,8 +1356,14 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 					bytes.NewReader(reqJSON),
 				)
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+				req.AddCookie(&http.Cookie{
+					Name:     "jwt_token",
+					Value:    token,
+					Path:     "/",
+					Expires:  time.Now().Add(jwtutils.JWTTTL),
+					HttpOnly: true,
+					SameSite: http.SameSiteLaxMode,
+				})
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -1358,8 +1436,14 @@ func TestTotalHandler_Totalize(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1419,8 +1503,14 @@ func TestTotalHandler_Totalize(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1509,8 +1599,14 @@ func TestTotalHandler_Totalize(t *testing.T) {
 					bytes.NewReader(reqJSON),
 				)
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
-
+				req.AddCookie(&http.Cookie{
+					Name:     "jwt_token",
+					Value:    token,
+					Path:     "/",
+					Expires:  time.Now().Add(jwtutils.JWTTTL),
+					HttpOnly: true,
+					SameSite: http.SameSiteLaxMode,
+				})
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)

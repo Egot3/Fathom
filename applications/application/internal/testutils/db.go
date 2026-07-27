@@ -2,8 +2,10 @@ package testutils
 
 import (
 	"database/sql"
+	"os"
 	"testing"
 
+	"github.com/egot3/fathom/internal/config"
 	"github.com/samber/do/v2"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -13,6 +15,8 @@ import (
 
 func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 	tb.Helper()
+
+	config.PathToQuizzes = os.TempDir()
 
 	dsn := "file::memory:?cache=private"
 
