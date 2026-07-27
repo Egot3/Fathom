@@ -49,7 +49,7 @@
 
 		try {
 			const response = await TokenizedFetch(
-				"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/register",
+				"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/register",
 				{
 					method: "POST",
 					headers: {

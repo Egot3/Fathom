@@ -16,7 +16,7 @@ export async function FetchAllQuizzes(
 ): Promise<QuizzesOrError> {
 	try {
 		const rawRes = await TokenizedFetch(
-			"http://" +
+			"https://" +
 				import.meta.env.VITE_DOMAIN +
 				"/api/v1/quiz/" +
 				"?page=" +

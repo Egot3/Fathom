@@ -19,7 +19,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://localhost:5173", "http://localhost:5173"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "ETag", "If-None-Match", "Session-Control"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "Cookie", "ETag", "If-None-Match", "Session-Control"},
 		ExposedHeaders:   []string{"Link", "ETag", "If-None-Match", "Session-Control"},
 		AllowCredentials: true,
 		MaxAge:           300,

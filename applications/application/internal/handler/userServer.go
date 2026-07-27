@@ -121,7 +121,7 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -183,7 +183,8 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 			Path:     "/",
 			Expires:  time.Unix(0, 0),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		}
 		http.SetCookie(w, cookie)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad token"})
@@ -195,7 +196,8 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  time.Now().Add(jwtutils.JWTTTL),
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
 	})
 
 	mAge := int(math.Trunc(jwtutils.JWTTTL.Seconds()))
@@ -431,7 +433,8 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  time.Now().Add(jwtutils.JWTTTL),
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
 	})
 
 	mAge := int(math.Trunc(jwtutils.JWTTTL.Seconds()))
