@@ -284,7 +284,14 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	abs := config.TurnToAbs(req.Name)
+	abs, err := config.TurnToAbs(req.Name)
+	if err != nil {
+		logger.Error("couldn't turn filepath to abs", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get absolute path of quiz"})
+		return
+	}
+
 	checksumUint := xxh3.HashString(req.Body)
 	checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
 
@@ -498,8 +505,9 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 
 	var newAbs *string
 	if req.Name != nil {
-		v := config.TurnToAbs(*req.Name)
-		newAbs = &v
+		if v, err := config.TurnToAbs(*req.Name); err == nil {
+			newAbs = &v
+		}
 	}
 
 	if req.Score != nil {

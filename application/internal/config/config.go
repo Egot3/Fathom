@@ -1,6 +1,12 @@
 package config
 
-type Config struct {
+import (
+	"os"
+	"slices"
+	"strings"
+)
+
+/* type Config struct {
 	Database struct {
 		Sqlite struct {
 			Used bool   `yaml:"used"`
@@ -23,4 +29,39 @@ type Config struct {
 		} `yaml:"logging"`
 	} `yaml:"server"`
 	QuizPath string `yaml:"quizPath"`
+} */
+
+type Config struct {
+	DatabaseDriver string
+	SqlitePath     string
+	PostgresURL    string
+
+	ServerPort string
+	LogLevel   string
+	LogSinks   []string
+
+	QuizPath string
+}
+
+func getEnv(key, fallback string, allowed []string) string {
+	if v, ok := os.LookupEnv(key); ok && (allowed == nil || slices.Contains(allowed, v)) {
+		return v
+
+	}
+	return fallback
+}
+
+func Load() Config {
+	pathToQuizzes = getEnv("QUIZ_PATH", "./data/quizzes", nil)
+	return Config{
+		DatabaseDriver: getEnv("DATABASE_DRIVER", "sqlite", []string{"sqlite", "postgres"}),
+		SqlitePath:     getEnv("SQLITE_PATH", "./data/fathom.db", nil),
+		PostgresURL:    os.Getenv("POSTGRES_URL"),
+
+		ServerPort: getEnv("SERVER_PORT", "8080", nil),
+		LogLevel:   getEnv("LOG_LEVEL", "info", nil),
+		LogSinks:   strings.Split(os.Getenv("LOG_SINKS"), ","),
+
+		QuizPath: pathToQuizzes,
+	}
 }

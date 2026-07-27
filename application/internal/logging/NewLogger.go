@@ -19,7 +19,7 @@ func NewLogger(i do.Injector) (*slog.Logger, error) {
 	cfg := do.MustInvoke[config.Config](i)
 
 	var level slog.Level
-	switch cfg.Server.Logging.Level {
+	switch cfg.LogLevel {
 	case "debug":
 		level = slog.LevelDebug
 	case "info":
@@ -32,16 +32,16 @@ func NewLogger(i do.Injector) (*slog.Logger, error) {
 		return nil, fmt.Errorf("no Log level")
 	}
 
-	if len(cfg.Server.Logging.Loggers) > 2 {
+	if len(cfg.LogSinks) > 2 {
 		return nil, fmt.Errorf("Can't have other loggers than slog and charm")
 	}
-	if slices.Contains(cfg.Server.Logging.Loggers, "slog") {
+	if slices.Contains(cfg.LogSinks, "slog") {
 		jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: level,
 		})
 		handlers = append(handlers, jsonHandler)
 	}
-	if slices.Contains(cfg.Server.Logging.Loggers, "charmLog") {
+	if slices.Contains(cfg.LogSinks, "charmLog") {
 		if term.IsTerminal(os.Stderr.Fd()) {
 			charmHandler := charmlog.New(os.Stderr)
 			charmHandler.SetLevel(charmlog.Level(level))

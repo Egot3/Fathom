@@ -76,7 +76,8 @@ func TestQuizHandler_Post(t *testing.T) {
 		bodyString := rec.Body.String()
 		require.Equal(t, http.StatusNoContent, rec.Code, bodyString)
 
-		path := config.TurnToAbs(name)
+		path, err := config.TurnToAbs(name)
+		require.NoError(t, err)
 		t.Logf("Filepath: %v", path)
 		require.FileExists(t, path)
 		b, err := os.ReadFile(path)
@@ -172,8 +173,11 @@ func TestQuizHandler_Post(t *testing.T) {
 
 		name := rand.Text()
 		db := do.MustInvoke[*bun.DB](i)
-		_, err := db.NewInsert().Model(&models.Quiz{
-			Path:          config.TurnToAbs(name),
+
+		path, err := config.TurnToAbs(name)
+		require.NoError(t, err)
+		_, err = db.NewInsert().Model(&models.Quiz{
+			Path:          path,
 			Checksum:      []byte{},
 			Score:         1,
 			CorrectAnswer: "omega",
@@ -209,7 +213,8 @@ func TestQuizHandler_Post(t *testing.T) {
 		bodyString := rec.Body.String()
 		require.Equal(t, http.StatusConflict, rec.Code, bodyString)
 
-		path := config.TurnToAbs(name)
+		path, err = config.TurnToAbs(name)
+		require.NoError(t, err)
 		require.NoFileExists(t, path)
 	})
 }
@@ -640,7 +645,8 @@ func TestQuizHandler_Patch(t *testing.T) {
 
 		require.Equal(t, http.StatusNoContent, rec.Code)
 
-		newPath := config.TurnToAbs(newName)
+		newPath, err := config.TurnToAbs(newName)
+		require.NoError(t, err)
 		require.FileExists(t, newPath)
 		defer os.Remove(newPath)
 
@@ -738,7 +744,8 @@ func TestQuizHandler_Patch(t *testing.T) {
 				require.Equal(t, http.StatusNoContent, rec.Code)
 
 				if nameJ != nil {
-					newPath := config.TurnToAbs(*nameJ)
+					newPath, err := config.TurnToAbs(*nameJ)
+					require.NoError(t, err)
 					require.FileExists(t, newPath)
 					os.Remove(newPath)
 				}

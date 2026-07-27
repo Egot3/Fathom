@@ -43,7 +43,4 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Use to get debug-level output")
 
 	rootCmd.AddCommand(serveCmd)
-
-	rootCmd.AddCommand(configCmd)
-	configCmd.AddCommand(configRegenerateCmd)
 }

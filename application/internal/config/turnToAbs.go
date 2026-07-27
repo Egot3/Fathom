@@ -1,7 +1,11 @@
 package config
 
-var pathToQuizzes string = "/home/ETS/"
+import (
+	"path/filepath"
+)
 
-func TurnToAbs(name string) string {
-	return pathToQuizzes + name + ".md"
+var pathToQuizzes string
+
+func TurnToAbs(name string) (string, error) {
+	return filepath.Abs(pathToQuizzes + name + ".md")
 }
