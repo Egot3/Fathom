@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/contracts"
@@ -462,7 +463,15 @@ func TestUserHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
+
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -502,7 +511,14 @@ func TestUserHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -542,7 +558,14 @@ func TestUserHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -582,7 +605,14 @@ func TestUserHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -670,7 +700,14 @@ func TestUserHandler_Patch(t *testing.T) {
 			)
 
 			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+			req.AddCookie(&http.Cookie{
+				Name:     "jwt_token",
+				Value:    token,
+				Path:     "/",
+				Expires:  time.Now().Add(jwtutils.JWTTTL),
+				HttpOnly: true,
+				SameSite: http.SameSiteLaxMode,
+			})
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -732,7 +769,14 @@ func TestUserHandler_Patch(t *testing.T) {
 		)
 
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -780,7 +824,14 @@ func TestUserHandler_Patch(t *testing.T) {
 		)
 
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -830,7 +881,14 @@ func TestUserHandler_Patch(t *testing.T) {
 			)
 
 			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+			req.AddCookie(&http.Cookie{
+				Name:     "jwt_token",
+				Value:    token,
+				Path:     "/",
+				Expires:  time.Now().Add(jwtutils.JWTTTL),
+				HttpOnly: true,
+				SameSite: http.SameSiteLaxMode,
+			})
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -878,7 +936,14 @@ func TestUserHandler_Patch(t *testing.T) {
 			)
 
 			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+			req.AddCookie(&http.Cookie{
+				Name:     "jwt_token",
+				Value:    token,
+				Path:     "/",
+				Expires:  time.Now().Add(jwtutils.JWTTTL),
+				HttpOnly: true,
+				SameSite: http.SameSiteLaxMode,
+			})
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
