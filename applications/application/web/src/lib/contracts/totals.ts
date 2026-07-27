@@ -28,7 +28,7 @@ export async function GetTotalsForUser(
 ): Promise<TotalsOrError> {
 	try {
 		const rawRes = await TokenizedFetch(
-			"http://" +
+			"https://" +
 				import.meta.env.VITE_DOMAIN +
 				"/api/v1/total/all/" +
 				userUUID +

@@ -74,7 +74,8 @@ func TestQuizHandler_Post(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
 
@@ -163,7 +164,8 @@ func TestQuizHandler_Post(t *testing.T) {
 					Path:     "/",
 					Expires:  time.Now().Add(jwtutils.JWTTTL),
 					HttpOnly: true,
-					SameSite: http.SameSiteLaxMode,
+					SameSite: http.SameSiteNoneMode,
+					Secure:   true,
 				})
 				rec := httptest.NewRecorder()
 
@@ -223,7 +225,8 @@ func TestQuizHandler_Post(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
 
@@ -283,7 +286,8 @@ func TestQuizHandler_Get(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
 
@@ -321,7 +325,8 @@ func TestQuizHandler_Get(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
 
@@ -430,7 +435,8 @@ func TestQuizHandler_Delete(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
 
@@ -461,7 +467,8 @@ func TestQuizHandler_Delete(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
 
@@ -528,7 +535,8 @@ func TestQuizHandler_Put(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
 
@@ -622,7 +630,8 @@ func TestQuizHandler_Put(t *testing.T) {
 					Path:     "/",
 					Expires:  time.Now().Add(jwtutils.JWTTTL),
 					HttpOnly: true,
-					SameSite: http.SameSiteLaxMode,
+					SameSite: http.SameSiteNoneMode,
+					Secure:   true,
 				})
 				rec := httptest.NewRecorder()
 
@@ -698,7 +707,8 @@ func TestQuizHandler_Patch(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
 
@@ -802,7 +812,8 @@ func TestQuizHandler_Patch(t *testing.T) {
 					Path:     "/",
 					Expires:  time.Now().Add(jwtutils.JWTTTL),
 					HttpOnly: true,
-					SameSite: http.SameSiteLaxMode,
+					SameSite: http.SameSiteNoneMode,
+					Secure:   true,
 				})
 				rec := httptest.NewRecorder()
 
@@ -878,7 +889,8 @@ func TestQuizHandler_Patch(t *testing.T) {
 				Path:     "/",
 				Expires:  time.Now().Add(jwtutils.JWTTTL),
 				HttpOnly: true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
+				Secure:   true,
 			})
 			rec := httptest.NewRecorder()
 
@@ -944,7 +956,8 @@ func TestQuizHandler_Patch(t *testing.T) {
 				Path:     "/",
 				Expires:  time.Now().Add(jwtutils.JWTTTL),
 				HttpOnly: true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
+				Secure:   true,
 			})
 			rec := httptest.NewRecorder()
 
@@ -1011,7 +1024,8 @@ func TestQuizHandler_Patch(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
 

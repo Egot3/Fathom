@@ -24,7 +24,7 @@ type GetQuizUUIDsResponse = {
 // redo
 export async function FetchTest(testUUID: string): Promise<Test> {
 	const rawRes = await TokenizedFetch(
-		"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + testUUID,
+		"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + testUUID,
 		{
 			method: "GET",
 			headers: {
@@ -41,7 +41,7 @@ export async function FetchCurrentlyRunningTestInfo(): Promise<
 > {
 	try {
 		const res = await TokenizedFetch(
-			"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/running",
+			"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/running",
 		);
 		if (!res.ok) {
 			if (res.status === 423) {
@@ -70,7 +70,7 @@ export async function FetchCurrentlyRunningQuizUUIDs(
 	if (ETag === undefined) {
 		try {
 			const res = await TokenizedFetch(
-				"http://" +
+				"https://" +
 					import.meta.env.VITE_DOMAIN +
 					"/api/v1/test/running/quizzes",
 			);
@@ -114,7 +114,7 @@ export async function FetchCurrentlyRunningQuizUUIDs(
 
 	try {
 		const res = await TokenizedFetch(
-			"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/running/quizzes",
+			"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/running/quizzes",
 			{ headers: {} },
 		);
 		if (!res.ok) {
@@ -163,7 +163,7 @@ export async function FetchAllTests(
 ): Promise<TestsOrError> {
 	try {
 		const rawRes = await TokenizedFetch(
-			"http://" +
+			"https://" +
 				import.meta.env.VITE_DOMAIN +
 				"/api/v1/test/" +
 				"?page=" +
@@ -209,7 +209,7 @@ export async function FetchTestPost(
 	const bodyString = JSON.stringify(body);
 	try {
 		const response = await TokenizedFetch(
-			"http://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/",
+			"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/",
 			{
 				method: "POST",
 				headers: {

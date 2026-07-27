@@ -34,7 +34,8 @@ func JWT(next http.Handler) http.Handler {
 				Path:     "/",
 				Expires:  time.Unix(0, 0),
 				HttpOnly: true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
+				Secure:   true,
 			}
 			http.SetCookie(w, cookie)
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad token"})
@@ -54,7 +55,8 @@ func JWT(next http.Handler) http.Handler {
 				Path:     "/",
 				Expires:  time.Unix(0, 0),
 				HttpOnly: true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
+				Secure:   true,
 			}
 			http.SetCookie(w, cookie)
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad token"})
@@ -68,7 +70,8 @@ func JWT(next http.Handler) http.Handler {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		})
 
 		mAge := int(math.Trunc(jwtutils.JWTTTL.Seconds()))
