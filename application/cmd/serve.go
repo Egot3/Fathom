@@ -18,7 +18,6 @@ import (
 	"github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 	"github.com/uptrace/bun"
-	"go.yaml.in/yaml/v4"
 )
 
 var serveCmd = &cobra.Command{
@@ -28,12 +27,7 @@ var serveCmd = &cobra.Command{
 	There is really nothing more to it.`,
 	Args: cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg := config.Config{}
-		data, _ := os.ReadFile(PathToConfig)
-		if err := yaml.Unmarshal(data, &cfg); err != nil {
-			log.Printf("couldn't read config data: %v", err)
-			os.Exit(1)
-		}
+		cfg := config.Load()
 
 		i := do.New(
 			do.Eager(cfg),
@@ -56,8 +50,8 @@ var serveCmd = &cobra.Command{
 		do.Provide(i, handler.NewTestService)
 		do.Provide(i, server.ChiServer)
 
-		log.Printf("running on %v", cfg.Server.Port)
-		if err := http.ListenAndServe(":"+cfg.Server.Port, do.MustInvoke[chi.Router](i)); err != nil {
+		log.Printf("running on %v", cfg.ServerPort)
+		if err := http.ListenAndServe(":"+cfg.ServerPort, do.MustInvoke[chi.Router](i)); err != nil {
 			log.Printf("Server execution finished: %v", err)
 			os.Exit(0)
 		}
