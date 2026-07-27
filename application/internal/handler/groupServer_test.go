@@ -124,14 +124,6 @@ func TestGroupHandler_Post(t *testing.T) {
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
 		})
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-		})
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
