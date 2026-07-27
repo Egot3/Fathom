@@ -17,6 +17,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/samber/do/v2"
 	"github.com/uptrace/bun"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -37,6 +38,19 @@ func main() {
 	db.RegisterModel((*models.UserGroupsTests)(nil))
 	db.RegisterModel((*models.GroupsUsers)(nil))
 	db.RegisterModel((*models.TestsQuizzes)(nil))
+	if cfg.InitAdminPassword != "" && cfg.InitAdminUsername != "" {
+		passwordHash, err := bcrypt.GenerateFromPassword([]byte(cfg.InitAdminPassword), bcrypt.DefaultCost)
+		if err != nil {
+			log.Printf("Couldn't create init teacher: %v", err.Error())
+		}
+		_, err = db.NewInsert().On("CONFLICT DO UPDATE").Model(&models.User{
+			Nickname:     cfg.InitAdminUsername,
+			PasswordHash: passwordHash,
+		}).Exec(context.Background())
+		if err != nil {
+			log.Printf("Couldn't create init teacher: %v", err.Error())
+		}
+	}
 
 	do.Provide(i, testrunner.NewTestRunner)
 

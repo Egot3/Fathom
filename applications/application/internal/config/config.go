@@ -40,6 +40,9 @@ type Config struct {
 	LogLevel   string
 	LogSinks   []string
 
+	InitAdminUsername string
+	InitAdminPassword string
+
 	QuizPath string
 }
 
@@ -61,6 +64,9 @@ func Load() Config {
 		ServerPort: getEnv("SERVER_PORT", "8080", nil),
 		LogLevel:   getEnv("LOG_LEVEL", "info", nil),
 		LogSinks:   strings.Split(os.Getenv("LOG_SINKS"), ","),
+
+		InitAdminUsername: os.Getenv("INIT_ADMIN_USERNAME"),
+		InitAdminPassword: os.Getenv("INIT_ADMIN_PASSWORD"),
 
 		QuizPath: pathToQuizzes,
 	}
