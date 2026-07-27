@@ -46,6 +46,7 @@ func main() {
 		_, err = db.NewInsert().On("CONFLICT DO UPDATE").Model(&models.User{
 			Nickname:     cfg.InitAdminUsername,
 			PasswordHash: passwordHash,
+			IsTeacher:    true,
 		}).Exec(context.Background())
 		if err != nil {
 			log.Printf("Couldn't create init teacher: %v", err.Error())
