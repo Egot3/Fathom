@@ -14,12 +14,6 @@ import (
 
 var verbose bool
 
-var PathToConfig string
-
-func LoadPath() {
-	PathToConfig = os.Getenv("PATH_TO_CONFIG")
-}
-
 var rootCmd = &cobra.Command{
 	Use:   "fampls",
 	Short: "fampls is a toolchain for fathom project",
@@ -41,6 +35,4 @@ func Execute() {
 func init() {
 
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Use to get debug-level output")
-
-	rootCmd.AddCommand(serveCmd)
 }
