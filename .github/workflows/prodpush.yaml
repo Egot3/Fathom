@@ -33,5 +33,5 @@ jobs:
     if: needs.verify-branch.outputs.on_main == 'true'
     uses: ./.github/workflows/reusable.yaml
     with:
-      path: "application"
+      path: "applications/application"
     secrets: inherit
