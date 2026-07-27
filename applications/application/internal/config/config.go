@@ -52,10 +52,10 @@ func getEnv(key, fallback string, allowed []string) string {
 }
 
 func Load() Config {
-	pathToQuizzes = getEnv("QUIZ_PATH", "./data/quizzes", nil)
+	pathToQuizzes = "/data/quizzes"
 	return Config{
 		DatabaseDriver: getEnv("DATABASE_DRIVER", "sqlite", []string{"sqlite", "postgres"}),
-		SqlitePath:     getEnv("SQLITE_PATH", "./data/fathom.db", nil),
+		SqlitePath:     "/data/fathom.db",
 		PostgresURL:    os.Getenv("POSTGRES_URL"),
 
 		ServerPort: getEnv("SERVER_PORT", "8080", nil),
