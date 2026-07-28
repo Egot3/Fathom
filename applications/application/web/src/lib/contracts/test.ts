@@ -226,11 +226,11 @@ export async function FetchTestPost(
 
 		return null;
 	} catch (err) {
-		console.log("Couldn't fetch login for user: ", err);
+		console.log("Couldn't fetch test post: ", err);
 		if (err instanceof Error) {
-			return { error: "couldn't send login because of in-browser error" };
+			return { error: "couldn't send test post because of in-browser error" };
 		}
 
-		return { error: "couldn't send login because of unknown error" };
+		return { error: "couldn't send test post because of unknown error" };
 	}
 }

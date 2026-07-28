@@ -4,16 +4,20 @@
 	import { Pagination } from "@skeletonlabs/skeleton-svelte";
 	import { IsJSONError } from "../lib/statuses/jsonerror";
 	import { FetchAllQuizzes, type QuizzesOrError } from "../lib/contracts/quiz";
+	import CreateDialog from "./CreateDialog.svelte";
+	import CreateQuizForm from "./CreateQuizForm.svelte";
 
 	let height = $state(0);
 
 	let page = $state(1);
 	let pageSize = $derived(Math.trunc((height - 39 - 45 - 40) / 39));
 
+	let trigger = $state(0);
 	let time: number;
 	const paginatedQuizPromises = $derived.by(() => {
 		const p = page;
 		const ps = pageSize;
+		trigger;
 
 		console.log("detected change");
 		clearTimeout(time);
@@ -39,7 +43,13 @@
 			<div>{paginatedQuizzes.error}</div>
 		{:else}
 			{#if paginatedQuizzes.total == 0}
-				<!-- <CreateDialog title="Create your first quiz" /> -->
+				<CreateDialog title="Quiz creator" name="Create your first quiz"
+					><CreateQuizForm
+						callback={() => {
+							trigger++;
+						}}
+					/></CreateDialog
+				>
 			{:else}
 				<table class="table table-auto self-start">
 					<thead>

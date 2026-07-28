@@ -46,7 +46,9 @@
 			<div>{paginatedTests.error}</div>
 		{:else}
 			{#if paginatedTests.total == 0}
-				<CreateDialog title="Create your first test"
+				<CreateDialog
+					name="Create your first test"
+					title="Create your first test"
 					><CreateTestForm
 						callback={() => {
 							trigger++;
