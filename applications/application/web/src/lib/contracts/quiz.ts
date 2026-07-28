@@ -45,3 +45,74 @@ export async function FetchAllQuizzes(
 		} as JSONError;
 	}
 }
+
+export enum Kind {
+	Input = "INPUT",
+	Radio = "RADIO",
+	Check = "CHECK",
+	Accordance = "ACCORDANCE",
+	Order = "ORDER",
+}
+
+export type Meta = {
+	kind: Kind;
+	randomized: boolean;
+	score: number;
+	all_or_none: boolean;
+};
+
+type PostQuizRequest = {
+	meta: Meta;
+	name: string;
+	body: string;
+};
+
+export async function FetchQuizPost(
+	meta: Meta,
+	title: string,
+	path: string,
+	question: string,
+	options: string,
+): Promise<null | JSONError> {
+	const contents = `# ${title}
+		
+${question}
+		
+${options}`;
+	console.log(contents);
+	const body: PostQuizRequest = {
+		meta: meta,
+		body: contents,
+		name: title,
+	};
+
+	const bodyString = JSON.stringify(body);
+
+	try {
+		const response = await TokenizedFetch(
+			"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				},
+				body: bodyString,
+			},
+		);
+
+		if (!response.ok) {
+			console.log("response is not ok!");
+			return (await response.json()) as JSONError;
+		}
+
+		return null;
+	} catch (err) {
+		console.log("Couldn't fetch quiz post for user: ", err);
+		if (err instanceof Error) {
+			return { error: "couldn't send quiz post because of in-browser error" };
+		}
+
+		return { error: "couldn't send quiz post because of unknown error" };
+	}
+}
