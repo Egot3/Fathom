@@ -51,9 +51,7 @@ func TestQuizHandler_Post(t *testing.T) {
 
 		name := rand.Text()
 		body :=
-			`# quiz!
-		there is a body!
-		[yeah!]`
+			`#Sky color\n\nWhat color is da sky?\n\n[depends]`
 		reqJSON, _ := json.Marshal(contracts.PostQuizRequest{
 			Name: name,
 			Body: body,

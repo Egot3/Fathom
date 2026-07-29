@@ -69,21 +69,13 @@ type PostQuizRequest = {
 
 export async function FetchQuizPost(
 	meta: Meta,
-	title: string,
 	path: string,
-	question: string,
-	options: string,
+	contents: string,
 ): Promise<null | JSONError> {
-	const contents = `# ${title}
-		
-${question}
-		
-${options}`;
-	console.log(contents);
 	const body: PostQuizRequest = {
 		meta: meta,
 		body: contents,
-		name: title,
+		name: path,
 	};
 
 	const bodyString = JSON.stringify(body);

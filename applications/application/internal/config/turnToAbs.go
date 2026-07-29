@@ -7,5 +7,5 @@ import (
 var pathToQuizzes string
 
 func TurnToAbs(name string) (string, error) {
-	return filepath.Abs(pathToQuizzes + name + ".md")
+	return filepath.Abs(pathToQuizzes + filepath.FromSlash("/") + name + ".md")
 }
