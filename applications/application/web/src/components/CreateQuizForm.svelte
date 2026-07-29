@@ -3,6 +3,7 @@
 	import { FetchQuizPost, Kind, type Meta } from "../lib/contracts/quiz";
 	import { ClassForStatus, InputStatus } from "../lib/statuses/input";
 	import UXInput from "./UXInput.svelte";
+	import Quiz from "./Quiz.svelte";
 
 	const { callback }: { callback: () => void } = $props();
 
@@ -22,6 +23,11 @@
 	let nameMessage: string = $state("");
 
 	let nameReady: boolean = $state(false);
+	let content = $derived(`# ${title}
+		
+${question}
+		
+${answer}`) 
 
 	async function PostQuiz(e: Event) {
 		e.preventDefault();
@@ -42,10 +48,7 @@
 				score: score,
 				kind: type,
 			} as Meta,
-			title,
-			name || title,
-			question,
-			answer,
+			name, content
 		);
 		if (postResponse != null) {
 			statusMessage = postResponse.error;
@@ -57,6 +60,10 @@
 </script>
 
 <form onsubmit={PostQuiz} class="w-full flex flex-col h-full space-y-2">
+	<div class="flex">
+
+	
+	<div class="flex flex-col w-1/2">	
 	<UXInput
 		label="Name/path"
 		placeholder="color_theory/sky.md"
@@ -132,8 +139,13 @@
 		<input class="checkbox" type="checkbox" bind:checked={allOrNone} />
 		<p>All or none</p>
 	</label>
+	</div>
+	<div class="w-1/2">
+		<Quiz content={content} />
+	</div>
+	</div>
 
-	<footer class="flex justify-end gap-2">
+	<footer class="flex justify-end gap-2 w-full">
 		{#if statusMessage != ""}
 			<span class="justify-self-start">{statusMessage}</span>
 		{/if}

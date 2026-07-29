@@ -6,6 +6,7 @@
 	import { FetchAllQuizzes, type QuizzesOrError } from "../lib/contracts/quiz";
 	import CreateDialog from "./CreateDialog.svelte";
 	import CreateQuizForm from "./CreateQuizForm.svelte";
+	import SmallPaperCreateDialog from "./SmallPaperCreateDialog.svelte";
 
 	let height = $state(0);
 
@@ -98,6 +99,14 @@
 							<ArrowRightIcon class="size-4" />
 						</Pagination.NextTrigger>
 					</Pagination>
+
+					<SmallPaperCreateDialog title="Quiz maker">
+						<CreateQuizForm 
+							callback={()=>{
+								trigger++
+							}}
+						/>
+					</SmallPaperCreateDialog>
 				</div>
 			{/if}
 		{/if}
