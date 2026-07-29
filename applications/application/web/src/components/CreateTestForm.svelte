@@ -4,17 +4,21 @@
 	import { Dialog } from "@skeletonlabs/skeleton-svelte";
 	import { FetchTestPost } from "../lib/contracts/test";
 
+	const { callback }: { callback: () => void } = $props();
+
 	let name: string = $state("");
 	let quizzes: SvelteSet<string> = $state(new SvelteSet<string>());
 	let statusMessage: string = $state("");
 
 	async function PostTest(e: Event) {
+		e.preventDefault();
 		const postResponse = await FetchTestPost(name, Array.from(quizzes));
 		if (postResponse != null) {
 			statusMessage = postResponse.error;
+			return;
 		}
 
-		return;
+		callback();
 	}
 
 	$inspect(name);

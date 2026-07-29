@@ -2,12 +2,12 @@
 	import { X } from "@lucide/svelte";
 	import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
 
-	const { title, children } = $props();
+	const { title, name, children } = $props();
 </script>
 
 <Dialog>
 	<Dialog.Trigger class="btn preset-filled-primary-500 whitespace-normal"
-		>Create your first test</Dialog.Trigger
+		>{name}</Dialog.Trigger
 	>
 
 	<Portal>

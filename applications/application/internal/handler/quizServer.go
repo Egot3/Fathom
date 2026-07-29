@@ -304,6 +304,14 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = os.WriteFile(abs, buf, 0644)
+	if err != nil {
+		w.WriteHeader(http.StatusMultiStatus)
+
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write file"})
+		return
+	}
+
 	err = c.quizRepo.RegisterQuiz(ctx, abs, checksum, quiz.Meta.Score, answer)
 	if err != nil {
 		logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
@@ -314,14 +322,6 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't register quiz"})
-		return
-	}
-
-	err = os.WriteFile(abs, buf, 0644)
-	if err != nil {
-		w.WriteHeader(http.StatusMultiStatus)
-
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write file"})
 		return
 	}
 
