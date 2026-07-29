@@ -7,7 +7,7 @@
 
 	const { callback }: { callback: () => void } = $props();
 
-	const pathRegex = /^([a-zA-Z0-9_\-]+)*\/?[a-zA-Z0-9_\-]+\.md$/;
+	const pathRegex = /^([a-zA-Z0-9_\-]+)*\/?[a-zA-Z0-9_\-]+$/;
 
 	let name: string = $state("");
 	let title: string = $state("");
@@ -72,7 +72,7 @@ ${answer}`)
 		message={nameMessage}
 		checker={(v: string) => {
 			nameMessage =
-				"name must have no special symbols and contain .md extension";
+				"name must have no special symbols and doesn't contain any extensions";
 			pathRegex.test(v);
 		}}
 	/>
