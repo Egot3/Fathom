@@ -73,7 +73,7 @@ ${answer}`)
 		checker={(v: string) => {
 			nameMessage =
 				"name must have no special symbols and doesn't contain any extensions";
-			pathRegex.test(v);
+			return pathRegex.test(v);
 		}}
 	/>
 
