@@ -1,0 +1,59 @@
+<script lang="ts">
+	import { Popover, usePopover } from "@skeletonlabs/skeleton-svelte";
+	import { ClassForStatus, InputStatus } from "../lib/statuses/input";
+
+	let {
+		value = $bindable(""),
+		label = "",
+		ready = $bindable(true),
+		checker = (v: string) => true,
+		placeholder = "",
+		message = $bindable(""),
+	} = $props();
+
+	const popover = usePopover({ id: (() => label)() });
+	let state = $state(InputStatus.Idle);
+	$effect(() => {
+		ready = checker(value);
+	});
+</script>
+
+<label class="label">
+	<span class="label-text">{label}</span>
+	<Popover.Provider value={popover}>
+		<Popover.Anchor>
+			<input
+				class={"input border-2 " + ClassForStatus(state)}
+				type="text"
+				onblur={() => {
+					if (ready) {
+						state = InputStatus.Treat;
+
+						return;
+					}
+					popover().setOpen(true);
+					state = InputStatus.Punish;
+				}}
+				onfocus={() => {
+					popover().setOpen(false);
+					state = InputStatus.Idle;
+				}}
+				onkeydown={() => {
+					if (ready) {
+						state = InputStatus.Treat;
+					}
+				}}
+				bind:value
+				{placeholder}
+			/>
+		</Popover.Anchor>
+
+		<Popover.Positioner>
+			<Popover.Content
+				class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50"
+			>
+				<Popover.Title tabindex={-1}>{message}</Popover.Title>
+			</Popover.Content>
+		</Popover.Positioner>
+	</Popover.Provider>
+</label>

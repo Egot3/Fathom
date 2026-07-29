@@ -24,9 +24,10 @@ func Test_parsers(t *testing.T) {
 			t.Run(path, func(t *testing.T) {
 				raw, err := os.ReadFile(path)
 				require.NoError(t, err)
-				_, err = quizparser.ParseQuizByBytes(raw)
+				q, err := quizparser.ParseQuizByBytes(raw)
 				if strings.Contains(path, "valid") {
 					require.NoError(t, err)
+					t.Logf("%+v", q)
 				} else {
 					t.Logf("path:%v\n%v", path, err)
 					require.Error(t, err)

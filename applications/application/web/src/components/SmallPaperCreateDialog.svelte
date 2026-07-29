@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { X } from "@lucide/svelte";
+	import { FilePenLine, X } from "@lucide/svelte";
 	import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
 
-	const { title, name, children } = $props();
+	const { title, children } = $props();
 </script>
 
 <Dialog>
 	<Dialog.Trigger class="btn preset-filled-primary-500 whitespace-normal"
-		>{name}</Dialog.Trigger
+		><FilePenLine></FilePenLine></Dialog.Trigger
 	>
 
 	<Portal>

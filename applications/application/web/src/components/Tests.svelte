@@ -4,19 +4,21 @@
 	import { Pagination } from "@skeletonlabs/skeleton-svelte";
 	import { IsJSONError } from "../lib/statuses/jsonerror";
 	import { FetchAllTests, type TestsOrError } from "../lib/contracts/test";
-	import CreateTest from "./CreateDialog.svelte";
 	import CreateDialog from "./CreateDialog.svelte";
 	import CreateTestForm from "./CreateTestForm.svelte";
+	import SmallBookCreateDialog from "./SmallBookCreateDialog.svelte";
 
 	let height = $state(0);
 
 	let page = $state(1);
 	let pageSize = $derived(Math.trunc((height - 39 - 45) / 39));
 
+	let trigger = $state(0);
 	let time: number;
 	const paginatedTestPromises = $derived.by(() => {
 		const p = page;
 		const ps = pageSize;
+		trigger;
 
 		console.log("detected change");
 		clearTimeout(time);
@@ -44,8 +46,14 @@
 			<div>{paginatedTests.error}</div>
 		{:else}
 			{#if paginatedTests.total == 0}
-				<CreateDialog title="Create your first test"
-					><CreateTestForm /></CreateDialog
+				<CreateDialog
+					name="Create your first test"
+					title="Create your first test"
+					><CreateTestForm
+						callback={() => {
+							trigger++;
+						}}
+					/></CreateDialog
 				>
 			{:else}
 				<table class="table table-auto self-start">
@@ -95,6 +103,14 @@
 							<ArrowRightIcon class="size-4" />
 						</Pagination.NextTrigger>
 					</Pagination>
+
+					<SmallBookCreateDialog title="Test maker"
+						><CreateTestForm
+							callback={() => {
+								trigger++;
+							}}
+						/></SmallBookCreateDialog
+					>
 				</div>
 			{/if}
 		{/if}

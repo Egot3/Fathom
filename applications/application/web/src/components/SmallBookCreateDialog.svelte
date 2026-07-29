@@ -1,13 +1,15 @@
 <script lang="ts">
-	import { X } from "@lucide/svelte";
+	import { Book, Pencil, X } from "@lucide/svelte";
 	import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
 
-	const { title, name, children } = $props();
+	const { title, children } = $props();
 </script>
 
 <Dialog>
 	<Dialog.Trigger class="btn preset-filled-primary-500 whitespace-normal"
-		>{name}</Dialog.Trigger
+		><Book>
+			<Pencil size="14" x="5" y="2"></Pencil>
+		</Book></Dialog.Trigger
 	>
 
 	<Portal>
