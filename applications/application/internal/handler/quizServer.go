@@ -518,14 +518,6 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = c.quizRepo.PatchQuiz(ctx, quizUUID, newAbs, req.Score)
-	if err != nil {
-		logger.Error("couldn't update quiz", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't register quiz"})
-		return
-	}
-
 	if newAbs != nil {
 		err := os.Rename(abs, *newAbs)
 		if err != nil {
@@ -533,6 +525,14 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
 			return
 		}
+	}
+
+	err = c.quizRepo.PatchQuiz(ctx, quizUUID, newAbs, req.Score)
+	if err != nil {
+		logger.Error("couldn't update quiz", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't register quiz"})
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
