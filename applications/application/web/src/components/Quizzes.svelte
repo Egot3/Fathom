@@ -88,7 +88,6 @@
 												{#if moused}
 													<Eye size=16/>
 												{:else}
-												
 													<EyeClosed size=16/>
 												{/if}
 												

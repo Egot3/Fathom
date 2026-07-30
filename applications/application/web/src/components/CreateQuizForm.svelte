@@ -39,6 +39,15 @@ ${answer}`)
 
 		if (answer === "") {
 			statusMessage = "Answer is required";
+			return
+		}
+
+		if (name === "") {
+			if (!pathRegex.test(title)) {
+				statusMessage = "No name provided and title doesn't meet name conditions"
+				return
+			}
+			name = title
 		}
 
 		const postResponse = await FetchQuizPost(
