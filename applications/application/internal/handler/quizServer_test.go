@@ -298,8 +298,8 @@ func TestQuizHandler_Get(t *testing.T) {
 		err = json.Unmarshal(rec.Body.Bytes(), &quizS)
 		require.NoError(t, err)
 
-		require.Equal(t, score, quizS.Quiz.Meta.Score)
-		require.Equal(t, "x", quizS.Quiz.Answer.Input.Input)
+		require.Equal(t, score, quizS.Meta.Score)
+		require.Contains(t, quizS.Body, "[x]")
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
