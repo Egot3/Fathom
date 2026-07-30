@@ -133,7 +133,8 @@ func (c *chiService) GetQuiz(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	quiz, err := quizparser.ParseQuizByBytes(buf)
+
+	fm, source, err := quizparser.ParseFrontmatter(buf)
 	if err != nil {
 		logger.Error("Unable to retrieve quiz by path",
 			slog.String("Error", err.Error()),
@@ -143,7 +144,7 @@ func (c *chiService) GetQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.GetQuizResponse{Quiz: *quiz})
+	json.NewEncoder(w).Encode(contracts.GetQuizResponse{Meta: fm, Body: string(source)})
 }
 
 // ListQuiz implements [Service].

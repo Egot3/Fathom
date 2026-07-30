@@ -7,7 +7,8 @@ import (
 )
 
 type GetQuizResponse struct {
-	Quiz quiz.Quiz `json:"quiz"`
+	Meta quiz.Frontmatter `json:"meta"`
+	Body string           `json:"body"`
 }
 
 type PostQuizRequest struct {
