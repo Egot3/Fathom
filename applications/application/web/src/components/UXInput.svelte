@@ -9,11 +9,17 @@
 		checker = (v: string) => true,
 		placeholder = "",
 		message = $bindable(""),
+		initValue = ""
 	} = $props();
 
 	const popover = usePopover({ id: (() => label)() });
 	let state = $state(InputStatus.Idle);
+
+	// svelte-ignore state_referenced_locally
+	value = value || initValue
+
 	$effect(() => {
+		
 		ready = checker(value);
 	});
 </script>
