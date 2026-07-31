@@ -7,6 +7,10 @@ export type Quiz = {
 	score: number;
 	correct_answer: string;
 };
+export type QuizFile = {
+	meta: Meta;
+	body: string;
+};
 
 type AnswerInput = {
 	input: { input: string };
@@ -287,4 +291,33 @@ export async function FetchChangeQuiz(
 		return putResp;
 	}
 	return FetchQuizPatch(UUID, meta.score, name);
+}
+
+type QuizFileOrError = QuizFile | JSONError;
+export async function FetchQuiz(UUID: string): Promise<QuizFileOrError> {
+	try {
+		const response = await TokenizedFetch(
+			"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/" + UUID,
+			{
+				method: "GET",
+				headers: {
+					Accept: "application/json",
+				},
+			},
+		);
+
+		if (!response.ok) {
+			console.log("response is not ok!");
+			return (await response.json()) as JSONError;
+		}
+
+		return await response.json();
+	} catch (err) {
+		console.log("Couldn't fetch quiz patch for quiz: ", err);
+		if (err instanceof Error) {
+			return { error: "couldn't send quiz patch because of in-browser error" };
+		}
+
+		return { error: "couldn't send quiz patch because of unknown error" };
+	}
 }
