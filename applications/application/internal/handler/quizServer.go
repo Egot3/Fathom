@@ -404,17 +404,26 @@ func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	buf := fmt.Appendf(nil, `---
-	%v
-	---
-	%v
-	`, string(frontmatter), req.Body)
+	buf := fmt.Appendf(nil,
+		`---
+%v
+---
+%v
+`, string(frontmatter), req.Body)
 
 	_, err = quizparser.ParseQuizByBytes(buf)
 	if err != nil {
 		logger.Error("couldn't parse quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		return
+	}
+
+	err = os.WriteFile(abs, buf, 0644)
+	if err != nil {
+		w.WriteHeader(http.StatusMultiStatus)
+
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write file"})
 		return
 	}
 
@@ -425,14 +434,6 @@ func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
 		logger.Error("couldn't update quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't register quiz"})
-		return
-	}
-
-	err = os.WriteFile(abs, buf, 0644)
-	if err != nil {
-		w.WriteHeader(http.StatusMultiStatus)
-
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write file"})
 		return
 	}
 
