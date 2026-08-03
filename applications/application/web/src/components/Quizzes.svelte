@@ -95,10 +95,7 @@
 												<Trash2 size="16" />
 											</button>
 											<ChangeDialogSqare
-												callback={() =>
-													clickFocused === ""
-														? (clickFocused = quiz.uuid)
-														: (clickFocused = "")}
+												callback={() => (clickFocused = quiz.uuid)}
 												title="Quiz changer"
 											>
 												<ChangeQuizForm
@@ -110,10 +107,7 @@
 												/></ChangeDialogSqare
 											>
 											<PeekDialogSquare
-												callback={() =>
-													clickFocused === ""
-														? (clickFocused = quiz.uuid)
-														: (clickFocused = "")}
+												callback={() => (clickFocused = quiz.uuid)}
 												title="Quiz peeker"
 												contentGetter={async () => {
 													const response = await FetchQuiz(quiz.uuid);
