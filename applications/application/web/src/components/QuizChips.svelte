@@ -81,7 +81,7 @@
 											{page.value}
 										</Pagination.Item>
 									{:else}
-										<Pagination.Ellipsis {index}>&#8230;</Pagination.Ellipsis>
+										<Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
 									{/if}
 								{/each}
 							{/snippet}

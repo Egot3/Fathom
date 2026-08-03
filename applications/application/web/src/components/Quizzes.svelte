@@ -3,22 +3,27 @@
 	import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
 	import { Pagination } from "@skeletonlabs/skeleton-svelte";
 	import { IsJSONError } from "../lib/statuses/jsonerror";
-	import { FetchAllQuizzes, type QuizzesOrError } from "../lib/contracts/quiz";
+	import {
+		FetchAllQuizzes,
+		FetchQuiz,
+		type QuizzesOrError,
+	} from "../lib/contracts/quiz";
 	import CreateDialog from "./CreateDialog.svelte";
 	import CreateQuizForm from "./CreateQuizForm.svelte";
 	import SmallPaperCreateDialog from "./SmallPaperCreateDialog.svelte";
 	import { Eye, EyeClosed, Pencil, Trash, Trash2 } from "@lucide/svelte";
 	import ChangeQuizForm from "./ChangeQuizForm.svelte";
 	import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
+	import PeekDialogSquare from "./PeekDialogSquare.svelte";
+	import Quiz from "./Quiz.svelte";
 
 	let height = $state(0);
 
 	let page = $state(1);
 	let pageSize = $derived(Math.trunc((height - 29 - 35 - 20) / 39));
 
-	let focused = $state("")
-	let clickFocused = $state("")
-	let moused = $state(false)
+	let focused = $state("");
+	let clickFocused = $state("");
 
 	let trigger = $state(0);
 	let time: number;
@@ -70,38 +75,62 @@
 
 					<tbody>
 						{#each paginatedQuizzes.quizzes as quiz (quiz.uuid)}
-							{@const name = quiz.path.startsWith("/data/quizzes/") ? quiz.path.slice(14) : quiz.path}
+							{@const name = quiz.path.startsWith("/data/quizzes/")
+								? quiz.path.slice(14)
+								: quiz.path}
 							<tr
-								onmouseenter={()=>focused=quiz.uuid}
-								onmouseleave={()=>focused=""}
-							 	class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75">
+								onmouseenter={() => (focused = quiz.uuid)}
+								onmouseleave={() => (focused = "")}
+								class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
+							>
 								<td class="w-1/3">{name}</td>
 								<!-- 10.5 rem = 168px -->
 								<td class="w-1/3">{quiz.score}</td>
 								<td class="w-1/3">
-									{#if quiz.uuid===focused || quiz.uuid===clickFocused}
+									{#if quiz.uuid === focused || quiz.uuid === clickFocused}
 										<div class="flex flex-row-reverse">
-											<button class="btn mb-0 mt-0 preset-filled-surface-300-700 hover:preset-filled-error-300-700 aspect-square h-auto w-auto p-1 m-px">
-												<Trash2 size=16/>
+											<button
+												class="btn mb-0 mt-0 preset-filled-surface-300-700 hover:preset-filled-error-300-700 aspect-square h-auto w-auto p-1 m-px"
+											>
+												<Trash2 size="16" />
 											</button>
-											<ChangeDialogSqare callback={
-												()=>clickFocused==="" ? clickFocused=quiz.uuid : clickFocused=""
-											} title="Quiz changer">
-												<ChangeQuizForm UUID={quiz.uuid} name={name} callback={() => {
-													trigger++;
-												}}/></ChangeDialogSqare>
-											<button onmouseenter={()=>moused=true} onmouseleave={()=>moused=false} class="btn mb-0 mt-0 preset-filled-surface-300-700 hover:preset-filled-primary-300-700 aspect-square h-auto w-auto p-1 m-px">
-												{#if moused}
-													<Eye size=16/>
-												{:else}
-													<EyeClosed size=16/>
-												{/if}
-												
-											</button>
+											<ChangeDialogSqare
+												callback={() =>
+													clickFocused === ""
+														? (clickFocused = quiz.uuid)
+														: (clickFocused = "")}
+												title="Quiz changer"
+											>
+												<ChangeQuizForm
+													UUID={quiz.uuid}
+													{name}
+													callback={() => {
+														trigger++;
+													}}
+												/></ChangeDialogSqare
+											>
+											<PeekDialogSquare
+												callback={() =>
+													clickFocused === ""
+														? (clickFocused = quiz.uuid)
+														: (clickFocused = "")}
+												title="Quiz peeker"
+												contentGetter={async () => {
+													const response = await FetchQuiz(quiz.uuid);
+													if (IsJSONError(response)) {
+														return response.error;
+													}
+													return response.body;
+												}}
+											>
+												{#snippet children({ content }: { content: string })}
+													<Quiz content={content ?? ""} />
+												{/snippet}
+											</PeekDialogSquare>
 										</div>
 									{/if}
 								</td>
-							</tr>							
+							</tr>
 						{/each}
 					</tbody>
 				</table>
@@ -125,7 +154,7 @@
 											{page.value}
 										</Pagination.Item>
 									{:else}
-										<Pagination.Ellipsis {index}>&#8230;</Pagination.Ellipsis>
+										<Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
 									{/if}
 								{/each}
 							{/snippet}
@@ -136,9 +165,9 @@
 					</Pagination>
 
 					<SmallPaperCreateDialog title="Quiz maker">
-						<CreateQuizForm 
-							callback={()=>{
-								trigger++
+						<CreateQuizForm
+							callback={() => {
+								trigger++;
 							}}
 						/>
 					</SmallPaperCreateDialog>
