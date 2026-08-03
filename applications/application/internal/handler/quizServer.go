@@ -271,11 +271,12 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	buf := fmt.Appendf(nil, `---
-	%v
-	---
-	%v
-	`, string(frontmatter), req.Body)
+	var sb strings.Builder
+	sb.WriteString("---\n")
+	sb.Write(frontmatter)
+	sb.WriteString("---\n\n")
+	sb.WriteString(req.Body)
+	buf := []byte(sb.String())
 
 	quiz, err := quizparser.ParseQuizByBytes(buf)
 	if err != nil {
