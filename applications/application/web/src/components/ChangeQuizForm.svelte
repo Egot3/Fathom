@@ -61,6 +61,38 @@
 			})
 			.finally(() => (loading = false));
 	});
+
+	async function ChangeQuiz(e: Event) {
+		e.preventDefault();
+
+		const newMeta: Meta = {
+			all_or_none: allOrNone,
+			score: score,
+			randomized: randomized,
+			kind: response.meta.kind, // т.к. раньше надо было думать
+		};
+
+		if (newName != name || score != response.meta.score) {
+			const patchResponse = await FetchQuizPatch(
+				UUID,
+				score != response.meta.score ? score : undefined,
+				newName != name ? newName : undefined,
+			);
+			if (patchResponse != null) {
+				statusMessage = patchResponse.error;
+				return;
+			}
+		}
+
+		if (body != response.body || !_.isEqual(response.meta, newMeta)) {
+			const putResponse = await FetchQuizPut(UUID, newMeta, body);
+			if (putResponse != null) {
+				statusMessage = putResponse.error;
+				return;
+			}
+		}
+		callback();
+	}
 </script>
 
 {#if loading}
@@ -69,40 +101,7 @@
 	{#if error != ""}
 		<p>{error}</p>
 	{:else}
-		<form
-			onsubmit={async (e) => {
-				e.preventDefault();
-
-				const newMeta: Meta = {
-					all_or_none: allOrNone,
-					score: score,
-					randomized: randomized,
-					kind: response.meta.kind, // т.к. раньше надо было думать
-				};
-
-				if (newName != name || score != response.meta.score) {
-					const patchResponse = await FetchQuizPatch(
-						UUID,
-						score != response.meta.score ? score : undefined,
-						newName != name ? newName : undefined,
-					);
-					if (patchResponse != null) {
-						statusMessage = patchResponse.error;
-						return;
-					}
-				}
-
-				if (body != response.body || !_.isEqual(response.meta, newMeta)) {
-					const putResponse = await FetchQuizPut(UUID, newMeta, body);
-					if (putResponse != null) {
-						statusMessage = putResponse.error;
-						return;
-					}
-				}
-				callback();
-			}}
-			class="w-full flex flex-col h-full space-y-2"
-		>
+		<form onsubmit={ChangeQuiz} class="w-full flex flex-col h-full space-y-2">
 			<UXInput
 				label="Name/path"
 				placeholder="color_theory/sky.md"
