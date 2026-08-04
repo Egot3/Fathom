@@ -16,11 +16,13 @@
 	import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
 	import PeekDialogSquare from "./PeekDialogSquare.svelte";
 	import Quiz from "./Quiz.svelte";
+	import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
+	import DeleteQuizForm from "./DeleteQuizForm.svelte";
 
 	let height = $state(0);
 
 	let page = $state(1);
-	let pageSize = $derived(Math.trunc((height - 29 - 35 - 20) / 39));
+	let pageSize = $derived(Math.trunc((height - 29 - 45 - 40) / 49));
 
 	let focused = $state("");
 	let clickFocused = $state("");
@@ -89,11 +91,18 @@
 								<td class="w-1/3">
 									{#if quiz.uuid === focused || quiz.uuid === clickFocused}
 										<div class="flex flex-row-reverse">
-											<button
-												class="btn mb-0 mt-0 preset-filled-surface-300-700 hover:preset-filled-error-300-700 aspect-square h-auto w-auto p-1 m-px"
+											<DeleteDialogSquare
+												title="Quiz deleter"
+												callback={() => (clickFocused = quiz.uuid)}
 											>
-												<Trash2 size="16" />
-											</button>
+												<DeleteQuizForm
+													{name}
+													UUID={quiz.uuid}
+													callback={() => {
+														trigger++;
+													}}
+												/>
+											</DeleteDialogSquare>
 											<ChangeDialogSqare
 												callback={() => (clickFocused = quiz.uuid)}
 												title="Quiz changer"

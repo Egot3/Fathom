@@ -321,3 +321,28 @@ export async function FetchQuiz(UUID: string): Promise<QuizFileOrError> {
 		return { error: "couldn't send quiz patch because of unknown error" };
 	}
 }
+
+export async function FetchQuizDelete(UUID: string): Promise<null | JSONError> {
+	try {
+		const response = await TokenizedFetch(
+			"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/" + UUID,
+			{
+				method: "DELETE",
+			},
+		);
+
+		if (!response.ok) {
+			console.log("response is not ok!");
+			return (await response.json()) as JSONError;
+		}
+
+		return null;
+	} catch (err) {
+		console.log("Couldn't fetch quiz patch for quiz: ", err);
+		if (err instanceof Error) {
+			return { error: "couldn't send quiz patch because of in-browser error" };
+		}
+
+		return { error: "couldn't send quiz patch because of unknown error" };
+	}
+}
