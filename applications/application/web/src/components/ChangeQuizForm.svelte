@@ -8,7 +8,6 @@
 		type Meta,
 		type QuizFile,
 	} from "../lib/contracts/quiz";
-	import { IsJSONError } from "../lib/statuses/jsonerror";
 	import UXInput from "./UXInput.svelte";
 	import _ from "lodash";
 
@@ -16,9 +15,11 @@
 		callback,
 		UUID,
 		name,
+		response,
 	}: {
 		callback: () => void;
 
+		response: QuizFile;
 		name: string;
 		UUID: string;
 	} = $props();
@@ -31,36 +32,11 @@
 	let nameReady: boolean = $derived(pathRegex.test(name));
 
 	let newName = $derived(name);
-	let body = $state("");
-	let allOrNone: boolean = $state(false);
-	let randomized: boolean = $state(true);
-	let score: number = $state(1);
-	let kind: Kind | null = $state(null);
-
-	let loading: boolean = $state(true);
-	let error: string = $state("");
-
-	let response = $state<QuizFile>(null as never);
-
-	$effect(() => {
-		loading = true;
-		error = "";
-		FetchQuiz(UUID)
-			.then((r) => {
-				console.log("response loaded");
-				if (IsJSONError(r)) {
-					error = r.error;
-					return;
-				}
-				body = r.body;
-				allOrNone = r.meta.all_or_none;
-				randomized = r.meta.randomized;
-				score = r.meta.score;
-				kind = r.meta.kind;
-				response = r;
-			})
-			.finally(() => (loading = false));
-	});
+	let body = $derived(response.body);
+	let allOrNone: boolean = $derived(response.meta.all_or_none);
+	let randomized: boolean = $derived(response.meta.randomized);
+	let score: number = $derived(response.meta.score);
+	let kind: Kind = $derived(response.meta.kind);
 
 	async function ChangeQuiz(e: Event) {
 		e.preventDefault();
@@ -95,64 +71,54 @@
 	}
 </script>
 
-{#if loading}
-	<div class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"></div>
-{:else}
-	{#if error != ""}
-		<p>{error}</p>
-	{:else}
-		<form onsubmit={ChangeQuiz} class="w-full flex flex-col h-full space-y-2">
-			<UXInput
-				label="Name/path"
-				placeholder="color_theory/sky.md"
-				bind:value={newName}
-				bind:ready={nameReady}
-				message={nameMessage}
-				checker={(v: string) => {
-					nameMessage =
-						"name must have no special symbols and contain .md extension";
-					return pathRegex.test(v);
-				}}
-			/>
+<form onsubmit={ChangeQuiz} class="w-full flex flex-col h-full space-y-2">
+	<UXInput
+		label="Name/path"
+		placeholder="color_theory/sky.md"
+		bind:value={newName}
+		bind:ready={nameReady}
+		message={nameMessage}
+		checker={(v: string) => {
+			nameMessage =
+				"name must have no special symbols and contain .md extension";
+			return pathRegex.test(v);
+		}}
+	/>
 
-			<label class="label">
-				<span class="label-text">Quiz</span>
-				<textarea class="textarea" bind:value={body} placeholder="" required
-				></textarea>
-			</label>
+	<label class="label">
+		<span class="label-text">Quiz</span>
+		<textarea class="textarea" bind:value={body} placeholder="" required
+		></textarea>
+	</label>
 
-			<label class="label">
-				<span class="label-text">Default score</span>
-				<input
-					class="input"
-					type="number"
-					bind:value={score}
-					placeholder="1"
-					required
-				/>
-			</label>
+	<label class="label">
+		<span class="label-text">Default score</span>
+		<input
+			class="input"
+			type="number"
+			bind:value={score}
+			placeholder="1"
+			required
+		/>
+	</label>
 
-			{#if kind != Kind.Input}
-				<label class="flex items-center space-x-2">
-					<input class="checkbox" type="checkbox" bind:checked={randomized} />
-					<p>Randomized</p>
-				</label>
-			{/if}
-
-			<label class="flex items-center space-x-2">
-				<input class="checkbox" type="checkbox" bind:checked={allOrNone} />
-				<p>All or none</p>
-			</label>
-
-			<footer class="flex justify-end gap-2 w-full">
-				{#if statusMessage != ""}
-					<span class="justify-self-start">{statusMessage}</span>
-				{/if}
-				<Dialog.CloseTrigger class="btn preset-tonal"
-					>Cancel</Dialog.CloseTrigger
-				>
-				<button type="submit" class="btn preset-filled">Change</button>
-			</footer>
-		</form>
+	{#if kind != Kind.Input}
+		<label class="flex items-center space-x-2">
+			<input class="checkbox" type="checkbox" bind:checked={randomized} />
+			<p>Randomized</p>
+		</label>
 	{/if}
-{/if}
+
+	<label class="flex items-center space-x-2">
+		<input class="checkbox" type="checkbox" bind:checked={allOrNone} />
+		<p>All or none</p>
+	</label>
+
+	<footer class="flex justify-end gap-2 w-full">
+		{#if statusMessage != ""}
+			<span class="justify-self-start">{statusMessage}</span>
+		{/if}
+		<Dialog.CloseTrigger class="btn preset-tonal">Cancel</Dialog.CloseTrigger>
+		<button type="submit" class="btn preset-filled">Change</button>
+	</footer>
+</form>

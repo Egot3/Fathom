@@ -6,6 +6,7 @@
 	import {
 		FetchAllQuizzes,
 		FetchQuiz,
+		type QuizFile,
 		type QuizzesOrError,
 	} from "../lib/contracts/quiz";
 	import CreateDialog from "./CreateDialog.svelte";
@@ -106,15 +107,22 @@
 											<ChangeDialogSqare
 												callback={() => (clickFocused = quiz.uuid)}
 												title="Quiz changer"
+												contentGetter={async () => {
+													return await FetchQuiz(quiz.uuid);
+												}}
 											>
-												<ChangeQuizForm
-													UUID={quiz.uuid}
-													{name}
-													callback={() => {
-														trigger++;
-													}}
-												/></ChangeDialogSqare
+												{#snippet children({ content }: { content: QuizFile })}
+													<ChangeQuizForm
+														UUID={quiz.uuid}
+														{name}
+														callback={() => {
+															trigger++;
+														}}
+														response={content}
+													/>
+												{/snippet}</ChangeDialogSqare
 											>
+
 											<PeekDialogSquare
 												callback={() => (clickFocused = quiz.uuid)}
 												title="Quiz peeker"

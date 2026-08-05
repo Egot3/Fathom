@@ -15,7 +15,6 @@
 	} = $props();
 
 	let moused = $state(false);
-	let clicked = $state(false);
 	let content: unknown = $state();
 </script>
 

@@ -1,21 +1,30 @@
 <script lang="ts">
 	import { Pencil, X } from "@lucide/svelte";
 	import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
+	import { FetchQuiz } from "../lib/contracts/quiz";
+	import { IsJSONError } from "../lib/statuses/jsonerror";
 
 	const {
 		title,
 		callback = () => {},
 		children,
+		contentGetter,
 	}: {
 		title: string;
 		callback: () => void;
 		children: any;
+		contentGetter: () => Record<string, any>;
 	} = $props();
+
+	let content: Record<string, any> | null = $state(null);
 </script>
 
 <Dialog>
 	<Dialog.Trigger
-		onclick={callback}
+		onclick={() => {
+			content = contentGetter();
+			callback();
+		}}
 		class="btn mb-0 mt-0 preset-filled-surface-300-700 hover:preset-filled-warning-300-700 aspect-square h-auto w-auto p-1 m-px"
 		><Pencil size="16" /></Dialog.Trigger
 	>
@@ -36,7 +45,17 @@
 					>
 				</header>
 
-				{@render children?.()}
+				{#if content != null}
+					{#await content}
+						<div>loading...</div>
+					{:then content}
+						{#if IsJSONError(content)}
+							<div>{content.error}</div>
+						{:else}
+							{@render children({ content })}
+						{/if}
+					{/await}
+				{/if}
 			</Dialog.Content>
 		</Dialog.Positioner>
 	</Portal>
