@@ -3,5 +3,5 @@ export type JSONError = {
 };
 
 export function IsJSONError(res: Record<string, any>): res is JSONError {
-	return "error" in res;
+	return typeof res === "object" && res !== null && "error" in res;
 }

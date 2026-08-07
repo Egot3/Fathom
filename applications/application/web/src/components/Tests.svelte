@@ -2,11 +2,22 @@
 	import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
 	import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
 	import { Pagination } from "@skeletonlabs/skeleton-svelte";
-	import { IsJSONError } from "../lib/statuses/jsonerror";
-	import { FetchAllTests, type TestsOrError } from "../lib/contracts/test";
+	import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
+	import {
+		FetchAllTests,
+		FetchTest,
+		type Test,
+		type TestsOrError,
+	} from "../lib/contracts/test";
 	import CreateDialog from "./CreateDialog.svelte";
 	import CreateTestForm from "./CreateTestForm.svelte";
 	import SmallBookCreateDialog from "./SmallBookCreateDialog.svelte";
+	import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
+	import DeleteTestForm from "./DeleteTestForm.svelte";
+	import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
+	import ChangeTestForm from "./ChangeTestForm.svelte";
+	import PeekDialogSquare from "./PeekDialogSquare.svelte";
+	import TestPeek from "./TestPeek.svelte";
 
 	let height = $state(0);
 
@@ -30,7 +41,8 @@
 		});
 	});
 
-	let creatingTest = $state(false);
+	let focused = $state("");
+	let clickFocused = $state("");
 </script>
 
 <div
@@ -58,18 +70,76 @@
 			{:else}
 				<table class="table table-auto self-start">
 					<thead>
-						<tr class="text-surface-100-900">
-							<th>Test</th>
-							<th>Quiz count</th>
+						<tr class="text-surface-100-900 flex">
+							<th class="w-1/3">Test</th>
+							<th class="w-1/3">Quiz count</th>
+							<th class="w-1/3"></th>
 						</tr>
 					</thead>
 
 					<tbody>
 						{#each paginatedTests.tests as test}
-							<tr>
-								<td>{test.name}</td>
+							<tr
+								onmouseenter={() => (focused = test.uuid)}
+								onmouseleave={() => (focused = "")}
+								class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
+							>
+								<td class="w-1/3">{test.name}</td>
 								<!-- 10.5 rem = 168px -->
-								<td>{test.quizzes?.length ?? 0}</td>
+								<td class="w-1/3">{test.quizzes?.length ?? 0}</td>
+								<td class="w-1/3">
+									{#if test.uuid === focused || test.uuid === clickFocused}
+										<div class="flex flex-row-reverse">
+											<DeleteDialogSquare
+												title="Quiz deleter"
+												callback={() => (clickFocused = test.uuid)}
+											>
+												<DeleteTestForm
+													name={test.name}
+													UUID={test.uuid}
+													callback={() => {
+														trigger++;
+													}}
+												/>
+											</DeleteDialogSquare>
+											<ChangeDialogSqare
+												callback={() => (clickFocused = test.uuid)}
+												title="Quiz changer"
+												contentGetter={async () => {
+													return await FetchTest(test.uuid);
+												}}
+											>
+												{#snippet children({ content }: { content: Test })}
+													<ChangeTestForm
+														UUID={test.uuid}
+														name={test.name}
+														callback={() => {
+															trigger++;
+														}}
+														response={content}
+													/>
+												{/snippet}</ChangeDialogSqare
+											>
+
+											<PeekDialogSquare
+												callback={() => (clickFocused = test.uuid)}
+												title="Test peeker"
+												contentGetter={async () => {
+													const response = await FetchTest(test.uuid);
+													return response;
+												}}
+											>
+												{#snippet children({
+													content,
+												}: {
+													content: Test | JSONError;
+												})}
+													<TestPeek {content} />
+												{/snippet}
+											</PeekDialogSquare>
+										</div>
+									{/if}
+								</td>
 							</tr>
 						{/each}
 					</tbody>

@@ -279,20 +279,6 @@ export async function FetchQuizPatch(
 	}
 }
 
-// helper
-export async function FetchChangeQuiz(
-	UUID: string,
-	meta: Meta,
-	contents: string,
-	name: string | undefined,
-): Promise<JSONError | null> {
-	const putResp = await FetchQuizPut(UUID, meta, contents);
-	if (putResp != null) {
-		return putResp;
-	}
-	return FetchQuizPatch(UUID, meta.score, name);
-}
-
 type QuizFileOrError = QuizFile | JSONError;
 export async function FetchQuiz(UUID: string): Promise<QuizFileOrError> {
 	try {

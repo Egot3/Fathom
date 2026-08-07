@@ -3,7 +3,7 @@ import type { JSONError } from "../statuses/jsonerror";
 import type { Quiz } from "./quiz";
 import { maxAgeRegex, TokenizedFetch } from "./tokenizedFetch";
 
-type Test = {
+export type Test = {
 	uuid: string;
 	name: string;
 	created_at: Date;
@@ -21,19 +21,30 @@ type GetQuizUUIDsResponse = {
 	quiz_uuids: string[];
 };
 
-// redo
-export async function FetchTest(testUUID: string): Promise<Test> {
-	const rawRes = await TokenizedFetch(
-		"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + testUUID,
-		{
-			method: "GET",
-			headers: {
-				Accept: "application/json",
+// redone
+export async function FetchTest(testUUID: string): Promise<Test | JSONError> {
+	try {
+		const rawRes = await TokenizedFetch(
+			"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + testUUID,
+			{
+				method: "GET",
+				headers: {
+					Accept: "application/json",
+				},
 			},
-		},
-	);
+		);
 
-	return ((await rawRes.json()) as GetTestResponse).test;
+		if (!rawRes.ok) {
+			return (await rawRes.json()) as JSONError;
+		}
+
+		return ((await rawRes.json()) as GetTestResponse).test;
+	} catch (err) {
+		console.log("couldn't fetch current test info due to unknown error: ", err);
+		return {
+			error: "got network error while fetching current test",
+		} as JSONError;
+	}
 }
 
 export async function FetchCurrentlyRunningTestInfo(): Promise<
@@ -232,5 +243,163 @@ export async function FetchTestPost(
 		}
 
 		return { error: "couldn't send test post because of unknown error" };
+	}
+}
+
+export async function FetchTestDelete(UUID: string): Promise<null | JSONError> {
+	try {
+		const rawRes = await TokenizedFetch(
+			"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + UUID,
+			{
+				method: "DELETE",
+				headers: {
+					Accept: "application/json",
+				},
+			},
+		);
+
+		if (!rawRes.ok) {
+			return (await rawRes.json()) as JSONError;
+		}
+
+		return null;
+	} catch (err) {
+		console.log("couldn't fetch current test info due to unknown error: ", err);
+		return {
+			error: "got network error while fetching current test",
+		} as JSONError;
+	}
+}
+
+type PatchTestRequest = {
+	name: string | undefined;
+};
+
+export async function FetchTestPatch(
+	UUID: string,
+	name: string | undefined,
+): Promise<JSONError | null> {
+	const body: PatchTestRequest = {
+		name: name,
+	};
+
+	const bodyString = JSON.stringify(body);
+
+	try {
+		const response = await TokenizedFetch(
+			"https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + UUID,
+			{
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				},
+				body: bodyString,
+			},
+		);
+
+		if (!response.ok) {
+			console.log("response is not ok!");
+			return (await response.json()) as JSONError;
+		}
+
+		return null;
+	} catch (err) {
+		console.log("Couldn't fetch quiz patch for quiz: ", err);
+		if (err instanceof Error) {
+			return { error: "couldn't send quiz patch because of in-browser error" };
+		}
+
+		return { error: "couldn't send quiz patch because of unknown error" };
+	}
+}
+
+type TestBundleRequest = {
+	quiz_uuids: string[];
+};
+
+export async function FetchTestBundle(
+	testUUID: string,
+	quizUUIDs: string[],
+): Promise<null | JSONError> {
+	const body: TestBundleRequest = {
+		quiz_uuids: quizUUIDs,
+	};
+
+	const bodyString = JSON.stringify(body);
+
+	try {
+		const response = await TokenizedFetch(
+			"https://" +
+				import.meta.env.VITE_DOMAIN +
+				"/api/v1/test/" +
+				testUUID +
+				"/quizzes",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				},
+				body: bodyString,
+			},
+		);
+
+		if (!response.ok) {
+			console.log("response is not ok!");
+			return (await response.json()) as JSONError;
+		}
+
+		return null;
+	} catch (err) {
+		console.log("Couldn't fetch quiz patch for quiz: ", err);
+		if (err instanceof Error) {
+			return { error: "couldn't send quiz patch because of in-browser error" };
+		}
+
+		return { error: "couldn't send quiz patch because of unknown error" };
+	}
+}
+
+export async function FetchTestPrune(
+	testUUID: string,
+	quizUUIDs: string[],
+): Promise<null | JSONError> {
+	const body: TestBundleRequest = {
+		quiz_uuids: quizUUIDs,
+	};
+
+	const bodyString = JSON.stringify(body);
+
+	try {
+		const response = await TokenizedFetch(
+			"https://" +
+				import.meta.env.VITE_DOMAIN +
+				"/api/v1/test/" +
+				testUUID +
+				"/quizzes",
+			{
+				method: "DELETE",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				},
+				body: bodyString,
+			},
+		);
+
+		if (!response.ok) {
+			console.log("response is not ok!");
+			return (await response.json()) as JSONError;
+		}
+
+		return null;
+	} catch (err) {
+		console.log("Couldn't fetch quiz patch for quiz: ", err);
+		if (err instanceof Error) {
+			return { error: "couldn't send quiz patch because of in-browser error" };
+		}
+
+		return { error: "couldn't send quiz patch because of unknown error" };
 	}
 }
