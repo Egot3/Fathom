@@ -6,16 +6,16 @@
 		title,
 		children,
 		callback = () => {},
-		contentGetter = () => {},
+		contentGetter,
 	}: {
 		title: string;
 		children: any;
-		callback: () => void;
-		contentGetter: () => unknown;
+		callback?: () => void;
+		contentGetter: () => Promise<unknown>;
 	} = $props();
 
 	let moused = $state(false);
-	let content: unknown = $state();
+	let content = $state<Promise<unknown>>(new Promise(() => {}));
 </script>
 
 <Dialog>
