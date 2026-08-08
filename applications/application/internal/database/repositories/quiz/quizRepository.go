@@ -14,7 +14,6 @@ type QuizRepository interface {
 	CheckRegistered(ctx context.Context, path string) (bool, error)
 	CheckIntegrity(ctx context.Context, path string, checksum []byte) (bool, error)
 	QuizPath(ctx context.Context, quizUUID uuid.UUID) (string, error)
-	// fuzzy search goes to app layer, as sqlite is... for storage only
 	UpdateChecksum(ctx context.Context, quizUUID uuid.UUID, checksum []byte) error
 	PatchQuiz(ctx context.Context, quizUUID uuid.UUID, path *string, score *int) error
 	CorrectAnswer(ctx context.Context, quizUUID uuid.UUID) (string, error)
