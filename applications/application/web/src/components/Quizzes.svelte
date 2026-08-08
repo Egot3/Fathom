@@ -12,7 +12,6 @@
 	import CreateDialog from "./CreateDialog.svelte";
 	import CreateQuizForm from "./CreateQuizForm.svelte";
 	import SmallPaperCreateDialog from "./SmallPaperCreateDialog.svelte";
-	import { Eye, EyeClosed, Pencil, Trash, Trash2 } from "@lucide/svelte";
 	import ChangeQuizForm from "./ChangeQuizForm.svelte";
 	import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
 	import PeekDialogSquare from "./PeekDialogSquare.svelte";
@@ -35,7 +34,6 @@
 		const ps = pageSize;
 		trigger;
 
-		console.log("detected change");
 		clearTimeout(time);
 
 		return new Promise<QuizzesOrError>((resolve) => {
