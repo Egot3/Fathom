@@ -45,7 +45,7 @@ func InitDB(i do.Injector) (*bun.DB, error) {
 			continue
 		}
 		break
-	} //почему бы и нет
+	}
 
 	if err := DB.Ping(); err != nil {
 		log.Printf("\nNo db?\n")
