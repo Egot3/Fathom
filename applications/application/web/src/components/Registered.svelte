@@ -28,7 +28,7 @@
 
   let trigger = $state(0);
   let time: number;
-  const paginatedQuizPromises = $derived.by(() => {
+  const paginatedUserPromises = $derived.by(() => {
     const p = page;
     const ps = pageSize;
     trigger;
@@ -47,7 +47,7 @@
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
   bind:clientHeight={height}
 >
-  {#await paginatedQuizPromises}
+  {#await paginatedUserPromises}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
