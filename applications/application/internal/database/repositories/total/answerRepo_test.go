@@ -549,7 +549,7 @@ func TestAnswer_Totals(t *testing.T) {
 		t.Parallel()
 		t.Run("Valid", func(t *testing.T) {
 			t.Parallel()
-			totals, total, err := r.AllTotals(t.Context(), userUUID, 0, 1)
+			totals, total, err := r.UserTotals(t.Context(), userUUID, 0, 1)
 			require.NoError(t, err)
 			require.Equal(t, 1, total)
 			require.Len(t, totals, 1)
@@ -557,12 +557,24 @@ func TestAnswer_Totals(t *testing.T) {
 		})
 		t.Run("Invalid", func(t *testing.T) {
 			t.Parallel()
-			totals, total, err := r.AllTotals(t.Context(), uuid.Nil, 0, 1)
+			totals, total, err := r.UserTotals(t.Context(), uuid.Nil, 0, 1)
 			require.Len(t, totals, 0)
 
 			require.Equal(t, 0, total)
 			require.Error(t, err)
 			require.Nil(t, totals)
+		})
+	})
+
+	t.Run("All totals", func(t *testing.T) {
+		t.Parallel()
+		t.Run("Valid", func(t *testing.T) {
+			t.Parallel()
+			totals, total, err := r.ListTotals(t.Context(), 0, 1)
+			require.NoError(t, err)
+			require.Equal(t, 1, total)
+			require.Len(t, totals, 1)
+			require.Equal(t, totals[0].Score, score)
 		})
 	})
 }
@@ -575,7 +587,7 @@ func BenchmarkTotals_Errors(b *testing.B) {
 	RegisterModels(db)
 	b.Run("Not found", func(b *testing.B) {
 		for b.Loop() {
-			r.AllTotals(b.Context(), uuid.Nil, 0, 1)
+			r.UserTotals(b.Context(), uuid.Nil, 0, 1)
 		}
 	})
 }

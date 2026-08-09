@@ -23,12 +23,13 @@ type Answer struct {
 }
 
 type Total struct {
-	GroupUUID uuid.UUID `json:"group_uuid" bun:"group_uuid"`
-	TestUUID  uuid.UUID `json:"test_uuid" bun:"test_uuid"`
-	UserUUID  uuid.UUID `json:"user_uuid" bun:"user_uuid"`
-	GroupName string    `json:"group_name" bun:"group_name"`
-	TestName  string    `json:"test_name" bun:"test_name"`
-	Score     float64   `json:"score" bun:"score"`
+	GroupUUID   uuid.UUID `json:"group_uuid" bun:"group_uuid"`
+	TestUUID    uuid.UUID `json:"test_uuid" bun:"test_uuid"`
+	UserUUID    uuid.UUID `json:"user_uuid" bun:"user_uuid"`
+	GroupName   string    `json:"group_name" bun:"group_name"`
+	TestName    string    `json:"test_name" bun:"test_name"`
+	FinalizedAt time.Time `json:"finalized_at" bun:"finalized_at"`
+	Score       float64   `json:"score" bun:"score"`
 }
 
 type GetAnswerResponse struct {
