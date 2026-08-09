@@ -1,0 +1,1 @@
+ALTER TABLE "users_groups_tests" ADD COLUMN "finalized_at" TEXT;

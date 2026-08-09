@@ -78,8 +78,8 @@ type TestService interface {
 }
 
 type TotalService interface {
-	PostAnswer(w http.ResponseWriter, r *http.Request) // answer as a VERB
-	GetAnswer(w http.ResponseWriter, r *http.Request)  // answer as a NOUN
+	PostAnswer(w http.ResponseWriter, r *http.Request)
+	GetAnswer(w http.ResponseWriter, r *http.Request)
 
 	Totalize(w http.ResponseWriter, r *http.Request)
 
@@ -87,6 +87,7 @@ type TotalService interface {
 	GetUserTotals(w http.ResponseWriter, r *http.Request)
 	GetGroupTotals(w http.ResponseWriter, r *http.Request)
 	GetTestTotals(w http.ResponseWriter, r *http.Request)
+	ListTotals(w http.ResponseWriter, r *http.Request)
 }
 
 type Service interface {

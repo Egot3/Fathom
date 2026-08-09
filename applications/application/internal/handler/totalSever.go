@@ -318,7 +318,7 @@ func (c *chiService) GetUserTotals(w http.ResponseWriter, r *http.Request) {
 
 	logger = logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
 
-	userTotals, total, err := c.answerRepo.AllTotals(ctx, userUUID, pageInt, sizeInt)
+	userTotals, total, err := c.answerRepo.UserTotals(ctx, userUUID, pageInt, sizeInt)
 	if err != nil {
 		logger.Error("couldn't get an answer",
 			slog.String("Error", err.Error()),
@@ -509,4 +509,63 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (c *chiService) ListTotals(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+	w.Header().Set("Content-Type", "application/json")
+
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
+		return
+	}
+
+	pageInt, err := strconv.Atoi(r.Form.Get("page"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
+		return
+	}
+	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
+		return
+	}
+	if sizeInt <= 0 {
+		w.WriteHeader(422)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
+		return
+	}
+
+	logger = logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
+
+	totals, total, err := c.answerRepo.ListTotals(ctx, pageInt, sizeInt)
+	if err != nil {
+		logger.Error("couldn't get an answer",
+			slog.String("Error", err.Error()),
+		)
+
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "there is no totals to list"})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contracts.TotalsResponse{
+		Totals: totals,
+		Total:  total,
+		Page:   pageInt,
+		Size:   sizeInt,
+	})
 }
