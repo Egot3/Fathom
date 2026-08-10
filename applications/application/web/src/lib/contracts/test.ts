@@ -352,12 +352,14 @@ export async function FetchTestBundle(
 
     return null;
   } catch (err) {
-    console.log("Couldn't fetch quiz patch for quiz: ", err);
+    console.log("Couldn't fetch test bundle: ", err);
     if (err instanceof Error) {
-      return { error: "couldn't send quiz patch because of in-browser error" };
+      return {
+        error: "couldn't send test bundle patch because of in-browser error",
+      };
     }
 
-    return { error: "couldn't send quiz patch because of unknown error" };
+    return { error: "couldn't send test bundle because of unknown error" };
   }
 }
 

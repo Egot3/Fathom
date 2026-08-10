@@ -72,7 +72,7 @@
       <span class="justify-self-start">{statusMessage}</span>
     {/if}
     <Dialog.CloseTrigger class="btn preset-tonal">Cancel</Dialog.CloseTrigger>
-    <button type="submit" class="btn preset-filled" disabled={nameReady}
+    <button type="submit" class="btn preset-filled" disabled={!nameReady}
       >Delete</button
     >
   </footer>
