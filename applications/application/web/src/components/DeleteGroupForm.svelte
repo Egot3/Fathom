@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { FetchQuizDelete } from "../lib/contracts/quiz";
+  import { FetchGroupDelete } from "../lib/contracts/group";
   import DeleteForm from "./DeleteForm.svelte";
 
   const {
@@ -13,4 +13,4 @@
   } = $props();
 </script>
 
-<DeleteForm {name} {UUID} {callback} deletor={FetchQuizDelete}></DeleteForm>
+<DeleteForm {name} {UUID} {callback} deletor={FetchGroupDelete}></DeleteForm>
