@@ -24,30 +24,18 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	err := r.ParseForm()
-	if err != nil {
-		logger.Error("Failed to parse form data",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
-		return
-	}
-
-	groupUUID, err := uuid.Parse(r.Form.Get("uuid"))
-	if err != nil {
-		logger.Error("Failed to parse uuid",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse uuid"})
+	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		logger.Error("Bad uuid")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.AppendUsersRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", err.Error()),
@@ -356,30 +344,18 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	err := r.ParseForm()
-	if err != nil {
-		logger.Error("Failed to parse form data",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
-		return
-	}
-
-	groupUUID, err := uuid.Parse(r.Form.Get("uuid"))
-	if err != nil {
-		logger.Error("Failed to parse uuid",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse uuid"})
+	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		logger.Error("Bad uuid")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.RemoveUsersRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", err.Error()),
