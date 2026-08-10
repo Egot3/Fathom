@@ -64,6 +64,47 @@ export async function FetchLogin(
 
     return { error: "couldn't send login because of unknown error" };
   }
+<<<<<<< HEAD
+=======
+}
+
+type RegisterResponseOrJSONError = RegisterResponse | JSONError;
+
+export async function FetchRegister(
+  nickname: string,
+  password: string,
+): Promise<RegisterResponseOrJSONError> {
+  const body: LoginRequest = {
+    nickname: nickname,
+    password: password,
+  };
+  try {
+    const response = await TokenizedFetch(
+      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(body),
+      },
+    );
+
+    if (!response.ok) {
+      return (await response.json()) as JSONError;
+    }
+
+    return (await response.json()) as RegisterResponse;
+  } catch (err) {
+    console.log("Couldn't fetch register for user: ", err);
+    if (err instanceof Error) {
+      return { error: "couldn't send register because of in-browser error" };
+    }
+
+    return { error: "couldn't send register because of unknown error" };
+  }
+>>>>>>> 296696e1 (feat(frontend): improved UX for register and login by adding loader. Also upgraded register page)
 }
 
 export type {
