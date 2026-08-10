@@ -89,6 +89,7 @@
                             trigger++;
                           }}
                         />
+                        <!-- need only cofirmation, as user is regenerated on re-deploy -->
                       </DeleteDialogSquare>
                       <ChangeDialogSqare
                         callback={() => (clickFocused = user.uuid)}
