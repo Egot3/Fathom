@@ -2,15 +2,16 @@
   import { Dialog } from "@skeletonlabs/skeleton-svelte";
   import UXInput from "./UXInput.svelte";
   import _ from "lodash";
-  import {
-    FetchTestBundle,
-    FetchTestPatch,
-    FetchTestPrune,
-    type Test,
-  } from "../lib/contracts/test";
-  import QuizChips from "./QuizChips.svelte";
   import { SvelteSet } from "svelte/reactivity";
-  import ExistingQuizChips from "./ExistingQuizChips.svelte";
+  import {
+    FetchGroupAppend,
+    FetchGroupPatch,
+    FetchGroupPrune,
+    type Group,
+  } from "../lib/contracts/group";
+  import ExistingGroupChips from "./ExistingGroupChips.svelte";
+  import ExistingUserChips from "./ExistingUserChips.svelte";
+  import UserChips from "./UserChips.svelte";
 
   const {
     callback,
@@ -20,7 +21,7 @@
   }: {
     callback: () => void;
 
-    response: Test;
+    response: Group;
     name: string;
     UUID: string;
   } = $props();
@@ -31,27 +32,26 @@
   let nameReady: boolean = $state(false);
 
   let newName = $derived(name);
-  let quizzes = $derived(new SvelteSet(response.quizzes));
-  let newQuizzes = $state(new SvelteSet<string>());
+  let pupils = $derived(new SvelteSet(response.pupils));
+  let newPupils = $state(new SvelteSet<string>());
 
   async function ChangeGroup(e: Event) {
     e.preventDefault();
 
     if (newName != name && newName) {
-      const patchResponse = await FetchTestPatch(UUID, newName);
+      const patchResponse = await FetchGroupPatch(UUID, newName);
       if (patchResponse != null) {
         statusMessage = patchResponse.error;
         return;
       }
     }
 
-    const quizzesArr = Array.from(quizzes);
-    const quizzesRemoved = _.difference(response.quizzes, quizzesArr);
-    console.log("quizzes removed+quizzesArr: ", quizzesRemoved, quizzesArr);
-    if (quizzesRemoved.length > 0) {
-      const deleteResponse = await FetchTestPrune(
+    const pupilsArr = Array.from(pupils);
+    const pupilsRemoved = _.difference(response.pupils, pupilsArr);
+    if (pupilsRemoved.length > 0) {
+      const deleteResponse = await FetchGroupPrune(
         UUID,
-        quizzesRemoved.map((v) => v.uuid),
+        pupilsRemoved.map((v) => v.uuid),
       );
       if (deleteResponse != null) {
         statusMessage = deleteResponse.error;
@@ -59,9 +59,9 @@
       }
     }
 
-    const newQuizzesArr = Array.from(newQuizzes);
-    if (newQuizzesArr.length > 0) {
-      const postResponse = await FetchTestBundle(UUID, newQuizzesArr);
+    const newPupilsArr = Array.from(newPupils);
+    if (newPupilsArr.length > 0) {
+      const postResponse = await FetchGroupAppend(UUID, newPupilsArr);
       if (postResponse != null) {
         statusMessage = postResponse.error;
         return;
@@ -71,13 +71,13 @@
     callback();
   }
 
-  const existing = new SvelteSet((() => quizzes)());
+  const existing = new SvelteSet((() => pupils)());
 </script>
 
 <form onsubmit={ChangeGroup} class="w-full flex flex-col h-full space-y-2">
   <UXInput
     label="Name"
-    placeholder="go-regenerics"
+    placeholder="ETS' Evil Corp fan club"
     bind:value={newName}
     bind:ready={nameReady}
     message={nameMessage}
@@ -98,14 +98,14 @@
   <div class="w-full flex">
     <div class="h-full w-1/2">
       <label class="label">
-        <span class="label-text">Old quizzes</span>
-        <ExistingQuizChips bind:quizzes />
+        <span class="label-text">Existing pupils</span>
+        <ExistingUserChips bind:pupils />
       </label>
     </div>
     <div class="h-full w-1/2">
       <label class="label">
-        <span class="label-text">New quizzes</span>
-        <QuizChips bind:chosen={newQuizzes} {existing} />
+        <span class="label-text">New pupils</span>
+        <UserChips bind:chosen={newPupils} {existing} />
       </label>
     </div>
   </div>

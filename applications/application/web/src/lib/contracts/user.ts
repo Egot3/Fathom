@@ -64,8 +64,6 @@ export async function FetchLogin(
 
     return { error: "couldn't send login because of unknown error" };
   }
-<<<<<<< HEAD
-=======
 }
 
 type RegisterResponseOrJSONError = RegisterResponse | JSONError;
@@ -104,7 +102,6 @@ export async function FetchRegister(
 
     return { error: "couldn't send register because of unknown error" };
   }
->>>>>>> 296696e1 (feat(frontend): improved UX for register and login by adding loader. Also upgraded register page)
 }
 
 export type {

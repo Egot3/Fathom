@@ -1,5 +1,6 @@
 <script lang="ts">
   import BentoContainer from "../components/BentoContainer.svelte";
+  import Groups from "../components/Groups.svelte";
   import Quizzes from "../components/Quizzes.svelte";
   import Registered from "../components/Registered.svelte";
   import TeacherCurrentlyRunning from "../components/TeacherCurrentlyRunning.svelte";
@@ -25,12 +26,20 @@
     <TestingResults />
   </div>
   <div
-    id="pupils"
-    class="row-start-1 row-end-8 col-start-5 col-end-9 flex flex-col bg-surface-700-300 rounded-2xl p-8"
+    id="registered"
+    class="row-start-1 row-end-8 col-start-5 col-end-7 flex flex-col bg-surface-700-300 rounded-2xl p-8"
   >
     <h2 class="text-2xl font-bold">Registered</h2>
     <hr class="hr mt-5 mb-5" />
     <Registered />
+  </div>
+  <div
+    id="groups"
+    class="row-start-1 row-end-8 col-start-7 col-end-9 flex flex-col bg-surface-700-300 rounded-2xl p-8"
+  >
+    <h2 class="text-2xl font-bold">Groups</h2>
+    <hr class="hr mt-5 mb-5" />
+    <Groups />
   </div>
   <div
     id="tests"
