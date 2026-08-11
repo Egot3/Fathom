@@ -68,9 +68,15 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(req.Appendants) == 0 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Can't proccess adding 0 users"})
+		return
+	}
+
 	err = c.groupRepo.AppendUsers(ctx, groupUUID, req.Appendants)
 	if err != nil {
-		logger.Error("Failed to create new group",
+		logger.Error("Failed to append new users to group",
 			slog.String("Error", err.Error()),
 		)
 		if partial, ok := errors.AsType[carefulness.PartialSuccess](err); ok {
@@ -79,6 +85,7 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't insert new users to group"})
 		return
 	}
 
@@ -385,6 +392,12 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(req.Removants) == 0 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Can't proccess adding 0 users"})
 		return
 	}
 
