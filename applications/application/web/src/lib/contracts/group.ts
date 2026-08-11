@@ -178,7 +178,7 @@ export async function FetchGroupPrune(
 
   try {
     const response = await TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${groupUUID}/user`,
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${groupUUID}/user`,
       {
         method: "DELETE",
         headers: {
