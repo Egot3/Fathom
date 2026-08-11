@@ -151,9 +151,9 @@ func (r *bunGroupRepository) ListGroups(ctx context.Context, page, size int) ([]
 	total, err := r.db.NewSelect().Model(&groups).
 		OrderBy("name", bun.OrderAsc).
 		Offset(size * page).Limit(size).
+		Relation("Users").
 		ScanAndCount(ctx)
 	if err != nil {
-
 		return nil, 0, err
 	}
 
