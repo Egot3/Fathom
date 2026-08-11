@@ -245,7 +245,7 @@ func (r *bunTotalRepository) ListTotals(ctx context.Context, page int, size int)
 		ColumnExpr("ugt.score AS score, ugt.test_uuid AS test_uuid, ugt.group_uuid AS group_uuid, ugt.user_uuid AS user_uuid").
 		Join("JOIN groups AS g").JoinOn("g.uuid = ugt.group_uuid").ColumnExpr("g.name AS group_name").
 		Join("JOIN tests AS t").JoinOn("t.uuid = ugt.test_uuid").ColumnExpr("t.name AS test_name").
-		Join("JOIN users AS u").JoinOn("u.uuid = ugt.user_uuid").ColumnExpr("u.name AS user_name").
+		Join("JOIN users AS u").JoinOn("u.uuid = ugt.user_uuid").ColumnExpr("u.nickname AS user_name").
 		OrderBy("ugt.finalized_at", bun.OrderDesc).
 		Offset(page*size).Limit(size).
 		ScanAndCount(ctx, &totals)
