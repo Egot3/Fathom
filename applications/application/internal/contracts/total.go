@@ -28,6 +28,7 @@ type Total struct {
 	UserUUID    uuid.UUID `json:"user_uuid" bun:"user_uuid"`
 	GroupName   string    `json:"group_name" bun:"group_name"`
 	TestName    string    `json:"test_name" bun:"test_name"`
+	UserName    string    `json:"user_name" bun:"user_name"`
 	FinalizedAt time.Time `json:"finalized_at" bun:"finalized_at"`
 	Score       float64   `json:"score" bun:"score"`
 }
