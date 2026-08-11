@@ -1,65 +1,65 @@
 <script lang="ts">
-	import { Popover, usePopover } from "@skeletonlabs/skeleton-svelte";
-	import { ClassForStatus, InputStatus } from "../lib/statuses/input";
+  import { Popover, usePopover } from "@skeletonlabs/skeleton-svelte";
+  import { ClassForStatus, InputStatus } from "../lib/statuses/input";
 
-	let {
-		value = $bindable(""),
-		label = "",
-		ready = $bindable(true),
-		checker = (v: string) => true,
-		placeholder = "",
-		message = $bindable(""),
-		initValue = ""
-	} = $props();
+  let {
+    value = $bindable(""),
+    label = "",
+    type = "text",
+    ready = $bindable(true),
+    checker = (v: string) => true,
+    placeholder = "",
+    message = $bindable(""),
+    initValue = "",
+  } = $props();
 
-	const popover = usePopover({ id: (() => label)() });
-	let state = $state(InputStatus.Idle);
+  const popover = usePopover({ id: (() => label)() });
+  let state = $state(InputStatus.Idle);
 
-	// svelte-ignore state_referenced_locally
-	value = value || initValue
+  // svelte-ignore state_referenced_locally
+  value = value || initValue;
 
-	$effect(() => {
-		
-		ready = checker(value);
-	});
+  $effect(() => {
+    ready = checker(value);
+  });
 </script>
 
 <label class="label">
-	<span class="label-text">{label}</span>
-	<Popover.Provider value={popover}>
-		<Popover.Anchor>
-			<input
-				class={"input border-2 " + ClassForStatus(state)}
-				type="text"
-				onblur={() => {
-					if (ready) {
-						state = InputStatus.Treat;
+  <span class="label-text">{label}</span>
+  <Popover.Provider value={popover}>
+    <Popover.Anchor>
+      <input
+        class={"input border-2 " + ClassForStatus(state)}
+        {type}
+        onblur={() => {
+          if (ready) {
+            state = InputStatus.Treat;
 
-						return;
-					}
-					popover().setOpen(true);
-					state = InputStatus.Punish;
-				}}
-				onfocus={() => {
-					popover().setOpen(false);
-					state = InputStatus.Idle;
-				}}
-				onkeydown={() => {
-					if (ready) {
-						state = InputStatus.Treat;
-					}
-				}}
-				bind:value
-				{placeholder}
-			/>
-		</Popover.Anchor>
+            return;
+          }
+          popover().setOpen(true);
+          state = InputStatus.Punish;
+        }}
+        onfocus={() => {
+          popover().setOpen(false);
+          state = InputStatus.Idle;
+        }}
+        onkeydown={() => {
+          if (ready) {
+            state = InputStatus.Treat;
+          }
+        }}
+        bind:value
+        {placeholder}
+      />
+    </Popover.Anchor>
 
-		<Popover.Positioner>
-			<Popover.Content
-				class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50"
-			>
-				<Popover.Title tabindex={-1}>{message}</Popover.Title>
-			</Popover.Content>
-		</Popover.Positioner>
-	</Popover.Provider>
+    <Popover.Positioner>
+      <Popover.Content
+        class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50"
+      >
+        <Popover.Title tabindex={-1}>{message}</Popover.Title>
+      </Popover.Content>
+    </Popover.Positioner>
+  </Popover.Provider>
 </label>
