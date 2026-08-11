@@ -206,7 +206,7 @@ export async function FetchGroupPrune(
 }
 
 type AppendGroupRequest = {
-  removants: string[];
+  appendants: string[];
 };
 
 export async function FetchGroupAppend(
@@ -214,7 +214,7 @@ export async function FetchGroupAppend(
   userUUIDs: string[],
 ): Promise<null | JSONError> {
   const body: AppendGroupRequest = {
-    removants: userUUIDs,
+    appendants: userUUIDs,
   };
 
   const bodyString = JSON.stringify(body);
