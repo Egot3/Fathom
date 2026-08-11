@@ -394,6 +394,7 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	ctx = logging.WithLogger(ctx, logger.With(slog.Int("removants_len", len(req.Removants))))
 
 	if len(req.Removants) == 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -403,7 +404,7 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 
 	err = c.groupRepo.RemoveUsers(ctx, groupUUID, req.Removants)
 	if err != nil {
-		logger.Error("Failed to create new group",
+		logger.Error("Failed to delete users from group",
 			slog.String("Error", err.Error()),
 		)
 		if partial, ok := errors.AsType[carefulness.PartialSuccess](err); ok {
