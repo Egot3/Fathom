@@ -86,7 +86,7 @@
     placeholder="knownUser"
     bind:value={newName}
     bind:ready={nameReady}
-    message={nameMessage}
+    bind:message={nameMessage}
     checker={(v: string) => {
       if (v.length < 3) {
         nameMessage = "name can't be less than 3 characters in length";
@@ -103,10 +103,11 @@
 
   <UXInput
     label="Password"
+    type="password"
     placeholder="unbelievab1y_H4RD_TO_brut3_ForcePassw0rd!"
     bind:value={password}
     bind:ready={passwordReady}
-    message={passwordMessage}
+    bind:message={passwordMessage}
     checker={(v: string) => {
       passwordMessage = CheckPassword(v);
       return passwordMessage === "";

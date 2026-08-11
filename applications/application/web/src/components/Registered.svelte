@@ -3,9 +3,6 @@
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
   import { IsJSONError } from "../lib/statuses/jsonerror";
-  import CreateDialog from "./CreateDialog.svelte";
-  import SmallPaperCreateDialog from "./SmallPaperCreateDialog.svelte";
-  import ChangeQuizForm from "./ChangeQuizForm.svelte";
   import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
   import PeekDialogSquare from "./PeekDialogSquare.svelte";
   import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
