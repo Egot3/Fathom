@@ -13,13 +13,16 @@ import (
 */
 
 type Answer struct {
-	GroupUUID   uuid.UUID `json:"group_uuid"`
-	TestUUID    uuid.UUID `json:"test_uuid"`
-	UserUUID    uuid.UUID `json:"user_uuid"`
-	QuizUUID    uuid.UUID `json:"quiz_uuid"`
-	Chosen      string    `json:"chosen"`
-	Correct     string    `json:"correct"`
-	SubmittedAt time.Time `json:"submitted_at"`
+	GroupUUID   uuid.UUID `json:"group_uuid" bun:"group_uuid"`
+	TestUUID    uuid.UUID `json:"test_uuid" bun:"test_uuid"`
+	UserUUID    uuid.UUID `json:"user_uuid" bun:"user_uuid"`
+	QuizUUID    uuid.UUID `json:"quiz_uuid" bun:"quiz_uuid"`
+	Chosen      string    `json:"chosen" bun:"answer_value"`
+	Correct     string    `json:"correct" bun:"correct"`
+	SubmittedAt time.Time `json:"submitted_at" bun:"answered_at"`
+
+	GroupName string `json:"group_name" bun:"group_name"`
+	TestName  string `json:"test_name" bun:"test_name"`
 }
 
 type Total struct {
@@ -32,12 +35,15 @@ type Total struct {
 	Score       float64   `json:"score" bun:"score"`
 }
 
-type GetAnswerResponse struct {
+type AnswerResponse struct {
 	Answer Answer `json:"answer"`
 }
 
-type GetAnswersResponse struct {
+type AnswersResponse struct {
 	Answers []Answer `json:"answers"`
+	Total   int      `json:"total"`
+	Page    int      `json:"page"`
+	Size    int      `json:"size"`
 }
 
 type PostAnswerRequest struct {

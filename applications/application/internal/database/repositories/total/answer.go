@@ -259,3 +259,26 @@ func (r *bunTotalRepository) ListTotals(ctx context.Context, page int, size int)
 
 	return totals, total, nil
 }
+
+func (r *bunTotalRepository) AnswersInTest(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, page, size int) ([]contracts.Answer, int, error) {
+	var answers []contracts.Answer
+
+	total, err := r.db.NewSelect().TableExpr("users_groups_tests_quiz_answers AS ugtqa").
+		Where("ugtqa.user_uuid = ?", userUUID).
+		ColumnExpr("ugtqa.score AS score, ugtqa.test_uuid AS test_uuid, ugtqa.group_uuid AS group_uuid").
+		Join("JOIN groups AS g").JoinOn("g.uuid = ugtqa.group_uuid").ColumnExpr("g.name AS group_name").
+		Join("JOIN tests AS t").JoinOn("t.uuid = ugtqa.test_uuid").ColumnExpr("t.name AS test_name").
+		Join("JOIN quizzes AS q").JoinOn("q.uuid = ugtqa.quiz_uuid").ColumnExpr("q.correct_answer AS correct").
+		OrderBy("ugtqa.answered_at", bun.OrderDesc).
+		Offset(page*size).Limit(size).
+		ScanAndCount(ctx, &answers)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if len(answers) == 0 {
+		return nil, 0, sql.ErrNoRows
+	}
+
+	return answers, total, nil
+}
