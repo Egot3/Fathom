@@ -87,6 +87,7 @@ type TotalService interface {
 	GetUserTotals(w http.ResponseWriter, r *http.Request)
 	GetGroupTotals(w http.ResponseWriter, r *http.Request)
 	GetTestTotals(w http.ResponseWriter, r *http.Request)
+	ListUserAnswer(w http.ResponseWriter, r *http.Request)
 }
 
 type Service interface {
