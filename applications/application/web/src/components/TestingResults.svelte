@@ -49,10 +49,11 @@
         <table class="table table-auto self-start">
           <thead>
             <tr class="text-surface-100-900 flex">
-              <th class="w-1/4">User</th>
-              <th class="w-1/4">Group</th>
-              <th class="w-1/4">Test</th>
-              <th class="w-1/4">Score</th>
+              <th class="w-1/5">User</th>
+              <th class="w-1/5">Group</th>
+              <th class="w-1/5">Test</th>
+              <th class="w-1/5">Score</th>
+              <th class="w-1/5">Totalized at</th>
             </tr>
           </thead>
 
@@ -62,10 +63,11 @@
               <tr
                 class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
               >
-                <td class="w-1/4">{total.user_name}</td>
-                <td class="w-1/4">{total.group_name}</td>
-                <td class="w-1/4">{total.test_name}</td>
-                <td class="w-1/4">{total.score}</td>
+                <td class="w-1/5">{total.user_name}</td>
+                <td class="w-1/5">{total.group_name}</td>
+                <td class="w-1/5">{total.test_name}</td>
+                <td class="w-1/5">{total.score}</td>
+                <th class="w-1/5">{total.finalized_at}</th>
               </tr>
             {/each}
           </tbody>
