@@ -184,6 +184,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				}))
 
 				r.Get("/", svc.GetUserTotal)
+				r.Get("/answers", svc.ListUserAnswer)
 			})
 
 		})
