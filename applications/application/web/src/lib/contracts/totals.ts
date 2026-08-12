@@ -13,6 +13,7 @@ export type TestTotal = {
   group_name: string;
   user_name: string;
   score: number;
+  finalized_at: Date;
 
   test_uuid: string;
   group_uuid: string;
