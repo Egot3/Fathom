@@ -1,4 +1,3 @@
-import type { Users } from "@lucide/svelte";
 import type { JSONError } from "../statuses/jsonerror";
 import { TokenizedFetch } from "./tokenizedFetch";
 
