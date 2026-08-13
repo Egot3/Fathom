@@ -6,24 +6,17 @@
     title,
     children,
     open = $bindable(false),
-    contentGetter,
   }: {
     title: string;
     children: any;
     open: boolean;
-    contentGetter: () => Promise<unknown>;
   } = $props();
-
-  let content = $state<Promise<unknown>>(new Promise(() => {}));
 </script>
 
 <Dialog
   {open}
   onOpenChange={(details) => {
     open = details.open;
-    if (details.open) {
-      content = contentGetter();
-    }
   }}
 >
   <Portal>
@@ -40,11 +33,9 @@
             <XIcon class="size-4" />
           </Dialog.CloseTrigger>
         </header>
-        {#await content}
-          <div>loading</div>
-        {:then content}
-          {@render children({ content })}
-        {/await}
+        {#if open}
+          {@render children()}
+        {/if}
       </Dialog.Content>
     </Dialog.Positioner>
   </Portal>
