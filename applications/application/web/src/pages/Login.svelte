@@ -128,7 +128,7 @@
                 placeholder="supersecurePaSSwoRD!"
                 onblur={(e: FocusEvent) => {
                   const err = CheckPassword(password);
-                  if (err != "") {
+                  if (err !== "") {
                     passwordMessage = err;
                     passwordState = InputStatus.Punish;
                     passwordPopover().setOpen(true);

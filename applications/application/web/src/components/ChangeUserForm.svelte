@@ -42,12 +42,12 @@
       statusMessage = "You are logged out!";
       return;
     }
-    if (requestor.UUID != UUID && !requestor.isTeacher) {
+    if (requestor.UUID !== UUID && !requestor.isTeacher) {
       statusMessage = "You can't change account, which you don't own";
       return;
     }
 
-    if (isTeacher != response.is_teacher) {
+    if (isTeacher !== response.is_teacher) {
       if (!requestor.isTeacher) {
         statusMessage = "You are not a teacher to change teachery";
         return;
@@ -60,17 +60,17 @@
       patched.IsTeacher = isTeacher;
     }
 
-    if (newName != response.nickname && newName) {
+    if (newName !== response.nickname && newName) {
       patched.Name = newName;
     }
 
-    if (password != "") {
+    if (password !== "") {
       patched.Password = password;
     }
 
     if (!_.isEmpty(patched)) {
       const patchResponse = await FetchUserPatch(UUID, patched);
-      if (patchResponse != null) {
+      if (patchResponse !== null) {
         statusMessage = patchResponse.error;
         return;
       }
@@ -120,7 +120,7 @@
   </label>
 
   <footer class="flex justify-end gap-2 w-full">
-    {#if statusMessage != ""}
+    {#if statusMessage !== ""}
       <span class="justify-self-start">{statusMessage}</span>
     {/if}
     <Dialog.CloseTrigger class="btn preset-tonal">Cancel</Dialog.CloseTrigger>

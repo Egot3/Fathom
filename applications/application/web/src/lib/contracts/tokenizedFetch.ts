@@ -14,7 +14,7 @@ export async function TokenizedFetch(
     default:
       const sessionControl = res.headers.get("Session-Control");
       console.log("session control: ", sessionControl);
-      if (sessionControl != null) {
+      if (sessionControl !== null) {
         const reg = maxAgeRegex.exec(sessionControl);
         if (reg == null || reg.length < 2) {
           return res;

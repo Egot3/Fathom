@@ -52,7 +52,7 @@
     {#if IsJSONError(paginatedUsers)}
       <div>{paginatedUsers.error}</div>
     {:else}
-      {#if paginatedUsers.total != 0}
+      {#if paginatedUsers.total !== 0}
         {#each paginatedUsers.users as user (user.uuid)}
           <button
             type="button"

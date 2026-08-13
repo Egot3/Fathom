@@ -13,7 +13,7 @@
   async function PostGroup(e: Event) {
     e.preventDefault();
     const postResponse = await FetchGroupPost(name, Array.from(users));
-    if (postResponse != null) {
+    if (postResponse !== null) {
       statusMessage = postResponse.error;
       return;
     }
@@ -39,7 +39,7 @@
   </label>
 
   <footer class="flex justify-end gap-2">
-    {#if statusMessage != ""}
+    {#if statusMessage !== ""}
       <span class="justify-self-start">{statusMessage}</span>
     {/if}
     <Dialog.CloseTrigger class="btn preset-tonal">Cancel</Dialog.CloseTrigger>
