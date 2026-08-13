@@ -81,17 +81,19 @@
                 <td class="w-1/5">{total.score}</td>
                 <td class="w-1/5">{total.finalized_at}</td>
                 <td class="max-w-0">
-                  <!-- <PeekDialog
+                  <PeekDialog
                     bind:open={
                       () => focused === ultimateUUID,
                       (v) => (focused = v ? ultimateUUID : "")
                     }
                     title="Totals peeker"
                   >
-                    {#snippet children({ content }: { content: Answer })}
-                      <PeekTotal />
-                    {/snippet}
-                  </PeekDialog> -->
+                    <PeekTotal
+                      userUUID={total.user_uuid}
+                      groupUUID={total.group_uuid}
+                      testUUID={total.test_uuid}
+                    />
+                  </PeekDialog>
                 </td>
               </tr>
             {/each}
