@@ -46,7 +46,7 @@
           >
         </header>
 
-        {#if content != null}
+        {#if content !== null}
           {#await content}
             <div>loading...</div>
           {:then content}

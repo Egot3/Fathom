@@ -57,7 +57,7 @@
     {#if IsJSONError(paginatedQuizzes)}
       <div>{paginatedQuizzes.error}</div>
     {:else}
-      {#if paginatedQuizzes.total != 0}
+      {#if paginatedQuizzes.total !== 0}
         {#each paginatedQuizzes.quizzes as quiz (quiz.uuid)}
           <button
             type="button"

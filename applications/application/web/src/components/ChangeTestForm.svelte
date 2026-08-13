@@ -37,9 +37,9 @@
   async function ChangeGroup(e: Event) {
     e.preventDefault();
 
-    if (newName != name && newName) {
+    if (newName !== name && newName) {
       const patchResponse = await FetchTestPatch(UUID, newName);
-      if (patchResponse != null) {
+      if (patchResponse !== null) {
         statusMessage = patchResponse.error;
         return;
       }
@@ -53,7 +53,7 @@
         UUID,
         quizzesRemoved.map((v) => v.uuid),
       );
-      if (deleteResponse != null) {
+      if (deleteResponse !== null) {
         statusMessage = deleteResponse.error;
         return;
       }
@@ -62,7 +62,7 @@
     const newQuizzesArr = Array.from(newQuizzes);
     if (newQuizzesArr.length > 0) {
       const postResponse = await FetchTestBundle(UUID, newQuizzesArr);
-      if (postResponse != null) {
+      if (postResponse !== null) {
         statusMessage = postResponse.error;
         return;
       }
@@ -111,7 +111,7 @@
   </div>
 
   <footer class="flex justify-end gap-2 w-full">
-    {#if statusMessage != ""}
+    {#if statusMessage !== ""}
       <span class="justify-self-start">{statusMessage}</span>
     {/if}
     <Dialog.CloseTrigger class="btn preset-tonal">Cancel</Dialog.CloseTrigger>

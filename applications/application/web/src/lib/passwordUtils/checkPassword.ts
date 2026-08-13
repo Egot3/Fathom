@@ -13,7 +13,7 @@ export const CheckPassword = (passwordString: string): string => {
 	}
 
 	const whiteSpace = /\s+/.exec(passwordString);
-	if (whiteSpace !== null) {
+	if (whiteSpace !=== null) {
 		return `Password mustn't have any whitespace characters`;
 	}
 

@@ -31,7 +31,7 @@
     }
 
     const deleteResponse = await deletor(UUID);
-    if (deleteResponse != null) {
+    if (deleteResponse !== null) {
       statusMessage = deleteResponse.error;
       return;
     }
@@ -68,7 +68,7 @@
   />
 
   <footer class="flex justify-end gap-2 w-full">
-    {#if statusMessage != ""}
+    {#if statusMessage !== ""}
       <span class="justify-self-start">{statusMessage}</span>
     {/if}
     <Dialog.CloseTrigger class="btn preset-tonal">Cancel</Dialog.CloseTrigger>

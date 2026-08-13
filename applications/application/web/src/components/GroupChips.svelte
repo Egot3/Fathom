@@ -52,7 +52,7 @@
     {#if IsJSONError(paginatedGroups)}
       <div>{paginatedGroups.error}</div>
     {:else}
-      {#if paginatedGroups.total != 0}
+      {#if paginatedGroups.total !== 0}
         {#each paginatedGroups.groups as group (group.uuid)}
           <button
             type="button"
