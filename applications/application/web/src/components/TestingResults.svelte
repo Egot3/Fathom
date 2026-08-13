@@ -2,11 +2,18 @@
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
-  import { IsJSONError } from "../lib/statuses/jsonerror";
+  import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
   import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
   import PeekDialogSquare from "./PeekDialogSquare.svelte";
   import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
-  import { FetchTotals, type TotalsOrError } from "../lib/contracts/totals";
+  import {
+    FetchAnswers,
+    FetchTotals,
+    type Answer,
+    type TotalsOrError,
+  } from "../lib/contracts/totals";
+  import PeekDialog from "./PeekDialog.svelte";
+  import PeekTotal from "./PeekTotal.svelte";
 
   let height = $state(0);
 
@@ -28,6 +35,8 @@
       }, 500);
     });
   });
+
+  let focused = $state("");
 </script>
 
 <div
@@ -60,14 +69,30 @@
           <tbody>
             {#each paginatedTotals.totals as total ((total.group_uuid, total.test_uuid, total.user_uuid))}
               <!-- Ultimate IDX -->
+              {const ultimateUUID =
+                total.group_uuid + total.test_uuid + total.user_uuid}
               <tr
+                onclick={() => (focused = ultimateUUID)}
                 class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
               >
                 <td class="w-1/5">{total.user_name}</td>
                 <td class="w-1/5">{total.group_name}</td>
                 <td class="w-1/5">{total.test_name}</td>
                 <td class="w-1/5">{total.score}</td>
-                <th class="w-1/5">{total.finalized_at}</th>
+                <td class="w-1/5">{total.finalized_at}</td>
+                <td class="max-w-0">
+                  <!-- <PeekDialog
+                    bind:open={
+                      () => focused === ultimateUUID,
+                      (v) => (focused = v ? ultimateUUID : "")
+                    }
+                    title="Totals peeker"
+                  >
+                    {#snippet children({ content }: { content: Answer })}
+                      <PeekTotal />
+                    {/snippet}
+                  </PeekDialog> -->
+                </td>
               </tr>
             {/each}
           </tbody>
