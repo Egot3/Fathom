@@ -25,7 +25,7 @@
       class="fixed inset-0 z-50 flex justify-center items-center p-4"
     >
       <Dialog.Content
-        class="card bg-surface-100-900 w-full max-w-xl p-4 space-y-4 shadow-xl"
+        class="card bg-surface-100-900 w-full max-w-[75dvw] h-full max-h-[75dvh] p-4 space-y-4 shadow-xl"
       >
         <header class="flex justify-between items-center">
           <Dialog.Title class="text-lg font-bold">{title}</Dialog.Title>
