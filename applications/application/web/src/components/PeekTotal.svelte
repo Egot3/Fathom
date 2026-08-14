@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { Kind } from "../lib/contracts/quiz";
   import { FetchAnswers } from "../lib/contracts/totals";
+  import { IsJSONError } from "../lib/statuses/jsonerror";
+  import AnsweredQuiz from "./AnsweredQuiz.svelte";
 
   const {
     userUUID,
@@ -24,8 +27,14 @@
 {#await response}
   <div>loading...</div>
 {:then answers}
-  <div class="grid grid-cols-12">
-    <div class="col-start-1 col-end-8 bg-amber-800"></div>
-    <div class="col-start-8 col-end-13 border-green-950"></div>
-  </div>
+  {#if IsJSONError(answers)}
+    <div>{answers.error}</div>
+  {:else}
+    <div class="grid grid-cols-12 h-24/25 w-full">
+      <div class="col-start-1 col-end-9 bg-amber-800">
+        <AnsweredQuiz kind={Kind.Input} />
+      </div>
+      <div class="col-start-9 col-end-13 bg-green-950"></div>
+    </div>
+  {/if}
 {/await}
