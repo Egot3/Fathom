@@ -32,7 +32,7 @@ func (r *bunQuizRepository) QuizPath(ctx context.Context, quizUUID uuid.UUID) (s
 	return path, nil
 }
 
-func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, checksum []byte, score int, answer []byte) error {
+func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, checksum [8]byte, score int, answer []byte) error {
 	q := models.Quiz{
 		Path:          path,
 		Checksum:      checksum,
@@ -85,11 +85,11 @@ func (r *bunQuizRepository) CheckRegistered(ctx context.Context, path string) (b
 	return r.db.NewSelect().Model(&models.Quiz{Path: path}).WherePK().Exists(ctx)
 }
 
-func (r *bunQuizRepository) CheckIntegrity(ctx context.Context, path string, checksum []byte) (bool, error) {
+func (r *bunQuizRepository) CheckIntegrity(ctx context.Context, path string, checksum [8]byte) (bool, error) {
 	return r.db.NewSelect().Model(&models.Quiz{Path: path}).WherePK().Where("checksum = ?", checksum).Exists(ctx)
 }
 
-func (r *bunQuizRepository) UpdateChecksum(ctx context.Context, quizUUID uuid.UUID, checksum []byte) error {
+func (r *bunQuizRepository) UpdateChecksum(ctx context.Context, quizUUID uuid.UUID, checksum [8]byte) error {
 	_, err := r.db.NewUpdate().Model((*models.Quiz)(nil)).
 		Where("uuid = ?", quizUUID).Set("checksum = ?", checksum).Exec(ctx)
 
@@ -126,4 +126,20 @@ func (r *bunQuizRepository) CorrectAnswer(ctx context.Context, quizUUID uuid.UUI
 func (r *bunQuizRepository) ExistsByUUID(ctx context.Context, quizUUID uuid.UUID) (bool, error) {
 	return r.db.NewSelect().Model((*models.Quiz)(nil)).
 		Where("uuid = ?", quizUUID).Exists(ctx)
+}
+
+func (r *bunQuizRepository) QuizFresh(ctx context.Context, quizUUID uuid.UUID, checksum [8]byte) (bool, error) {
+	return r.db.NewSelect().Model((*models.Quiz)(nil)).
+		Where("uuid = ?", quizUUID).Where("checksum = ?", checksum).Exists(ctx)
+}
+
+func (r *bunQuizRepository) Quiz(ctx context.Context, quizUUID uuid.UUID) (models.Quiz, error) {
+	var quiz models.Quiz
+	err := r.db.NewSelect().Model(&quiz).
+		WherePK().Column("path").Scan(ctx)
+	if err != nil {
+		return models.Quiz{}, err
+	}
+
+	return quiz, nil
 }

@@ -41,7 +41,7 @@ func TestQuiz_Register(t *testing.T) {
 		t.Parallel()
 
 		path := "/usr/" + rand.Text() + "/path/to/quiz.md"
-		err := r.RegisterQuiz(t.Context(), path, []byte{}, 1, []byte("121321"))
+		err := r.RegisterQuiz(t.Context(), path, [8]byte{}, 1, []byte("121321"))
 		require.NoError(t, err)
 
 		quiz := models.Quiz{Path: path}
@@ -54,14 +54,14 @@ func TestQuiz_Register(t *testing.T) {
 	t.Run("Not abs path", func(t *testing.T) {
 		t.Parallel()
 
-		err := r.RegisterQuiz(t.Context(), "path.md", []byte{}, 1, []byte{})
+		err := r.RegisterQuiz(t.Context(), "path.md", [8]byte{}, 1, []byte{})
 		require.Error(t, err)
 		require.ErrorIs(t, err, carefulness.ErrAbsoluteRequired)
 	})
 	t.Run("Not md", func(t *testing.T) {
 		t.Parallel()
 
-		err := r.RegisterQuiz(t.Context(), "/usr/path/to/cooler_quiz.mdx", []byte{}, 1, []byte{})
+		err := r.RegisterQuiz(t.Context(), "/usr/path/to/cooler_quiz.mdx", [8]byte{}, 1, []byte{})
 		require.Error(t, err)
 		require.ErrorIs(t, err, carefulness.PlainMarkdownRequired)
 	})
@@ -77,7 +77,7 @@ func TestQuiz_Deallocate(t *testing.T) {
 
 	path := "/usr/path/to/quiz.md"
 	var uuidQ uuid.UUID
-	err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: []byte{1, 2}, Score: 2}).Returning("uuid").Scan(t.Context(), &uuidQ)
+	err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: [8]byte{1, 2}, Score: 2}).Returning("uuid").Scan(t.Context(), &uuidQ)
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -123,7 +123,7 @@ func TestQuiz_Check_registered(t *testing.T) {
 	db := do.MustInvoke[*bun.DB](i)
 
 	path := "/usr/path/to/quiz.md"
-	_, err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: []byte{}, Score: 2}).Exec(t.Context())
+	_, err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: [8]byte{}, Score: 2}).Exec(t.Context())
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -164,8 +164,7 @@ func TestQuiz_Check_integrity(t *testing.T) {
 	db := do.MustInvoke[*bun.DB](i)
 
 	path := "/usr/path/to/quiz.md"
-	randomBytes := make([]byte, 16)
-	rand.Read(randomBytes)
+	randomBytes := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
 
 	_, err := db.NewInsert().Model(&models.Quiz{Path: path, Checksum: randomBytes, Score: 2}).Exec(t.Context())
 	require.NoError(t, err)
@@ -173,7 +172,7 @@ func TestQuiz_Check_integrity(t *testing.T) {
 	testCases := []struct {
 		desc               string
 		path               string
-		checksum           []byte
+		checksum           [8]byte
 		expectUnintegrated bool
 	}{
 		{
@@ -185,13 +184,13 @@ func TestQuiz_Check_integrity(t *testing.T) {
 		{
 			desc:               "Unintegrated, registered",
 			path:               path,
-			checksum:           []byte{},
+			checksum:           [8]byte{},
 			expectUnintegrated: true,
 		},
 		{
 			desc:               "Unintegrated, unregistered",
 			path:               "",
-			checksum:           []byte{},
+			checksum:           [8]byte{},
 			expectUnintegrated: true,
 		},
 	}
@@ -220,8 +219,7 @@ func TestQuiz_List(t *testing.T) {
 
 	for range 5 {
 		path := fmt.Sprintf("/usr/path/to/%v.md", rand.Text())
-		randomBytes := make([]byte, 16)
-		rand.Read(randomBytes)
+		randomBytes := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
 
 		quiz := models.Quiz{Path: path, Checksum: randomBytes, Score: mrand.Int()}
 		_, err := db.NewInsert().Model(&quiz).Exec(t.Context())

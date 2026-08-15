@@ -78,19 +78,25 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 		})
 
 		r.Route("/quiz", func(r chi.Router) {
-			r.Use(middlewares.JWT, middlewares.IsTeacherRights)
+			r.Use(middlewares.JWT)
 
-			r.Get("/", svc.ListQuizzes)
-			r.Post("/", svc.PostQuiz)
-			r.Post("/import", svc.ImportQuizBank)
-			r.Get("/export", svc.ExportQuizBank)
+			r.With(middlewares.ParseUUID).Get("/{uuid}/parsed", svc.ParsedQuiz)
 
-			r.Route("/{uuid}", func(r chi.Router) {
-				r.Use(middlewares.ParseUUID)
-				r.Patch("/", svc.PatchQuiz)
-				r.Put("/", svc.PutQuiz)
-				r.Get("/", svc.GetQuiz)
-				r.Delete("/", svc.DeleteQuiz)
+			r.Group(func(r chi.Router) {
+				r.Use(middlewares.IsTeacherRights)
+
+				r.Get("/", svc.ListQuizzes)
+				r.Post("/", svc.PostQuiz)
+				r.Post("/import", svc.ImportQuizBank)
+				r.Get("/export", svc.ExportQuizBank)
+
+				r.Group(func(r chi.Router) {
+					r.Use(middlewares.ParseUUID)
+					r.Patch("/{uuid}", svc.PatchQuiz)
+					r.Put("/{uuid}", svc.PutQuiz)
+					r.Get("/{uuid}", svc.GetQuiz)
+					r.Delete("/{uuid}", svc.DeleteQuiz)
+				})
 			})
 		})
 

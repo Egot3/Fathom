@@ -196,7 +196,7 @@ func TestTest_Bundle(t *testing.T) {
 
 		var quizzes []models.Quiz
 		for range mrand.IntN(6) + 3 {
-			quizzes = append(quizzes, models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}})
+			quizzes = append(quizzes, models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}})
 		}
 		err = db.NewInsert().Model(&quizzes).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -238,7 +238,7 @@ func TestTest_Bundle(t *testing.T) {
 
 		var quizzes []models.Quiz
 		for range mrand.IntN(6) + 3 {
-			quizzes = append(quizzes, models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}})
+			quizzes = append(quizzes, models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}})
 		}
 		err = db.NewInsert().Model(&quizzes).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -278,7 +278,7 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
-			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
+			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: [8]byte{}})
 		}
 
 		err = db.NewInsert().Model(&quizzes).
@@ -319,7 +319,7 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
-			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
+			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: [8]byte{}})
 		}
 
 		err = db.NewInsert().Model(&quizzes).
@@ -359,7 +359,7 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
-			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
+			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: [8]byte{}})
 		}
 
 		err = db.NewInsert().Model(&quizzes).
@@ -401,7 +401,7 @@ func TestTest_Prune(t *testing.T) {
 		var quizzes []models.Quiz = make([]models.Quiz, count)
 		for i := range count {
 			path := fmt.Sprintf("/path/to/%v.md", rand.Text())
-			quizzes[i] = models.Quiz{Path: path, Checksum: []byte{}}
+			quizzes[i] = models.Quiz{Path: path, Checksum: [8]byte{}}
 		}
 		err = db.NewInsert().Model(&quizzes).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -441,7 +441,7 @@ func TestTest_Prune(t *testing.T) {
 		for i := range count {
 			path := fmt.Sprintf("/path/to/%v.md", rand.Text())
 			pathes[i] = path
-			quizzes[i] = models.Quiz{Path: path, Checksum: []byte{}}
+			quizzes[i] = models.Quiz{Path: path, Checksum: [8]byte{}}
 		}
 		err = db.NewInsert().Model(&quizzes).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -507,7 +507,7 @@ func TestTest_Prune(t *testing.T) {
 			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
 
 			require.NoError(b, err)
-			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
+			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: [8]byte{}})
 		}
 
 		_, err = db.NewInsert().Model(&quizzes).
@@ -548,7 +548,7 @@ func TestTest_Prune(t *testing.T) {
 
 			require.NoError(b, err)
 			pathes = append(pathes, quizPath)
-			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
+			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: [8]byte{}})
 			testQuizzes = append(testQuizzes, models.TestsQuizzes{TestUUID: testUUID, QuizPath: quizPath, Position: mrand.Int()})
 		}
 
@@ -588,7 +588,7 @@ func TestTest_Prune(t *testing.T) {
 
 			require.NoError(b, err)
 			pathes = append(pathes, quizPath)
-			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: []byte{}})
+			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: [8]byte{}})
 			testQuizzes = append(testQuizzes, models.TestsQuizzes{TestUUID: testUUID, QuizPath: quizPath, Position: mrand.Int()})
 		}
 

@@ -191,7 +191,7 @@ func TestQuizHandler_Post(t *testing.T) {
 		require.NoError(t, err)
 		_, err = db.NewInsert().Model(&models.Quiz{
 			Path:          path,
-			Checksum:      []byte{},
+			Checksum:      [8]byte{},
 			Score:         1,
 			CorrectAnswer: "omega",
 		}).Exec(t.Context())
@@ -256,7 +256,7 @@ func TestQuizHandler_Get(t *testing.T) {
 	db := do.MustInvoke[*bun.DB](i)
 	err = db.NewInsert().Model(&models.Quiz{
 		Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
-		Checksum:      []byte{},
+		Checksum:      [8]byte{},
 		Score:         score,
 		CorrectAnswer: "x",
 	}).Returning("uuid").
@@ -352,7 +352,7 @@ func TestQuizHandler_List(t *testing.T) {
 	db := do.MustInvoke[*bun.DB](i)
 	err = db.NewInsert().Model(&models.Quiz{
 		Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
-		Checksum:      []byte{},
+		Checksum:      [8]byte{},
 		Score:         score,
 		CorrectAnswer: "x",
 	}).Returning("uuid").
@@ -405,7 +405,7 @@ func TestQuizHandler_Delete(t *testing.T) {
 	db := do.MustInvoke[*bun.DB](i)
 	err = db.NewInsert().Model(&models.Quiz{
 		Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
-		Checksum:      []byte{},
+		Checksum:      [8]byte{},
 		Score:         score,
 		CorrectAnswer: "x",
 	}).Returning("uuid").
@@ -498,7 +498,7 @@ func TestQuizHandler_Put(t *testing.T) {
 		db := do.MustInvoke[*bun.DB](i)
 		err = db.NewInsert().Model(&models.Quiz{
 			Path:          path,
-			Checksum:      []byte{},
+			Checksum:      [8]byte{},
 			Score:         score,
 			CorrectAnswer: "x",
 		}).Returning("uuid").
@@ -605,7 +605,7 @@ func TestQuizHandler_Put(t *testing.T) {
 				db := do.MustInvoke[*bun.DB](i)
 				err = db.NewInsert().Model(&models.Quiz{
 					Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
-					Checksum:      []byte{},
+					Checksum:      [8]byte{},
 					Score:         score,
 					CorrectAnswer: "x",
 				}).Returning("uuid").
@@ -675,7 +675,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 		db := do.MustInvoke[*bun.DB](i)
 		err = db.NewInsert().Model(&models.Quiz{
 			Path:          path,
-			Checksum:      []byte{},
+			Checksum:      [8]byte{},
 			Score:         score,
 			CorrectAnswer: "x",
 		}).Returning("uuid").
@@ -777,7 +777,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 				db := do.MustInvoke[*bun.DB](i)
 				err = db.NewInsert().Model(&models.Quiz{
 					Path:          path,
-					Checksum:      []byte{},
+					Checksum:      [8]byte{},
 					Score:         score,
 					CorrectAnswer: "x",
 				}).Returning("uuid").
@@ -857,7 +857,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 			db := do.MustInvoke[*bun.DB](i)
 			err = db.NewInsert().Model(&models.Quiz{
 				Path:          path,
-				Checksum:      []byte{},
+				Checksum:      [8]byte{},
 				Score:         score,
 				CorrectAnswer: "x",
 			}).Returning("uuid").
@@ -924,7 +924,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 			db := do.MustInvoke[*bun.DB](i)
 			err = db.NewInsert().Model(&models.Quiz{
 				Path:          path,
-				Checksum:      []byte{},
+				Checksum:      [8]byte{},
 				Score:         score,
 				CorrectAnswer: "x",
 			}).Returning("uuid").
@@ -992,7 +992,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 		db := do.MustInvoke[*bun.DB](i)
 		err = db.NewInsert().Model(&models.Quiz{
 			Path:          path,
-			Checksum:      []byte{},
+			Checksum:      [8]byte{},
 			Score:         score,
 			CorrectAnswer: "x",
 		}).Returning("uuid").
