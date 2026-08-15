@@ -22,7 +22,7 @@ func (g *Group) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 	switch query.(type) {
 	case *bun.InsertQuery:
 		var err error
-		g.UUID, err = uuid.NewV7() //compensating sqlite
+		g.UUID, err = uuid.NewV7()
 		if err != nil {
 			return err
 		}
