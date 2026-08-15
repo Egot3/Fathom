@@ -295,7 +295,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	checksumUint := xxh3.HashString(req.Body)
-	checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
+	checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
 	answer, err := json.Marshal(quiz.Answer)
 	if err != nil {
@@ -421,7 +421,7 @@ func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	checksumUint := xxh3.HashString(req.Body)
-	checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
+	checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 	err = c.quizRepo.UpdateChecksum(ctx, quizUUID, checksum)
 	if err != nil {
 		logger.Error("couldn't update quiz", slog.String("Error", err.Error()))
@@ -827,7 +827,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			dest.Close()
 
 			checksumUint := xxh3.Hash(contents)
-			checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
+			checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
 			answer, err := json.Marshal(q.Answer)
 			if err != nil {
@@ -934,7 +934,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			dest.Close()
 
 			checksumUint := xxh3.Hash(contents)
-			checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
+			checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
 			answer, err := json.Marshal(q.Answer)
 			if err != nil {
@@ -1051,7 +1051,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			dest.Close()
 
 			checksumUint := xxh3.Hash(contents)
-			checksum := binary.BigEndian.AppendUint64(nil, checksumUint)
+			checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
 			answer, err := json.Marshal(q.Answer)
 			if err != nil {
@@ -1084,4 +1084,67 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
+}
+
+func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	quizUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	if !ok {
+		logger.Error("Bad uuid")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		return
+	}
+
+	ctx = logging.WithLogger(ctx, logger.With(
+		slog.String("quizUUID", quizUUID.String()),
+	))
+
+	quiz, err := c.quizRepo.Quiz(ctx, quizUUID)
+	if err != nil {
+		logger.Error("unable to retrieve quiz",
+			slog.String("Error", err.Error()),
+		)
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Quiz not found"})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	checkString := string(quiz.Checksum[:])
+
+	if match := r.Header.Get("If-None-Match"); match == checkString {
+		w.WriteHeader(http.StatusNotModified) // caching goes brrrrr
+		return
+	}
+
+	w.Header().Set("ETag", checkString)
+	w.Header().Set("Cache-Control", "public, immutable, must-revalidate")
+
+	buf, err := os.ReadFile(quiz.Path)
+	if err != nil {
+		logger.Error("Failed to read file")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	fm, source, err := quizparser.ParseFrontmatter(buf)
+	if err != nil {
+		logger.Error("Unable to retrieve quiz by path",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contracts.GetQuizResponse{Meta: fm, Body: string(source)})
 }

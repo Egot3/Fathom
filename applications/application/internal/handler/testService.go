@@ -53,6 +53,7 @@ type QuizService interface {
 	PatchQuiz(w http.ResponseWriter, r *http.Request)
 	ExportQuizBank(w http.ResponseWriter, r *http.Request)
 	ImportQuizBank(w http.ResponseWriter, r *http.Request)
+	ParsedQuiz(w http.ResponseWriter, r *http.Request)
 }
 
 type TestService interface {

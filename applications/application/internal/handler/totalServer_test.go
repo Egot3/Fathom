@@ -49,7 +49,7 @@ func randomQuiz(t *testing.T, db *bun.DB) (uuid.UUID, string) {
 	err := db.NewInsert().Model(&models.Quiz{
 		Path:          "/path.md",
 		Score:         1,
-		Checksum:      []byte{},
+		Checksum:      [8]byte{},
 		CorrectAnswer: answer,
 	}).Returning("uuid").Scan(t.Context(), &quizUUID)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func predefinedQuiz(t *testing.T, db *bun.DB) (quizUUID uuid.UUID, path string) 
 	err := db.NewInsert().Model(&models.Quiz{
 		Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
 		Score:         1,
-		Checksum:      []byte{},
+		Checksum:      [8]byte{},
 		CorrectAnswer: rand.Text(),
 	}).Returning("uuid, path").Scan(t.Context(), &quizUUID, &path)
 	require.NoError(t, err)

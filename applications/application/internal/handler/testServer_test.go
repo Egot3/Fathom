@@ -65,7 +65,7 @@ func TestTestHandler_AddQuizzes(t *testing.T) {
 		lo.ForEach(quizzes, func(quiz models.Quiz, i int) {
 			quizzes[i] = models.Quiz{
 				Path:          "/somepath/" + rand.Text() + ".md",
-				Checksum:      []byte{},
+				Checksum:      [8]byte{},
 				Score:         1,
 				CorrectAnswer: rand.Text(),
 			}
@@ -213,7 +213,7 @@ quiz sample(different): %v`,
 		lo.ForEach(quizzes, func(quiz models.Quiz, i int) {
 			quizzes[i] = models.Quiz{
 				Path:          "/somepath/" + rand.Text() + ".md",
-				Checksum:      []byte{},
+				Checksum:      [8]byte{},
 				Score:         1,
 				CorrectAnswer: rand.Text(),
 			}
@@ -861,7 +861,7 @@ func TestTestHandler_Post(t *testing.T) {
 			lo.ForEach(quizzes, func(quiz models.Quiz, i int) {
 				quizzes[i] = models.Quiz{
 					Path:          "/somepath/" + rand.Text() + ".md",
-					Checksum:      []byte{},
+					Checksum:      [8]byte{},
 					Score:         1,
 					CorrectAnswer: rand.Text(),
 				}
@@ -1111,7 +1111,7 @@ func TestTestHandler_RemoveQuizzes(t *testing.T) {
 		lo.ForEach(quizzes, func(quiz models.Quiz, i int) {
 			quizzes[i] = models.Quiz{
 				Path:          "/somepath/" + rand.Text() + ".md",
-				Checksum:      []byte{},
+				Checksum:      [8]byte{},
 				Score:         1,
 				CorrectAnswer: rand.Text(),
 			}
@@ -1264,7 +1264,7 @@ quiz sample(different): %v`,
 		lo.ForEach(quizzes, func(quiz models.Quiz, i int) {
 			quizzes[i] = models.Quiz{
 				Path:          "/somepath/" + rand.Text() + ".md",
-				Checksum:      []byte{},
+				Checksum:      [8]byte{},
 				Score:         1,
 				CorrectAnswer: rand.Text(),
 			}

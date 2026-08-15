@@ -46,7 +46,7 @@ func TestAnswer_Set(t *testing.T) {
 	err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
-	var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}, Score: 1}
+	var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: 1}
 	err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
@@ -179,7 +179,7 @@ func TestAnswer_Get(t *testing.T) {
 	err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
-	var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}, Score: 1}
+	var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: 1}
 	err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
@@ -250,7 +250,7 @@ func TestAnswer_Totalization(t *testing.T) {
 	err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
-	var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}, Score: 1}
+	var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: 1}
 	err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
@@ -343,7 +343,7 @@ func TestAnswer_Totalization(t *testing.T) {
 		})
 
 		scoreN := mrand.Float32() * 256
-		var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}, Score: 1}
+		var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: 1}
 		err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
@@ -386,7 +386,7 @@ func TestAnswer_Totals(t *testing.T) {
 	err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
-	var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: []byte{}, Score: 1}
+	var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: 1}
 	err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
 
