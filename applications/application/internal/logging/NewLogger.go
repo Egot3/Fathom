@@ -13,7 +13,6 @@ import (
 	slogmulti "github.com/samber/slog-multi"
 )
 
-// loggers []string, levelStr string
 func NewLogger(i do.Injector) (*slog.Logger, error) {
 	handlers := []slog.Handler{}
 	cfg := do.MustInvoke[config.Config](i)

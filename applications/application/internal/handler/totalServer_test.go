@@ -175,7 +175,7 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, rec.Code)
 
-		var bodyContract contracts.GetAnswerResponse
+		var bodyContract contracts.AnswerResponse
 		err = json.NewDecoder(rec.Body).Decode(&bodyContract)
 		require.NoError(t, err)
 

@@ -178,17 +178,19 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			r.Group(func(r chi.Router) {
 				r.Use(middlewares.IsTeacherRights)
 
+				r.Get("/", svc.ListTotals)
 				r.Get("/all/all/{test_uuid}", svc.GetTestTotals)
 				r.Get("/{group_uuid}/all/{test_uuid}", svc.GetGroupTotals)
 			})
 
-			r.Route("/{group_uuid}/{user_uuid}/{test_uuid}", func(r chi.Router) {
+			r.Group(func(r chi.Router) {
 
 				r.Use(middleware.Maybe(middlewares.UserRights, func(r *http.Request) bool {
 					return !middlewares.IsTeacherCondition(r)
 				}))
 
-				r.Get("/", svc.GetUserTotal)
+				r.Get("/{group_uuid}/{user_uuid}/{test_uuid}", svc.GetUserTotal)
+				r.Get("/{group_uuid}/{user_uuid}/{test_uuid}/answers", svc.ListUserAnswer)
 			})
 
 		})

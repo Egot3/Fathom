@@ -72,7 +72,7 @@ func (r *bunQuizRepository) DeallocateQuiz(ctx context.Context, quizUUID uuid.UU
 func (r *bunQuizRepository) ListQuizzes(ctx context.Context, page, size int) ([]models.Quiz, int, error) {
 	var quizzes []models.Quiz
 	total, err := r.db.NewSelect().Model(&quizzes).
-		Offset(page*size).Limit(page).
+		Offset(page*size).Limit(size).
 		OrderBy("path", bun.OrderDesc).ScanAndCount(ctx)
 	if err != nil {
 		return nil, total, err

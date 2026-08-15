@@ -215,7 +215,7 @@ func TestQuiz_List(t *testing.T) {
 	r := do.MustInvoke[quiz.QuizRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
-	var quizzes []string
+	var pathes []string
 
 	for range 5 {
 		path := fmt.Sprintf("/usr/path/to/%v.md", rand.Text())
@@ -225,15 +225,20 @@ func TestQuiz_List(t *testing.T) {
 		_, err := db.NewInsert().Model(&quiz).Exec(t.Context())
 		require.NoError(t, err)
 
-		quizzes = append(quizzes, quiz.Path)
+		pathes = append(pathes, quiz.Path)
 	}
 
-	pathes, total, err := r.ListQuizzes(t.Context(), 0, len(quizzes))
+	quizzes, total, err := r.ListQuizzes(t.Context(), 0, len(pathes)-1)
 	require.NoError(t, err)
-	require.Equal(t, len(quizzes), total)
-	require.ElementsMatch(t, pathes, quizzes)
+	require.Equal(t, len(pathes), total)
+	require.Len(t, quizzes, len(pathes)-1)
 	require.Condition(t, func() (success bool) {
-		return lo.EveryBy(lo.Window(pathes, 2), func(item []models.Quiz) bool {
+		return lo.Every(pathes, lo.Map(quizzes, func(item models.Quiz, _ int) string {
+			return item.Path
+		}))
+	})
+	require.Condition(t, func() (success bool) {
+		return lo.EveryBy(lo.Window(quizzes, 2), func(item []models.Quiz) bool {
 			return item[0].Path > item[1].Path
 		})
 	})
