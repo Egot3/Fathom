@@ -1136,7 +1136,7 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fm, source, err := quizparser.ParseFrontmatter(buf)
+	q, err := quizparser.ParseQuizByBytes(buf)
 	if err != nil {
 		logger.Error("Unable to retrieve quiz by path",
 			slog.String("Error", err.Error()),
@@ -1146,5 +1146,9 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.GetQuizResponse{Meta: fm, Body: string(source)})
+	json.NewEncoder(w).Encode(contracts.ParsedQuizResponse{Quiz: *q})
+}
+
+func (c *chiService) GetAllRunning() uuid.UUIDs {
+	return c.runner.GetAll()
 }
