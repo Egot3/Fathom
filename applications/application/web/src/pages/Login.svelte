@@ -217,8 +217,7 @@
 
       <a
         class="btn btn-lg w-2/5 leading-[0.75] text-xl preset-outlined-primary-500 self-center"
-        href={"register?login=" + login} // no, I didn't forget the password, form vals stay in history
-      >
+        href={"register?login=" + login}>
         Register
       </a>
     </form>
