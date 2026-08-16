@@ -1,3 +1,4 @@
+import { EvictQuiz, GetCachedQuiz, ReadManifest, SetCachedQuiz } from "../apiutils/quizManifest";
 import { type JSONError } from "../statuses/jsonerror";
 import { TokenizedFetch } from "./tokenizedFetch";
 
@@ -11,6 +12,13 @@ export type QuizFile = {
 	meta: Meta;
 	body: string;
 };
+export type ParsedQuiz = {
+  meta: Meta;
+  title: string;
+  body: string;
+  options: QuizOptions;
+  answers: QuizAnswer
+}
 
 type AnswerInput = {
 	input: { input: string };
@@ -331,4 +339,43 @@ export async function FetchQuizDelete(UUID: string): Promise<null | JSONError> {
 
 		return { error: "couldn't send quiz patch because of unknown error" };
 	}
+}
+
+// may not throw
+export async function FetchParsedQuiz(
+  quizUUID: string,
+): Promise<ParsedQuiz | JSONError> {
+  const manifest = ReadManifest();
+  const known = manifest[quizUUID];
+
+  try {
+    const res = await TokenizedFetch(`https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${quizUUID}/parsed`, {
+      headers: known ? { "If-None-Match": `"${known.checksum}"` } : {},
+    });
+    if (res.status === 304 && known) {
+      const cached = GetCachedQuiz<ParsedQuiz>(quizUUID, known.checksum);
+      if (cached !== null) return cached;
+    }
+
+    if (res.status === 404) {
+      EvictQuiz(quizUUID);
+      return { error: (`Quiz ${quizUUID} not found`) } as JSONError;
+    }
+
+    if (!res.ok) {
+      return await res.json() as JSONError
+    }
+
+    const data = (await res.json()) as ParsedQuiz;
+    const etag = res.headers.get("ETag")?.replace(/"/g, "") ?? "";
+    SetCachedQuiz(quizUUID, etag, data);
+    return data;
+  } catch (err) {
+    console.log("Couldn't fetch parsed quiz: ", err);
+		if (err instanceof Error) {
+			return { error: "couldn't fetch parsed quiz because of in-browser error" };
+		}
+
+		return { error: "couldn't fetch parsed quiz because of unknown error" };
+  }
 }
