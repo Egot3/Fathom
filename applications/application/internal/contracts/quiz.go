@@ -37,3 +37,7 @@ type ListQuizResponse struct {
 type ExportQuizRequest struct {
 	UUIDs uuid.UUIDs `json:"uuids"`
 }
+
+type ParsedQuizResponse struct {
+	Quiz quiz.Quiz `json:"quiz"`
+}

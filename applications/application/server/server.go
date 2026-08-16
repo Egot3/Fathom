@@ -80,7 +80,9 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 		r.Route("/quiz", func(r chi.Router) {
 			r.Use(middlewares.JWT)
 
-			r.With(middlewares.ParseUUID).Get("/{uuid}/parsed", svc.ParsedQuiz)
+			r.With(middlewares.ParseUUID, middleware.Maybe(middlewares.QuizNotRunning(svc.GetAllRunning), func(r *http.Request) bool {
+				return !middlewares.IsTeacherCondition(r)
+			})).Get("/{uuid}/parsed", svc.ParsedQuiz)
 
 			r.Group(func(r chi.Router) {
 				r.Use(middlewares.IsTeacherRights)

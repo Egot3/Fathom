@@ -101,6 +101,7 @@ type Service interface {
 	GetTestUUID() uuid.UUID
 	AllowedToTest(ctx context.Context, userUUID uuid.UUID) (bool, error)
 	GetDeadline() (*time.Time, error)
+	GetAllRunning() uuid.UUIDs
 }
 
 func NewTestService(i do.Injector) (Service, error) {
