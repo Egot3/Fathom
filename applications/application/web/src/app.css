@@ -17,6 +17,6 @@
 	width: 100vw;
 }
 
-b {
-	font-weight: 900;
+html {
+  font-size: 50%; /* 16px -> 8px, so 1rem now equals 8px */
 }
