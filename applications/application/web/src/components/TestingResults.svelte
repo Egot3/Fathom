@@ -3,11 +3,7 @@
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
   import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
-  import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
-  import PeekDialogSquare from "./PeekDialogSquare.svelte";
-  import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
   import {
-    FetchAnswers,
     FetchTotals,
     type Answer,
     type TotalsOrError,
