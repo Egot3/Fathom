@@ -1,3 +1,4 @@
+import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import { EvictQuiz, GetCachedQuiz, ReadManifest, SetCachedQuiz } from "../apiutils/quizManifest";
 import { type JSONError } from "../statuses/jsonerror";
 import { TokenizedFetch } from "./tokenizedFetch";
@@ -342,40 +343,44 @@ export async function FetchQuizDelete(UUID: string): Promise<null | JSONError> {
 }
 
 // may not throw
-export async function FetchParsedQuiz(
+function GetParsedQuiz(
   quizUUID: string,
-): Promise<ParsedQuiz | JSONError> {
+): ResultAsync<ParsedQuiz, JSONError> {
   const manifest = ReadManifest();
   const known = manifest[quizUUID];
-
-  try {
-    const res = await TokenizedFetch(`https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${quizUUID}/parsed`, {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(`https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${quizUUID}/parsed`, {
       headers: known ? { "If-None-Match": `"${known.checksum}"` } : {},
-    });
-    if (res.status === 304 && known) {
+    }),
+    (err): JSONError => {
+      console.log("Couldn't fetch parsed quiz: ", err);
+      if (err instanceof Error) {
+        return { error: "couldn't fetch parsed quiz because of in-browser error" };
+      }
+      return { error: "couldn't fetch parsed quiz because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (r.status === 304 && known) {
       const cached = GetCachedQuiz<ParsedQuiz>(quizUUID, known.checksum);
-      if (cached !== null) return cached;
+      if (cached !== null) return okAsync(cached);
     }
-
-    if (res.status === 404) {
+    if (r.status === 404) {
       EvictQuiz(quizUUID);
-      return { error: (`Quiz ${quizUUID} not found`) } as JSONError;
+      return errAsync<ParsedQuiz, JSONError>({ error: `Quiz ${quizUUID} not found` });
     }
-
-    if (!res.ok) {
-      return await res.json() as JSONError
+    if (!r.ok) {
+      return ResultAsync.fromPromise(
+        r.json(),
+        (): JSONError => ({ error: "couldn't parse error body" }),
+      ).andThen((body) => errAsync<ParsedQuiz, JSONError>(body as JSONError));
     }
-
-    const data = (await res.json()) as ParsedQuiz;
-    const etag = res.headers.get("ETag")?.replace(/"/g, "") ?? "";
-    SetCachedQuiz(quizUUID, etag, data);
-    return data;
-  } catch (err) {
-    console.log("Couldn't fetch parsed quiz: ", err);
-		if (err instanceof Error) {
-			return { error: "couldn't fetch parsed quiz because of in-browser error" };
-		}
-
-		return { error: "couldn't fetch parsed quiz because of unknown error" };
-  }
+    return ResultAsync.fromPromise(
+      r.json(),
+      (): JSONError => ({ error: "couldn't parse error body" }),
+    ).andThen((body) => {
+      const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
+      SetCachedQuiz(quizUUID, etag, body);
+      return okAsync(body as ParsedQuiz);
+    });
+  });
 }
