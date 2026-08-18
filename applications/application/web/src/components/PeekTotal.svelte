@@ -34,14 +34,17 @@
     <div>{answers.error}</div>
   {:else}
     <div class="grid grid-cols-12 h-24/25 w-full">
-      <div class="col-start-1 col-end-9 bg-amber-800">
+      <div class="col-start-1 col-end-9">
 
               <ParsedQuiz UUID={chosenUUID || answers.answers[0].quiz_uuid} answerValue={answerValue || answers.answers[0].chosen} />
 
       </div>
-      <div class="col-start-9 col-end-13 bg-green-950">
+      <div class="col-start-9 col-end-13 bg-surface-600-400">
           {#each answers.answers as answer}
-              <button class="btn preset-filled-error-50-950" onclick={()=>answerValue = answer.chosen}>{answer.quiz_name}</button>
+              <button class="btn preset-filled-error-50-950" onclick={()=>{
+                answerValue = answer.chosen
+                chosenUUID = answer.quiz_uuid
+              }}>{answer.quiz_name}</button>
           {/each}
       </div>
     </div>
