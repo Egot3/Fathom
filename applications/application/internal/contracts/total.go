@@ -21,6 +21,8 @@ type Answer struct {
 	Correct     string    `json:"correct" bun:"correct"`
 	SubmittedAt time.Time `json:"submitted_at" bun:"answered_at"`
 
+	Score float32 `json:"score" bun:"score"`
+
 	GroupName string `json:"group_name" bun:"group_name"`
 	TestName  string `json:"test_name" bun:"test_name"`
 }
