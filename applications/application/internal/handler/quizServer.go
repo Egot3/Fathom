@@ -1146,7 +1146,9 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.ParsedQuizResponse{Quiz: *q})
+	if err = json.NewEncoder(w).Encode(contracts.ParsedQuizResponse{Quiz: *q}); err != nil {
+		logger.Error("Couldn't encode body", slog.String("Error", err.Error()))
+	}
 }
 
 func (c *chiService) GetAllRunning() uuid.UUIDs {
