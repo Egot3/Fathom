@@ -134,9 +134,9 @@ func (r *bunQuizRepository) QuizFresh(ctx context.Context, quizUUID uuid.UUID, c
 }
 
 func (r *bunQuizRepository) Quiz(ctx context.Context, quizUUID uuid.UUID) (models.Quiz, error) {
-	var quiz models.Quiz
+	quiz := models.Quiz{UUID: quizUUID}
 	err := r.db.NewSelect().Model(&quiz).
-		WherePK().Column("path").Scan(ctx)
+		WherePK().Scan(ctx)
 	if err != nil {
 		return models.Quiz{}, err
 	}
