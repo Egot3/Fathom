@@ -343,7 +343,7 @@ export async function FetchQuizDelete(UUID: string): Promise<null | JSONError> {
 }
 
 // may not throw
-function GetParsedQuiz(
+export function FetchParsedQuiz(
   quizUUID: string,
 ): ResultAsync<ParsedQuiz, JSONError> {
   const manifest = ReadManifest();
