@@ -1033,3 +1033,100 @@ func TestQuizHandler_Patch(t *testing.T) {
 
 	})
 }
+
+func TestQuizHandler_GetParsed(t *testing.T) {
+
+	token, err := jwtutils.GenerateToken(uuid.Nil, true)
+	require.NoError(t, err)
+
+	i := testutils.NewTestInjector(t,
+		repositories.RepositoryPackage,
+	)
+	do.ProvideValue(i, slog.Default())
+	do.Provide(i, testrunner.NewTestRunner)
+
+	f := testutils.TestQuiz(t)
+
+	var quizUUID uuid.UUID
+	score := 1
+	db := do.MustInvoke[*bun.DB](i)
+	err = db.NewInsert().Model(&models.Quiz{
+		Path:          f.Name(),
+		Checksum:      [8]byte{},
+		Score:         score,
+		CorrectAnswer: "x",
+	}).Returning("uuid").
+		Scan(t.Context(), &quizUUID)
+	require.NoError(t, err)
+
+	err = f.Close()
+	require.NoError(t, err)
+
+	t.Run("Valid", func(t *testing.T) {
+
+		i = i.Scope("valid")
+
+		do.Provide(i, handler.NewTestService)
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(
+			http.MethodGet,
+			fmt.Sprintf("/api/v1/quiz/%v/parsed", quizUUID),
+			nil,
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
+		})
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+		var contract contracts.ParsedQuizResponse
+		err = json.NewDecoder(rec.Body).Decode(&contract)
+		require.NoError(t, err)
+
+		require.Equal(t, score, contract.Quiz.Meta.Score)
+		require.Equal(t, contract.Quiz.Body, "there is a body!")
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+
+		i = i.Scope("invalid")
+
+		do.Provide(i, handler.NewTestService)
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(
+			http.MethodGet,
+			fmt.Sprintf("/api/v1/quiz/%v/parsed", uuid.Max),
+			nil,
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
+		})
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		bodyString := rec.Body.String()
+		require.Equal(t, http.StatusNotFound, rec.Code, bodyString)
+	})
+}
