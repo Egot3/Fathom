@@ -242,7 +242,7 @@ func (r *bunTotalRepository) GroupTestTotals(ctx context.Context, testUUID, grou
 func (r *bunTotalRepository) ListTotals(ctx context.Context, page int, size int) ([]contracts.Total, int, error) {
 	var totals []contracts.Total
 	total, err := r.db.NewSelect().TableExpr("users_groups_tests AS ugt").
-		ColumnExpr("ugt.score AS score, ugt.test_uuid AS test_uuid, ugt.group_uuid AS group_uuid, ugt.user_uuid AS user_uuid").
+		ColumnExpr("ugt.score AS score, ugt.test_uuid AS test_uuid, ugt.group_uuid AS group_uuid, ugt.user_uuid AS user_uuid, ugt.finalized_at AS finalized_at").
 		Join("JOIN groups AS g").JoinOn("g.uuid = ugt.group_uuid").ColumnExpr("g.name AS group_name").
 		Join("JOIN tests AS t").JoinOn("t.uuid = ugt.test_uuid").ColumnExpr("t.name AS test_name").
 		Join("JOIN users AS u").JoinOn("u.uuid = ugt.user_uuid").ColumnExpr("u.nickname AS user_name").
@@ -265,7 +265,7 @@ func (r *bunTotalRepository) AnswersInTest(ctx context.Context, userUUID, testUU
 
 	total, err := r.db.NewSelect().TableExpr("users_groups_tests_quiz_answers AS ugtqa").
 		Where("ugtqa.user_uuid = ?", userUUID).
-		ColumnExpr("ugtqa.score AS score, ugtqa.test_uuid AS test_uuid, ugtqa.group_uuid AS group_uuid").
+		ColumnExpr("ugtqa.score AS score, ugtqa.test_uuid AS test_uuid, ugtqa.group_uuid AS group_uuid, ugtqa.quiz_uuid AS quiz_uuid, ugtqa.user_uuid AS user_uuid, ugtqa.answered_at AS answered_at").
 		Join("JOIN groups AS g").JoinOn("g.uuid = ugtqa.group_uuid").ColumnExpr("g.name AS group_name").
 		Join("JOIN tests AS t").JoinOn("t.uuid = ugtqa.test_uuid").ColumnExpr("t.name AS test_name").
 		Join("JOIN quizzes AS q").JoinOn("q.uuid = ugtqa.quiz_uuid").ColumnExpr("q.correct_answer AS correct").
