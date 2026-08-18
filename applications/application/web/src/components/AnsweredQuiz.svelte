@@ -11,8 +11,8 @@
     answer,
   }: {
     kind: Kind;
-    options?: QuizOptions;
-    answer?: QuizAnswer;
+    options: QuizOptions;
+    answer: QuizAnswer;
   } = $props();
 </script>
 
