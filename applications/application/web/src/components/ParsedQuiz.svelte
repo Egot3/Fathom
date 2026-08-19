@@ -12,25 +12,28 @@
     let loading: boolean = $state(false)
     let statusMessage: string = $state("")
 
-    let title: string = $state("")
-    let body: string = $state("")
-
     let options: QuizOptions | null = $state(null)
     let answer: QuizAnswer | null = $state(null)
 
+    let title: string = $state("")
+    let body: string = $state("")
+
     let time: number;
     $effect(()=>{
+      console.log("looping")
       loading = true
       const quizUUID: string = UUID;
 
         time = setTimeout(async () => {
           statusMessage = await FetchParsedQuiz(quizUUID)
-          .map((r)=>{
-            return r
-          })
           .match((r)=>{
+            console.log(r)
+
+            console.log(title, body)
             title = r.title
             body = r.body
+
+            console.log(title, body)
             return ""
           }, (e)=>e.error);
 
@@ -39,6 +42,6 @@
     })
 </script>
 
-<h2>{title}</h2>
+<h2 class="bg-red-900">{title}</h2>
 
 <p>{body}</p>

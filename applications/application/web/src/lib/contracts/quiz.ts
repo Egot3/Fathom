@@ -342,6 +342,8 @@ export async function FetchQuizDelete(UUID: string): Promise<null | JSONError> {
 	}
 }
 
+type ParsedQuizResponse = {quiz: ParsedQuiz}
+
 // may not throw
 export function FetchParsedQuiz(
   quizUUID: string,
@@ -379,8 +381,9 @@ export function FetchParsedQuiz(
       (): JSONError => ({ error: "couldn't parse error body" }),
     ).andThen((body) => {
       const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
+      console.log("ETag:", etag)
       SetCachedQuiz(quizUUID, etag, body);
-      return okAsync(body as ParsedQuiz);
+        return okAsync((body as ParsedQuizResponse).quiz);
     });
   });
 }
