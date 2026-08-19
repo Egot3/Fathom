@@ -26,6 +26,7 @@ import (
 	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
 	"github.com/egot3/fathom/internal/logging"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/zeebo/xxh3"
 	"go.yaml.in/yaml/v4"
@@ -1094,11 +1095,11 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	quizUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
-	if !ok {
-		logger.Error("Bad uuid")
+	quizUUID, err := uuid.Parse(chi.URLParam(r, "quiz_uuid"))
+	if err != nil {
+		logger.Error("Bad uuid", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad UUID"})
 		return
 	}
 
