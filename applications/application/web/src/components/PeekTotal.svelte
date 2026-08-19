@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { Kind, type QuizAnswer } from "../lib/contracts/quiz";
   import { FetchAnswers } from "../lib/contracts/totals";
   import { IsJSONError } from "../lib/statuses/jsonerror";
-  import AnsweredQuiz from "./AnsweredQuiz.svelte";
-    import ParsedQuiz from "./ParsedQuiz.svelte";
+  import ParsedQuiz from "./ParsedQuiz.svelte";
 
   const {
     userUUID,
