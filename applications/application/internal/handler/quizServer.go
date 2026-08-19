@@ -7,6 +7,7 @@ import (
 	"compress/gzip"
 	"database/sql"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1120,7 +1121,7 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	checkString := string(quiz.Checksum[:])
+	checkString := fmt.Sprintf("%q", hex.EncodeToString(quiz.Checksum[:]))
 
 	if match := r.Header.Get("If-None-Match"); match == checkString {
 		w.WriteHeader(http.StatusNotModified) // caching goes brrrrr
