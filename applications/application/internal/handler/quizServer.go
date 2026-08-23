@@ -305,7 +305,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	checksumUint := xxh3.HashString(req.Body)
+	checksumUint := xxh3.HashString(sb.String())
 	checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
 	answer, err := json.Marshal(quiz.Answer)
@@ -430,7 +430,7 @@ func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	checksumUint := xxh3.HashString(req.Body)
+	checksumUint := xxh3.Hash(buf.Bytes())
 	checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 	err = c.quizRepo.UpdateChecksum(ctx, quizUUID, checksum)
 	if err != nil {

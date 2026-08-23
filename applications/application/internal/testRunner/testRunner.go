@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -19,7 +18,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
 	"github.com/samber/lo"
-	"github.com/zeebo/xxh3"
 )
 
 var (
@@ -99,11 +97,10 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		}
 		quiz.UUID = quizUUIDs[i]
 
-		ch, err := io.ReadAll(f)
+		quiz.Checksum, err = hashutils.HashFile(f)
 		if err != nil {
 			return err
 		}
-		quiz.Checksum = xxh3.Hash(ch)
 		ultimateChecksum = append(ultimateChecksum, quiz.Checksum)
 		quizzes[i] = *quiz
 	}
