@@ -265,10 +265,16 @@ func (r *bunTotalRepository) AnswersInTest(ctx context.Context, userUUID, testUU
 
 	total, err := r.db.NewSelect().TableExpr("users_groups_tests_quiz_answers AS ugtqa").
 		Where("ugtqa.user_uuid = ?", userUUID).
-		ColumnExpr("ugtqa.score AS score, ugtqa.test_uuid AS test_uuid, ugtqa.group_uuid AS group_uuid, ugtqa.quiz_uuid AS quiz_uuid, ugtqa.user_uuid AS user_uuid, ugtqa.answered_at AS answered_at").
+		ColumnExpr("ugtqa.score AS score, "+
+			"ugtqa.test_uuid AS test_uuid, "+
+			"ugtqa.group_uuid AS group_uuid, "+
+			"ugtqa.quiz_uuid AS quiz_uuid, "+
+			"ugtqa.user_uuid AS user_uuid, "+
+			"ugtqa.answered_at AS answered_at, "+
+			"ugtqa.answer_value AS answer_value").
 		Join("JOIN groups AS g").JoinOn("g.uuid = ugtqa.group_uuid").ColumnExpr("g.name AS group_name").
 		Join("JOIN tests AS t").JoinOn("t.uuid = ugtqa.test_uuid").ColumnExpr("t.name AS test_name").
-		Join("JOIN quizzes AS q").JoinOn("q.uuid = ugtqa.quiz_uuid").ColumnExpr("q.correct_answer AS correct").
+		Join("JOIN quizzes AS q").JoinOn("q.uuid = ugtqa.quiz_uuid").ColumnExpr("q.correct_answer AS correct").ColumnExpr("q.path AS quiz_name").
 		OrderBy("ugtqa.answered_at", bun.OrderDesc).
 		Offset(page*size).Limit(size).
 		ScanAndCount(ctx, &answers)

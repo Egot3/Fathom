@@ -25,6 +25,7 @@ type Answer struct {
 
 	GroupName string `json:"group_name" bun:"group_name"`
 	TestName  string `json:"test_name" bun:"test_name"`
+	QuizName  string `json:"quiz_name" bun:"quiz_name"`
 }
 
 type Total struct {
