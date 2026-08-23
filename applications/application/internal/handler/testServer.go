@@ -294,7 +294,7 @@ func (c *chiService) GetTest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.GetTestResponse{Test: *test})
+	json.NewEncoder(w).Encode(contracts.GetTestResponse{Test: test})
 }
 
 // PatchTest implements [Service].
@@ -1145,7 +1145,7 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.RunningInfoResponse{
-		Test:     *test,
+		Test:     test,
 		Deadline: *deadline,
 		IsPaused: c.runner.IsPaused(),
 	})

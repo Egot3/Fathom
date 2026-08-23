@@ -101,7 +101,7 @@ func (c *chiService) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.GetUserResponse{
-		User: *user,
+		User: user,
 	})
 }
 
@@ -205,7 +205,7 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.RegisterResponse{
-		User: *user,
+		User: user,
 	})
 }
 
@@ -442,7 +442,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(contracts.RegisterResponse{
-		User: *user,
+		User: user,
 	})
 }
 

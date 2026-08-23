@@ -27,27 +27,27 @@ func NewUserRepository(i do.Injector) (UserRepository, error) {
 	return &bunUserRepository{db: db}, nil
 }
 
-func (r *bunUserRepository) Register(ctx context.Context, name string, passwordHash []byte) (*models.User, error) {
-	bakedUser := models.User{Nickname: name, PasswordHash: passwordHash}
-	err := r.db.NewInsert().Ignore().Model(&bakedUser).Scan(ctx)
+func (r *bunUserRepository) Register(ctx context.Context, name string, passwordHash []byte) (models.User, error) {
+	user := models.User{Nickname: name, PasswordHash: passwordHash}
+	err := r.db.NewInsert().Ignore().Model(&user).Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, carefulness.Conflict{Conflictor: name}
+			return models.User{}, carefulness.Conflict{Conflictor: name}
 		}
-		return nil, err
+		return models.User{}, err
 	}
 
-	return &models.User{
-		UUID:      bakedUser.UUID,
-		Nickname:  bakedUser.Nickname,
-		CreatedAt: bakedUser.CreatedAt,
-		UpdatedAt: bakedUser.UpdatedAt,
-		DeletedAt: bakedUser.DeletedAt,
-		IsTeacher: bakedUser.IsTeacher,
+	return models.User{
+		UUID:      user.UUID,
+		Nickname:  user.Nickname,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		DeletedAt: user.DeletedAt,
+		IsTeacher: user.IsTeacher,
 	}, nil
 }
 
-func (r *bunUserRepository) Login(ctx context.Context, nickname string, password []byte) (*models.User, error) {
+func (r *bunUserRepository) Login(ctx context.Context, nickname string, password []byte) (models.User, error) {
 	logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "repository"))
 
 	var user models.User
@@ -55,17 +55,17 @@ func (r *bunUserRepository) Login(ctx context.Context, nickname string, password
 		Where("nickname = ?", nickname).
 		Scan(ctx)
 	if err != nil {
-		return nil, err
+		return models.User{}, err
 	}
 
 	logger.Debug("Got user", slog.Any("user", user))
 
 	err = bcrypt.CompareHashAndPassword(user.PasswordHash, password)
 	if err != nil {
-		return nil, sql.ErrNoRows // will be sql.ErrNoRows
+		return models.User{}, sql.ErrNoRows // will be sql.ErrNoRows
 	}
 	user.PasswordHash = nil
-	return &user, nil
+	return user, nil
 }
 
 func (r *bunUserRepository) Exists(ctx context.Context, uuid uuid.UUID) (bool, error) {
@@ -108,18 +108,18 @@ func (r *bunUserRepository) IsTeacher(ctx context.Context, uuid uuid.UUID) (bool
 	return is, err
 }
 
-func (r *bunUserRepository) User(ctx context.Context, uuid uuid.UUID) (*models.User, error) {
+func (r *bunUserRepository) User(ctx context.Context, uuid uuid.UUID) (models.User, error) {
 	user := models.User{UUID: uuid}
 	err := r.db.NewSelect().Model(&user).WherePK().WhereAllWithDeleted().Scan(ctx)
 	if err != nil {
-		return nil, err
+		return models.User{}, err
 	}
 
 	if user.DeletedAt != nil && time.Since(*user.DeletedAt) >= 0 {
-		return nil, carefulness.ErrGone
+		return models.User{}, carefulness.ErrGone
 	}
 
-	return &models.User{
+	return models.User{
 		Nickname:     user.Nickname,
 		UUID:         user.UUID,
 		IsTeacher:    user.IsTeacher,

@@ -21,26 +21,26 @@ func NewGroupRepository(i do.Injector) (GroupRepository, error) {
 	return &bunGroupRepository{db: db}, nil
 }
 
-func (r *bunGroupRepository) NewGroup(ctx context.Context, name string) (*models.Group, error) {
+func (r *bunGroupRepository) NewGroup(ctx context.Context, name string) (models.Group, error) {
 	var group = models.Group{Name: name}
 	err := r.db.NewInsert().Model(&group).Ignore().Returning("uuid").Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, carefulness.Conflict{Conflictor: "group name"}
+			return models.Group{}, carefulness.Conflict{Conflictor: "group name"}
 		}
-		return nil, err
+		return models.Group{}, err
 	}
-	return &group, nil
+	return group, nil
 }
 
-func (r *bunGroupRepository) Group(ctx context.Context, uuid uuid.UUID) (*models.Group, error) {
+func (r *bunGroupRepository) Group(ctx context.Context, uuid uuid.UUID) (models.Group, error) {
 	group := models.Group{UUID: uuid}
 	err := r.db.NewSelect().Model(&group).WherePK().Relation("Users").Scan(ctx)
 	if err != nil {
-		return nil, err
+		return models.Group{}, err
 	}
 
-	return &group, nil
+	return group, nil
 }
 
 func (r *bunGroupRepository) DeleteGroup(ctx context.Context, uuid uuid.UUID) error {
