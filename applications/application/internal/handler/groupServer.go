@@ -161,7 +161,7 @@ func (c *chiService) GetGroup(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.GetGroupResponse{
-		Group: *group,
+		Group: group,
 	})
 }
 

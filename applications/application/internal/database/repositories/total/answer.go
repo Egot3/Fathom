@@ -155,14 +155,14 @@ func (r *bunTotalRepository) AnswerScore(ctx context.Context, userUUID, testUUID
 	return score, nil
 }
 
-func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (*contracts.Total, error) {
-	total := new(contracts.Total)
+func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (contracts.Total, error) {
+	total := contracts.Total{}
 	err := r.db.NewSelect().Model((*models.UserGroupsTests)(nil)).
 		Where("test_uuid = ?", testUUID).
 		Where("user_uuid = ?", userUUID).
-		Where("group_uuid = ?", groupUUID).Scan(ctx, total)
+		Where("group_uuid = ?", groupUUID).Scan(ctx, &total)
 	if err != nil {
-		return nil, err
+		return contracts.Total{}, err
 	}
 
 	return total, nil

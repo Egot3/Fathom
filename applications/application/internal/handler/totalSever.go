@@ -265,7 +265,7 @@ func (c *chiService) GetUserTotal(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.TotalResponse{
-		Total: *userTotal,
+		Total: userTotal,
 	})
 }
 
