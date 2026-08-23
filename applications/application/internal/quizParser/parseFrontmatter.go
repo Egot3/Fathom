@@ -1,6 +1,7 @@
 package quizparser
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"strings"
@@ -9,41 +10,44 @@ import (
 	"go.yaml.in/yaml/v4"
 )
 
-func cleanFrontmatter(data []byte) []byte {
-	return bytes.ReplaceAll(data, []byte("\t"), []byte(""))
-}
-
-func ParseFrontmatter(source []byte) (quiz.Frontmatter, []byte, error) {
+func ParseFrontmatter(scanner *bufio.Scanner) (quiz.Frontmatter, error) {
 	var fm quiz.Frontmatter
 
-	lines := bytes.Split(source, []byte("\n"))
-	if len(lines) < 2 || strings.TrimSpace(string(lines[0])) != "---" {
-		return fm, source, fmt.Errorf("missing frontmatter delimeter(---)")
+	if strings.TrimSpace(scanner.Text()) != "---" {
+		for {
+			if !scanner.Scan() {
+				return fm, fmt.Errorf("missing frontmatter delimeter(---)")
+			}
+			if strings.TrimSpace(scanner.Text()) == "---" {
+				break
+			}
+		}
 	}
 
+	rawFrontmatter := bytes.Buffer{}
 	end := -1
-	for i := 1; i < len(lines); i++ {
-		if strings.TrimSpace(string(lines[i])) == "---" {
+	for i := 0; scanner.Scan(); i++ {
+		line := scanner.Text()
+		if strings.TrimSpace(line) == "---" {
 			end = i
 			break
 		}
+		rawFrontmatter.WriteString(line)
+		rawFrontmatter.WriteString("\n")
 	}
 	if end == -1 {
-		return fm, source, fmt.Errorf("unclosed frontmatter")
+		return fm, fmt.Errorf("unclosed frontmatter")
 	}
 
-	fmData := bytes.Join(lines[1:end], []byte("\n"))
-	fmData = cleanFrontmatter(fmData)
-
-	if err := yaml.Unmarshal(fmData, &fm); err != nil {
-		return fm, nil, err
+	if err := yaml.NewDecoder(&rawFrontmatter).Decode(&fm); err != nil {
+		return fm, err
 	}
 	if fm.Kind == "" {
-		return fm, nil, fmt.Errorf("mising entry in frontmatter: kind")
+		return fm, fmt.Errorf("mising entry in frontmatter: kind")
 	}
 	if fm.Score == 0 {
-		return fm, nil, fmt.Errorf("missing score/score set to zero in frontmatter")
+		return fm, fmt.Errorf("missing score/score set to zero in frontmatter")
 	}
 
-	return fm, bytes.Join(lines[end+1:], []byte("\n")), nil
+	return fm, nil
 }
