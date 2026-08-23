@@ -3,6 +3,7 @@ package handler
 import (
 	"archive/tar"
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"database/sql"
@@ -129,14 +130,17 @@ func (c *chiService) GetQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	buf, err := os.ReadFile(quizPath)
+	f, err := os.Open(quizPath)
 	if err != nil {
 		logger.Error("Failed to read file")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer f.Close()
 
-	fm, source, err := quizparser.ParseFrontmatter(buf)
+	scanner := bufio.NewScanner(f)
+
+	fm, err := quizparser.ParseFrontmatter(scanner)
 	if err != nil {
 		logger.Error("Unable to retrieve quiz by path",
 			slog.String("Error", err.Error()),
@@ -145,8 +149,14 @@ func (c *chiService) GetQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var sb strings.Builder
+	for scanner.Scan() {
+		sb.WriteString(scanner.Text())
+		sb.WriteRune('\n')
+	}
+
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.GetQuizResponse{Meta: fm, Body: string(source)})
+	json.NewEncoder(w).Encode(contracts.GetQuizResponse{Meta: fm, Body: sb.String()})
 }
 
 // ListQuiz implements [Service].
@@ -278,9 +288,8 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	sb.Write(frontmatter)
 	sb.WriteString("---\n\n")
 	sb.WriteString(req.Body)
-	buf := []byte(sb.String())
 
-	quiz, err := quizparser.ParseQuizByBytes(buf)
+	quiz, err := quizparser.ParseQuiz(strings.NewReader(sb.String()))
 	if err != nil {
 		logger.Error("couldn't parse quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
@@ -308,7 +317,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = os.WriteFile(abs, buf, 0644)
+	err = os.WriteFile(abs, []byte(sb.String()), 0644)
 	if err != nil {
 		w.WriteHeader(http.StatusMultiStatus)
 
@@ -407,14 +416,13 @@ func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	var sb strings.Builder
-	sb.WriteString("---\n")
-	sb.Write(frontmatter)
-	sb.WriteString("---\n\n")
-	sb.WriteString(req.Body)
-	buf := []byte(sb.String())
+	var buf bytes.Buffer
+	buf.WriteString("---\n")
+	buf.Write(frontmatter)
+	buf.WriteString("---\n\n")
+	buf.WriteString(req.Body)
 
-	_, err = quizparser.ParseQuizByBytes(buf)
+	_, err = quizparser.ParseQuiz(&buf)
 	if err != nil {
 		logger.Error("couldn't parse quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
@@ -432,7 +440,7 @@ func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = os.WriteFile(abs, buf, 0644)
+	err = os.WriteFile(abs, buf.Bytes(), 0644)
 	if err != nil {
 		w.WriteHeader(http.StatusMultiStatus)
 
@@ -795,15 +803,11 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			}
 			defer rc.Close()
 
-			contents, err := io.ReadAll(rc)
-			if err != nil {
-				logger.Error("couldn't read file from zip reader", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't read file from zip"})
-				return
-			}
+			var buf bytes.Buffer
 
-			q, err := quizparser.ParseQuizByBytes(contents)
+			tee := io.TeeReader(rc, &buf)
+
+			q, err := quizparser.ParseQuiz(tee)
 			if err != nil {
 				logger.Error("invalid quiz", slog.String("Error", err.Error()))
 				w.WriteHeader(http.StatusBadRequest)
@@ -818,7 +822,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't create file"})
 				return
 			}
-			_, err = io.Copy(dest, bytes.NewReader(contents))
+			_, err = io.Copy(dest, &buf)
 			if err != nil {
 				logger.Error("couldn't write zip entry to file", slog.String("Error", err.Error()))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -828,7 +832,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			rc.Close()
 			dest.Close()
 
-			checksumUint := xxh3.Hash(contents)
+			checksumUint := xxh3.Hash(buf.Bytes())
 			checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
 			answer, err := json.Marshal(q.Answer)
@@ -903,15 +907,9 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			contents, err := io.ReadAll(tarReader)
-			if err != nil {
-				logger.Error("couldn't read file from tar reader", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't read file from zip"})
-				return
-			}
-
-			q, err := quizparser.ParseQuizByBytes(contents)
+			var buf bytes.Buffer
+			tee := io.TeeReader(tarReader, &buf)
+			q, err := quizparser.ParseQuiz(tee)
 			if err != nil {
 				logger.Error("invalid quiz", slog.String("Error", err.Error()))
 				w.WriteHeader(http.StatusBadRequest)
@@ -926,7 +924,8 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't create file"})
 				return
 			}
-			_, err = io.Copy(dest, bytes.NewReader(contents))
+
+			_, err = io.Copy(dest, &buf)
 			if err != nil {
 				logger.Error("couldn't write tar entry to file", slog.String("Error", err.Error()))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -935,7 +934,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			}
 			dest.Close()
 
-			checksumUint := xxh3.Hash(contents)
+			checksumUint := xxh3.Hash(buf.Bytes())
 			checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
 			answer, err := json.Marshal(q.Answer)
@@ -1020,15 +1019,10 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			contents, err := io.ReadAll(tarReader)
-			if err != nil {
-				logger.Error("couldn't read file from tar reader", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't read file from zip"})
-				return
-			}
+			var buf bytes.Buffer
+			tee := io.TeeReader(tarReader, &buf)
 
-			q, err := quizparser.ParseQuizByBytes(contents)
+			q, err := quizparser.ParseQuiz(tee)
 			if err != nil {
 				logger.Error("invalid quiz", slog.String("Error", err.Error()))
 				w.WriteHeader(http.StatusBadRequest)
@@ -1043,7 +1037,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't create file"})
 				return
 			}
-			_, err = io.Copy(dest, bytes.NewReader(contents))
+			_, err = io.Copy(dest, &buf)
 			if err != nil {
 				logger.Error("couldn't write tar entry to file", slog.String("Error", err.Error()))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -1052,7 +1046,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			}
 			dest.Close()
 
-			checksumUint := xxh3.Hash(contents)
+			checksumUint := xxh3.Hash(buf.Bytes())
 			checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
 			answer, err := json.Marshal(q.Answer)
@@ -1131,14 +1125,15 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("ETag", checkString)
 	w.Header().Set("Cache-Control", "public, immutable, must-revalidate")
 
-	buf, err := os.ReadFile(quiz.Path)
+	f, err := os.Open(quiz.Path)
 	if err != nil {
 		logger.Error("Failed to read file")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer f.Close()
 
-	q, err := quizparser.ParseQuizByBytes(buf)
+	q, err := quizparser.ParseQuiz(f)
 	if err != nil {
 		logger.Error("Unable to retrieve quiz by path",
 			slog.String("Error", err.Error()),

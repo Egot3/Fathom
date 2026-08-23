@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -86,17 +87,23 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 		if !filepath.IsAbs(path) {
 			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
 		}
-		buf, err := os.ReadFile(path)
+		f, err := os.Open(path)
 		if err != nil {
 			return err
 		}
+		defer f.Close()
 
-		quiz, err := quizparser.ParseQuizByBytes(buf) //no reason to hold the lock when I/O and not writing to tr
+		quiz, err := quizparser.ParseQuiz(f)
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
 		quiz.UUID = quizUUIDs[i]
-		quiz.Checksum = xxh3.Hash(buf)
+
+		ch, err := io.ReadAll(f)
+		if err != nil {
+			return err
+		}
+		quiz.Checksum = xxh3.Hash(ch)
 		ultimateChecksum = append(ultimateChecksum, quiz.Checksum)
 		quizzes[i] = *quiz
 	}
@@ -194,11 +201,13 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUID
 		if !filepath.IsAbs(path) {
 			return fmt.Errorf("unsupported path scheme %q: only abs paths are currently supported", path) //registry is not implemented
 		}
-		buf, err := os.ReadFile(path)
+		f, err := os.Open(path)
 		if err != nil {
 			return err
 		}
-		quiz, err := quizparser.ParseQuizByBytes(buf) //no reason to hold the lock when I/O and not writing to tr
+		defer f.Close()
+
+		quiz, err := quizparser.ParseQuiz(f)
 		if err != nil {
 			return fmt.Errorf("parsing quiz at %q: %w", path, err)
 		}
