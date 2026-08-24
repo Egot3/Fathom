@@ -232,7 +232,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -342,7 +342,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}

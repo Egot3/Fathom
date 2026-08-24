@@ -1045,58 +1045,116 @@ func TestQuizHandler_GetParsed(t *testing.T) {
 	do.ProvideValue(i, slog.Default())
 	do.Provide(i, testrunner.NewTestRunner)
 
-	f := testutils.TestQuiz(t)
-
-	var quizUUID uuid.UUID
-	score := 1
-	db := do.MustInvoke[*bun.DB](i)
-	err = db.NewInsert().Model(&models.Quiz{
-		Path:          f.Name(),
-		Checksum:      [8]byte{},
-		Score:         score,
-		CorrectAnswer: "x",
-	}).Returning("uuid").
-		Scan(t.Context(), &quizUUID)
-	require.NoError(t, err)
-
-	err = f.Close()
-	require.NoError(t, err)
-
 	t.Run("Valid", func(t *testing.T) {
-
 		i = i.Scope("valid")
+		t.Run("Input", func(t *testing.T) {
+			i = i.Scope("input")
 
-		do.Provide(i, handler.NewTestService)
-		router, err := server.ChiServer(i)
-		require.NoError(t, err)
+			f := testutils.TestQuiz(t)
 
-		req := httptest.NewRequest(
-			http.MethodGet,
-			fmt.Sprintf("/api/v1/quiz/%v/parsed", quizUUID),
-			nil,
-		)
-		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
+			var quizUUID uuid.UUID
+			score := 1
+			db := do.MustInvoke[*bun.DB](i)
+			err = db.NewInsert().Model(&models.Quiz{
+				Path:          f.Name(),
+				Checksum:      [8]byte{},
+				Score:         score,
+				CorrectAnswer: "x",
+			}).Returning("uuid").
+				Scan(t.Context(), &quizUUID)
+			require.NoError(t, err)
+
+			err = f.Close()
+			require.NoError(t, err)
+
+			do.Provide(i, handler.NewTestService)
+			router, err := server.ChiServer(i)
+			require.NoError(t, err)
+
+			req := httptest.NewRequest(
+				http.MethodGet,
+				fmt.Sprintf("/api/v1/quiz/%v/parsed", quizUUID),
+				nil,
+			)
+			req.Header.Set("Content-Type", "application/json")
+			req.AddCookie(&http.Cookie{
+				Name:     "jwt_token",
+				Value:    token,
+				Path:     "/",
+				Expires:  time.Now().Add(jwtutils.JWTTTL),
+				HttpOnly: true,
+				SameSite: http.SameSiteNoneMode,
+				Secure:   true,
+			})
+			rec := httptest.NewRecorder()
+
+			router.ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+			var contract contracts.ParsedQuizResponse
+			err = json.NewDecoder(rec.Body).Decode(&contract)
+			require.NoError(t, err)
+
+			require.Equal(t, score, contract.Quiz.Meta.Score)
+			require.Equal(t, contract.Quiz.Body, "there is a body!")
 		})
-		rec := httptest.NewRecorder()
 
-		router.ServeHTTP(rec, req)
+		t.Run("Not Input", func(t *testing.T) {
+			i = i.Scope("notInput")
 
-		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+			do.Provide(i, handler.NewTestService)
+			router, err := server.ChiServer(i)
+			require.NoError(t, err)
 
-		var contract contracts.ParsedQuizResponse
-		err = json.NewDecoder(rec.Body).Decode(&contract)
-		require.NoError(t, err)
+			f := testutils.TestRadioQuiz(t)
 
-		require.Equal(t, score, contract.Quiz.Meta.Score)
-		require.Equal(t, contract.Quiz.Body, "there is a body!")
+			var quizUUID uuid.UUID
+			score := 1
+			db := do.MustInvoke[*bun.DB](i)
+			err = db.NewInsert().Model(&models.Quiz{
+				Path:          f.Name(),
+				Checksum:      [8]byte{},
+				Score:         score,
+				CorrectAnswer: "x",
+			}).Returning("uuid").
+				Scan(t.Context(), &quizUUID)
+			require.NoError(t, err)
+
+			err = f.Close()
+			require.NoError(t, err)
+
+			req := httptest.NewRequest(
+				http.MethodGet,
+				fmt.Sprintf("/api/v1/quiz/%v/parsed", quizUUID),
+				nil,
+			)
+			req.Header.Set("Content-Type", "application/json")
+			req.AddCookie(&http.Cookie{
+				Name:     "jwt_token",
+				Value:    token,
+				Path:     "/",
+				Expires:  time.Now().Add(jwtutils.JWTTTL),
+				HttpOnly: true,
+				SameSite: http.SameSiteNoneMode,
+				Secure:   true,
+			})
+			rec := httptest.NewRecorder()
+
+			router.ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+			var contract contracts.ParsedQuizResponse
+			err = json.NewDecoder(rec.Body).Decode(&contract)
+			require.NoError(t, err)
+
+			require.Equal(t, score, contract.Quiz.Meta.Score)
+			require.Equal(t, contract.Quiz.Body, "what's the question?")
+			require.Len(t, contract.Quiz.Options.Radio.Choices, 3)
+			require.Equal(t, contract.Quiz.Answer.Radio.ChoiceIdx, 0)
+		})
+
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
