@@ -235,7 +235,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -367,7 +367,7 @@ func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -476,7 +476,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -566,7 +566,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, carefulness.ErrMalformedRequest):
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 		case errors.Is(err, carefulness.ErrUnprocessableRequest):
 			w.WriteHeader(422)

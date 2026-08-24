@@ -35,10 +35,7 @@ func ParseQuiz(reader io.Reader) (*quiz.Quiz, error) {
 		line := scanner.Text()
 		trimmedLine := strings.TrimSpace(line)
 
-		if InputRegex.MatchString(trimmedLine) {
-			break
-		}
-		if strings.HasPrefix(trimmedLine, "- ") {
+		if InputRegex.MatchString(trimmedLine) || strings.HasPrefix(trimmedLine, "- ") { // using "- " because all of kinds(with sole exception of Input, of course) have this
 			break
 		}
 
