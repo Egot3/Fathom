@@ -17,14 +17,10 @@ type PostQuizRequest struct {
 	Meta quiz.Frontmatter `json:"meta"`
 }
 
-type PutQuizRequest struct {
-	Body string           `json:"body"`
-	Meta quiz.Frontmatter `json:"meta"`
-}
-
 type PatchQuizRequest struct {
-	Name  *string `json:"name,omitzero"`
-	Score *int    `json:"score,omitzero"`
+	Name *string           `json:"name"`
+	Body *string           `json:"body"`
+	Meta *quiz.Frontmatter `json:"meta"`
 }
 
 type ListQuizResponse struct {

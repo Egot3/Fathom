@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/egot3/fathom/internal/models"
+	"github.com/egot3/fathom/internal/quiz"
 	"github.com/google/uuid"
 )
 
@@ -16,7 +17,7 @@ type QuizRepository interface {
 	QuizPath(ctx context.Context, quizUUID uuid.UUID) (string, error)
 
 	UpdateChecksum(ctx context.Context, quizUUID uuid.UUID, checksum [8]byte) error
-	PatchQuiz(ctx context.Context, quizUUID uuid.UUID, path *string, score *int) error
+	PatchQuiz(ctx context.Context, quizUUID uuid.UUID, path *string, score *int, answer *quiz.QuizAnswers, checksum *[8]byte) error
 	CorrectAnswer(ctx context.Context, quizUUID uuid.UUID) (string, error)
 	ExistsByUUID(ctx context.Context, quizUUID uuid.UUID) (bool, error)
 	QuizFresh(ctx context.Context, quizUUID uuid.UUID, checksum [8]byte) (bool, error)
