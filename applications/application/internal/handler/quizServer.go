@@ -27,6 +27,7 @@ import (
 	"github.com/egot3/fathom/internal/contracts"
 	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
 	"github.com/egot3/fathom/internal/logging"
+	"github.com/egot3/fathom/internal/quiz"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -341,116 +342,6 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// PutQuiz implements [Service].
-func (c *chiService) PutQuiz(w http.ResponseWriter, r *http.Request) {
-	logger := logging.LoggerFromContext(r.Context()).With(
-		slog.String("layer", "handler"),
-	)
-	ctx := logging.WithLogger(r.Context(), logger)
-
-	quizUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
-	if !ok {
-		logger.Error("Bad uuid")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
-		return
-	}
-	logger = logger.With(slog.String("quizUUID", quizUUID.String()))
-	ctx = logging.WithLogger(ctx, logger)
-
-	w.Header().Set("Content-Type", "application/json")
-	var req contracts.PutQuizRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		logger.Error("error in register during reading",
-			slog.String("error", err.Error()),
-		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Empty body"})
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	abs, err := c.quizRepo.QuizPath(ctx, quizUUID)
-	if err != nil {
-		logger.Error("couldn't select quiz path",
-			slog.String("Error", err.Error()),
-		)
-		if errors.Is(err, sql.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	frontmatter, err := yaml.Marshal(req.Meta)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		logger.Error("unable to process frontmatter",
-			slog.String("Error", err.Error()),
-		)
-
-		return
-	}
-	var buf bytes.Buffer
-	buf.WriteString("---\n")
-	buf.Write(frontmatter)
-	buf.WriteString("---\n\n")
-	buf.WriteString(req.Body)
-
-	_, err = quizparser.ParseQuiz(&buf)
-	if err != nil {
-		logger.Error("couldn't parse quiz", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
-		return
-	}
-
-	checksumUint := xxh3.Hash(buf.Bytes())
-	checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
-	err = c.quizRepo.UpdateChecksum(ctx, quizUUID, checksum)
-	if err != nil {
-		logger.Error("couldn't update quiz", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't register quiz"})
-		return
-	}
-
-	err = os.WriteFile(abs, buf.Bytes(), 0644)
-	if err != nil {
-		w.WriteHeader(http.StatusMultiStatus)
-
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write file"})
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
 func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
@@ -516,17 +407,114 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newAbs *string
-	if req.Name != nil {
-		if v, err := config.TurnToAbs(*req.Name); err == nil {
-			newAbs = &v
+	var checksum *[8]byte = nil
+	var score *int = nil
+	var ans *quiz.QuizAnswers = nil
+	if req.Body != nil || req.Meta != nil {
+		f, err := os.Open(abs)
+		if err != nil {
+			logger.Error("couldn't open file to start merging",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't open file to start merging"})
+			return
+		}
+		defer f.Close()
+
+		scanner := bufio.NewScanner(f)
+		fm, err := quizparser.ParseFrontmatter(scanner)
+		if err != nil {
+			logger.Error("couldn't parse frontmatter for quiz",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't parse frontmatter for quiz"})
+			return
+		}
+
+		var buf bytes.Buffer
+		buf.WriteString("---\n")
+
+		var fmtoparse quiz.Frontmatter = fm
+		if req.Meta != nil {
+			score = &req.Meta.Score
+
+			if *req.Meta != fmtoparse {
+				fmtoparse = *req.Meta
+			}
+		}
+		frontmatter, err := yaml.Marshal(fmtoparse)
+		if err != nil {
+			logger.Error("unable to process frontmatter",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to process frontmatter"})
+
+			return
+		}
+		buf.Write(frontmatter)
+		buf.WriteString("---\n\n")
+
+		logger.Info("After writing frontmatter", slog.String("Quiz", buf.String()))
+
+		var bodyLen int
+		fileStat, err := f.Stat()
+		if err == nil {
+			bodyLen = int(fileStat.Size()) - (buf.Len())
+		}
+
+		var bodytoparse string = ""
+		if req.Body != nil {
+			bodytoparse = *req.Body
+		}
+		if bodytoparse == "" {
+			var sb strings.Builder
+			sb.Grow(bodyLen)
+			for scanner.Scan() {
+				line := scanner.Bytes()
+				sb.Write(bytes.TrimSpace(line))
+				sb.WriteRune('\n')
+			}
+			bodytoparse = sb.String()
+		}
+		logger.Info("Body parsed", slog.String("Body", bodytoparse))
+
+		buf.WriteString(bodytoparse)
+		logger.Info("After writing body", slog.String("Quiz", buf.String()))
+
+		q, err := quizparser.ParseQuiz(&buf)
+		if err != nil {
+			logger.Error("couldn't parse quiz", slog.String("Error", err.Error()), slog.String("Quiz", buf.String()))
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+			return
+		}
+		score = &req.Meta.Score
+		ans = &q.Answer
+
+		c := [8]byte(binary.BigEndian.AppendUint64(nil, xxh3.Hash(buf.Bytes())))
+		checksum = &c
+		_, err = io.Copy(f, &buf)
+		if err != nil {
+			logger.Error("unable to write file",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write file"})
+			return
 		}
 	}
 
-	if req.Score != nil {
-		if *req.Score < 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "can't have negative score"})
+	var newAbs *string = nil
+	if req.Name != nil {
+		if v, err := config.TurnToAbs(*req.Name); err == nil {
+			newAbs = &v
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			logger.Error("couldn't get new abs name", slog.String("Error", err.Error()))
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to turn give path to abs"})
 			return
 		}
 	}
@@ -534,13 +522,15 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	if newAbs != nil {
 		err := os.Rename(abs, *newAbs)
 		if err != nil {
-			w.WriteHeader(http.StatusMultiStatus)
+			logger.Error("couldn't get rename to abs name", slog.String("Error", err.Error()))
+
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
 			return
 		}
 	}
 
-	err = c.quizRepo.PatchQuiz(ctx, quizUUID, newAbs, req.Score)
+	err = c.quizRepo.PatchQuiz(ctx, quizUUID, newAbs, score, ans, checksum)
 	if err != nil {
 		logger.Error("couldn't update quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)

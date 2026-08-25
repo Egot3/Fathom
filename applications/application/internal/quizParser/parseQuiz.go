@@ -31,18 +31,7 @@ func ParseQuiz(reader io.Reader) (*quiz.Quiz, error) {
 		}
 	}
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		trimmedLine := strings.TrimSpace(line)
-
-		if InputRegex.MatchString(trimmedLine) || strings.HasPrefix(trimmedLine, "- ") { // using "- " because all of kinds(with sole exception of Input, of course) have this
-			break
-		}
-
-		q.Body += line + " "
-
-	}
-	q.Body = strings.TrimSpace(q.Body)
+	q.Body = strings.TrimSpace(ParseBody(scanner))
 
 	// each quiz has 1 typeof question
 	switch q.Meta.Kind {
@@ -74,3 +63,20 @@ func ParseQuiz(reader io.Reader) (*quiz.Quiz, error) {
 }
 
 // P.S. on parts where I am putting comments, my brain melts
+
+func ParseBody(scanner *bufio.Scanner) string {
+	var sb strings.Builder
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmedLine := strings.TrimSpace(line)
+
+		if InputRegex.MatchString(trimmedLine) || strings.HasPrefix(trimmedLine, "- ") { // using "- " because all of kinds(with sole exception of Input, of course) have this
+			break
+		}
+
+		sb.WriteString(trimmedLine)
+		sb.WriteRune(' ')
+	}
+
+	return sb.String()
+}
