@@ -209,15 +209,8 @@ type PatchQuizRequest = {
 
 export function FetchQuizPatch(
   UUID: string,
-  name: string | undefined,
-  body: string | undefined,
-  meta: Meta | undefined,
+  req: PatchQuizRequest,
 ): ResultAsync<null, JSONError> {
-  const req: PatchQuizRequest = {
-    name: name,
-    meta: meta,
-    body: body,
-  };
   const bodyString = JSON.stringify(req);
   return ResultAsync.fromPromise(
     TokenizedFetch(

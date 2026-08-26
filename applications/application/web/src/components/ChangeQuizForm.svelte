@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Dialog } from "@skeletonlabs/skeleton-svelte";
   import {
-    FetchQuiz,
     FetchQuizPatch,
     Kind,
     type Meta,
@@ -60,12 +59,11 @@
       newBody = body;
     }
 
-    statusMessage = await FetchQuizPatch(
-      UUID,
-      newName === name ? undefined : newName,
-      newBody,
-      newMeta,
-    ).match(
+    statusMessage = await FetchQuizPatch(UUID, {
+      name: newName,
+      meta: newMeta,
+      body: newBody,
+    }).match(
       () => {
         return "";
       },
@@ -89,14 +87,14 @@
     message={nameMessage}
     checker={(v: string) => {
       nameMessage =
-        "name must have no special symbols and contain .md extension";
+        "name must have no special symbols and must contain .md extension";
       return pathRegex.test(v);
     }}
   />
 
   <label class="label">
     <span class="label-text">Quiz</span>
-    <textarea class="textarea" bind:value={body} placeholder="" required
+    <textarea class="textarea h-1/2" bind:value={body} placeholder="" required
     ></textarea>
   </label>
 
