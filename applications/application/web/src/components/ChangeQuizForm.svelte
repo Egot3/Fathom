@@ -3,7 +3,6 @@
   import {
     FetchQuiz,
     FetchQuizPatch,
-    FetchQuizPut,
     Kind,
     type Meta,
     type QuizFile,
@@ -41,34 +40,44 @@
   async function ChangeQuiz(e: Event) {
     e.preventDefault();
 
-    const newMeta: Meta = {
-      all_or_none: allOrNone,
-      score: score,
-      randomized: randomized,
-      kind: response.meta.kind, // т.к. раньше надо было думать
-    };
-
-    if (newName !== name || score !== response.meta.score) {
-      const patchResponse = await FetchQuizPatch(
-        UUID,
-        score !== response.meta.score ? score : undefined,
-        newName !== name ? newName : undefined,
-      );
-      if (patchResponse !== null) {
-        statusMessage = patchResponse.error;
-        return;
-      }
+    let newMeta: Meta | undefined = undefined;
+    if (
+      allOrNone !== response.meta.all_or_none ||
+      randomized !== response.meta.randomized ||
+      score !== response.meta.score ||
+      kind !== response.meta.kind
+    ) {
+      newMeta = {
+        all_or_none: allOrNone,
+        score: score,
+        randomized: randomized,
+        kind: kind,
+      };
     }
 
-    if (body !== response.body || !_.isEqual(response.meta, newMeta)) {
-      const putResponse = await FetchQuizPut(UUID, newMeta, body);
-      if (putResponse !== null) {
-        statusMessage = putResponse.error;
-        return;
-      }
+    let newBody: string | undefined = undefined;
+    if (body !== response.body) {
+      newBody = body;
     }
+
+    statusMessage = await FetchQuizPatch(
+      UUID,
+      newName === name ? undefined : newName,
+      newBody,
+      newMeta,
+    ).match(
+      () => {
+        return "";
+      },
+      (err) => {
+        return err.error || "error has occured";
+      },
+    );
+
     callback();
   }
+
+  $inspect(statusMessage);
 </script>
 
 <form onsubmit={ChangeQuiz} class="w-full flex flex-col h-full space-y-2">
