@@ -201,96 +201,54 @@ export async function FetchQuizPost(
   }
 }
 
-type PutQuizRequest = {
-  meta: Meta;
-  body: string;
-};
-
-export async function FetchQuizPut(
-  UUID: string,
-  meta: Meta,
-  contents: string,
-): Promise<JSONError | null> {
-  const body: PutQuizRequest = {
-    meta: meta,
-    body: contents,
-  };
-
-  const bodyString = JSON.stringify(body);
-
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/" + UUID,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
-      },
-    );
-
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch quiz put for quiz: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send quiz put because of in-browser error" };
-    }
-
-    return { error: "couldn't send quiz put because of unknown error" };
-  }
-}
-
 type PatchQuizRequest = {
   name: string | undefined;
-  score: number | undefined;
+  meta: Meta | undefined;
+  body: string | undefined;
 };
 
-export async function FetchQuizPatch(
+export function FetchQuizPatch(
   UUID: string,
-  score: number | undefined,
   name: string | undefined,
-): Promise<JSONError | null> {
-  const body: PatchQuizRequest = {
+  body: string | undefined,
+  meta: Meta | undefined,
+): ResultAsync<null, JSONError> {
+  const req: PatchQuizRequest = {
     name: name,
-    score: score,
+    meta: meta,
+    body: body,
   };
-
-  const bodyString = JSON.stringify(body);
-
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/" + UUID,
+  const bodyString = JSON.stringify(req);
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${UUID}`,
       {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
+          "Content-Type": "application/merge-patch+json", // we are being very rfc rn
         },
         body: bodyString,
       },
-    );
+    ),
+    (err): JSONError => {
+      console.log("Couldn't fetch quiz patch for quiz: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send quiz patch because of in-browser error",
+        };
+      }
 
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
+      return { error: "couldn't send quiz patch because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      return ResultAsync.fromPromise(r.json(), (): JSONError => ({
+        error: "couldn't parse error body",
+      })).andThen((body) => errAsync<null, JSONError>(body as JSONError));
     }
 
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch quiz patch for quiz: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send quiz patch because of in-browser error" };
-    }
-
-    return { error: "couldn't send quiz patch because of unknown error" };
-  }
+    return okAsync(null);
+  });
 }
 
 type QuizFileOrError = QuizFile | JSONError;
