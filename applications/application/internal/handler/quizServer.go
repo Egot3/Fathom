@@ -484,6 +484,8 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 		buf.WriteString(bodytoparse)
 		logger.Info("After writing body", slog.String("Quiz", buf.String()))
 
+		raw := buf.Bytes()
+
 		q, err := quizparser.ParseQuiz(&buf)
 		if err != nil {
 			logger.Error("couldn't parse quiz", slog.String("Error", err.Error()), slog.String("Quiz", buf.String()))
@@ -508,7 +510,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 
 		c := [8]byte(binary.BigEndian.AppendUint64(nil, xxh3.Hash(buf.Bytes())))
 		checksum = &c
-		_, err = io.Copy(f, &buf)
+		_, err = f.Write(raw)
 		if err != nil {
 			logger.Error("unable to write file",
 				slog.String("Error", err.Error()),
