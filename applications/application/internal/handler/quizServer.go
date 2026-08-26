@@ -506,6 +506,16 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write file"})
 			return
 		}
+
+		err = f.Sync()
+		if err != nil {
+			logger.Error("couldn't flush buffer to file",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't to flush buffer to file"})
+			return
+		}
 	}
 
 	var newAbs *string = nil
