@@ -491,7 +491,8 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
 			return
 		}
-		score = &req.Meta.Score
+
+		score = &q.Meta.Score
 		ans = &q.Answer
 
 		c := [8]byte(binary.BigEndian.AppendUint64(nil, xxh3.Hash(buf.Bytes())))
