@@ -75,7 +75,7 @@ ${answer}`);
     <div class="flex flex-col w-1/2">
       <UXInput
         label="Name/path"
-        placeholder="color_theory/sky.md"
+        placeholder="color_theory/sky"
         bind:value={name}
         bind:ready={nameReady}
         message={nameMessage}
