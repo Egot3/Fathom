@@ -413,11 +413,11 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	if req.Body != nil || req.Meta != nil {
 		f, err := os.Open(abs)
 		if err != nil {
-			logger.Error("couldn't open file to start merging",
+			logger.Error("couldn't open file to start reading",
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't open file to start merging"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't open file to start reading"})
 			return
 		}
 		defer f.Close()
@@ -494,6 +494,17 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 
 		score = &q.Meta.Score
 		ans = &q.Answer
+
+		f, err = os.OpenFile(abs, os.O_WRONLY|os.O_TRUNC, 0644) // now not readonly
+		if err != nil {
+			logger.Error("couldn't open file to start merging",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't open file to start merging"})
+			return
+		}
+		defer f.Close()
 
 		c := [8]byte(binary.BigEndian.AppendUint64(nil, xxh3.Hash(buf.Bytes())))
 		checksum = &c
