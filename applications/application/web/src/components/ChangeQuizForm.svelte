@@ -22,7 +22,7 @@
     UUID: string;
   } = $props();
 
-  const pathRegex = /^([a-zA-Z0-9_\-]+)*\/?[a-zA-Z0-9_\-]+\.md$/;
+  const pathRegex = /^([a-zA-Z0-9_\-]+)*\/?[a-zA-Z0-9_\-]+$/;
 
   let statusMessage = $state("");
   let nameMessage: string = $state("");
@@ -74,20 +74,18 @@
 
     callback();
   }
-
-  $inspect(statusMessage);
 </script>
 
 <form onsubmit={ChangeQuiz} class="w-full flex flex-col h-full space-y-2">
   <UXInput
     label="Name/path"
-    placeholder="color_theory/sky.md"
+    placeholder="color_theory/sky"
     bind:value={newName}
     bind:ready={nameReady}
     message={nameMessage}
     checker={(v: string) => {
       nameMessage =
-        "name must have no special symbols and must contain .md extension";
+        "name must have no special symbols and must not contain .md extension";
       return pathRegex.test(v);
     }}
   />
@@ -100,13 +98,7 @@
 
   <label class="label">
     <span class="label-text">Default score</span>
-    <input
-      class="input"
-      type="number"
-      bind:value={score}
-      placeholder="1"
-      required
-    />
+    <input class="input" type="number" bind:value={score} required />
   </label>
 
   {#if kind !== Kind.Input}
