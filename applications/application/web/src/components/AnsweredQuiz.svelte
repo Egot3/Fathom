@@ -9,24 +9,37 @@
     type QuizAnswer,
     type QuizOptions,
   } from "../lib/contracts/quiz";
+  import { InputStatus } from "../lib/statuses/input";
+  import UXInput from "./UXInput.svelte";
 
   const {
     kind,
     options,
     answers,
+    correct,
     disabled = false,
   }: {
     kind: Kind;
     options: QuizOptions;
     answers?: QuizAnswer;
     disabled: boolean;
+    correct?: string;
   } = $props();
 
   $inspect(options);
 </script>
 
 {#if kind === Kind.Input}
-  <input {disabled} value={answers ?? ""} />
+  {#if answers}
+    {const inp = AnswerInput(answers)}
+    <UXInput
+      state={correct === inp ? InputStatus.Treat : InputStatus.Punish}
+      {disabled}
+      value={inp}
+      message={inp}
+      ready={false}
+    />
+  {/if}
 {:else if kind === Kind.Order}
   <div class="space-y-2">
     {#each OptionOrder(options) as option}

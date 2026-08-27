@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Dialog, Popover, usePopover } from "@skeletonlabs/skeleton-svelte";
   import { FetchQuizPost, Kind, type Meta } from "../lib/contracts/quiz";
-  import { ClassForStatus, InputStatus } from "../lib/statuses/input";
   import UXInput from "./UXInput.svelte";
   import Quiz from "./Quiz.svelte";
 

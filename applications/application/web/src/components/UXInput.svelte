@@ -11,10 +11,12 @@
     placeholder = "",
     message = $bindable(""),
     initValue = "",
+    disabled = false,
+    state = $bindable(InputStatus.Idle),
   } = $props();
+  const uid = $props.id();
 
-  const popover = usePopover({ id: (() => label)() });
-  let state = $state(InputStatus.Idle);
+  const popover = $derived(usePopover({ id: uid }));
 
   // svelte-ignore state_referenced_locally
   value = value || initValue;
@@ -29,6 +31,17 @@
   <Popover.Provider value={popover}>
     <Popover.Anchor>
       <input
+        onmouseover={() => {
+          if (message !== "") {
+            popover().setOpen(true);
+          }
+        }}
+        onmouseout={() => {
+          if (message !== "") {
+            popover().setOpen(false);
+          }
+        }}
+        {disabled}
         class={"input border-2 " + ClassForStatus(state)}
         {type}
         onblur={() => {

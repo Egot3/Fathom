@@ -84,9 +84,13 @@
     bind:ready={nameReady}
     message={nameMessage}
     checker={(v: string) => {
-      nameMessage =
-        "name must have no special symbols and must not contain .md extension";
-      return pathRegex.test(v);
+      const pass = pathRegex.test(v);
+      if (!pass) {
+        nameMessage =
+          "name must have no special symbols and must not contain .md extension";
+      }
+
+      return pass;
     }}
   />
 
