@@ -2,12 +2,8 @@
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
-  import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
-  import {
-    FetchTotals,
-    type Answer,
-    type TotalsOrError,
-  } from "../lib/contracts/totals";
+  import { IsJSONError } from "../lib/statuses/jsonerror";
+  import { FetchTotals, type TotalsOrError } from "../lib/contracts/totals";
   import PeekDialog from "./PeekDialog.svelte";
   import PeekTotal from "./PeekTotal.svelte";
 
@@ -84,6 +80,15 @@
                     }
                     title="Totals peeker"
                   >
+                    <div class="flex">
+                      <h2 class="text-2xl">{total.test_name}</h2>
+                      <div
+                        class="ml-auto text-2xl chip preset-outlined-surface-400-600"
+                      >
+                        {total.score}/{total.max_score}
+                      </div>
+                    </div>
+
                     <PeekTotal
                       userUUID={total.user_uuid}
                       groupUUID={total.group_uuid}

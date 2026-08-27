@@ -27,15 +27,17 @@
       <Dialog.Content
         class="card bg-surface-100-900 w-full max-w-[75dvw] h-full max-h-[75dvh] p-4 space-y-4 shadow-xl"
       >
-        <header class="flex justify-between items-center">
-          <Dialog.Title class="text-lg font-bold">{title}</Dialog.Title>
-          <Dialog.CloseTrigger class="btn-icon hover:preset-tonal">
-            <XIcon class="size-4" />
-          </Dialog.CloseTrigger>
-        </header>
-        {#if open}
-          {@render children()}
-        {/if}
+        <div class="h-full">
+          <header class="flex justify-between items-center">
+            <Dialog.Title class="text-lg font-bold">{title}</Dialog.Title>
+            <Dialog.CloseTrigger class="btn-icon hover:preset-tonal">
+              <XIcon class="size-4" />
+            </Dialog.CloseTrigger>
+          </header>
+          {#if open}
+            {@render children()}
+          {/if}
+        </div>
       </Dialog.Content>
     </Dialog.Positioner>
   </Portal>

@@ -14,6 +14,7 @@ export type TestTotal = {
   user_name: string;
   score: number;
   finalized_at: Date;
+  max_score: number;
 
   test_uuid: string;
   group_uuid: string;
@@ -28,6 +29,9 @@ export type Answer = {
   chosen: string;
   correct: string;
   submitted_at: Date;
+
+  score: number;
+  max_score: number;
 
   group_name: string;
   quiz_name: string;
