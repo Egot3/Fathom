@@ -9,7 +9,7 @@
   }: {
     title: string;
     children: any;
-    open: boolean;
+    open?: boolean;
   } = $props();
 </script>
 
@@ -34,7 +34,8 @@
               <XIcon class="size-4" />
             </Dialog.CloseTrigger>
           </header>
-          {#if open}
+          {#if open !== false}
+            <!-- if open activates on undefined -->
             {@render children()}
           {/if}
         </div>

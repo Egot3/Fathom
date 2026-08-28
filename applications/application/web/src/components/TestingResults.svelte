@@ -4,7 +4,7 @@
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
   import { IsJSONError } from "../lib/statuses/jsonerror";
   import { FetchTotals, type TotalsOrError } from "../lib/contracts/totals";
-  import PeekDialog from "./PeekDialog.svelte";
+  import PeekDialogBig from "./PeekDialogBig.svelte";
   import PeekTotal from "./PeekTotal.svelte";
 
   let height = $state(0);
@@ -73,7 +73,7 @@
                 <td class="w-1/5">{total.score}</td>
                 <td class="w-1/5">{total.finalized_at}</td>
                 <td class="max-w-0">
-                  <PeekDialog
+                  <PeekDialogBig
                     bind:open={
                       () => focused === ultimateUUID,
                       (v) => (focused = v ? ultimateUUID : "")
@@ -94,7 +94,7 @@
                       groupUUID={total.group_uuid}
                       testUUID={total.test_uuid}
                     />
-                  </PeekDialog>
+                  </PeekDialogBig>
                 </td>
               </tr>
             {/each}

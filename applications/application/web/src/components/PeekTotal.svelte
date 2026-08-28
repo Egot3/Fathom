@@ -33,12 +33,11 @@
       <div>{answers.error}</div>
     {:else}
       <div class="grid grid-cols-12 w-full h-full mt-2">
-        <div class="col-start-1 col-end-9 p-1">
+        <div class="col-start-1 col-end-9 p-3">
           <ParsedQuiz
             UUID={chosenUUID || answers.answers[0].quiz_uuid}
             answerValue={answerValue || answers.answers[0].chosen}
           />
-          <div></div>
         </div>
         <div
           class="col-start-9 col-end-13 bg-surface-600-400 rounded-[0.25rem] p-1"

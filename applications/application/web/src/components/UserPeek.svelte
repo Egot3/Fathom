@@ -24,7 +24,7 @@
   <input
     class="input"
     type="date"
-    value={content.created_at.slice(0, 10)}
+    value={content.created_at?.slice(0, 10)}
     disabled
   />
 </label>
@@ -34,7 +34,7 @@
   <input
     class="input"
     type="date"
-    value={content.updated_at.slice(0, 10)}
+    value={content.updated_at?.slice(0, 10)}
     disabled
   />
 </label>

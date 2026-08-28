@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { render } from "svelte/server";
   import {
     FetchParsedQuiz,
     Kind,
