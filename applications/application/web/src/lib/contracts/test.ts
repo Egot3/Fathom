@@ -1,3 +1,4 @@
+import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { ETagInfo } from "../bgdata/currentlyrunning.svelte";
 import type { JSONError } from "../statuses/jsonerror";
 import type { Quiz } from "./quiz";
@@ -166,14 +167,14 @@ export async function FetchCurrentlyRunningQuizUUIDs(
   }
 }
 
-export type TestsOrError = { tests: Test[]; total: number } | JSONError;
+export type Tests = { tests: Test[]; total: number };
 
-export async function FetchAllTests(
+export function FetchAllTests(
   page: number,
   size: number,
-): Promise<TestsOrError> {
-  try {
-    const rawRes = await TokenizedFetch(
+): ResultAsync<Tests, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
       "https://" +
         import.meta.env.VITE_DOMAIN +
         "/api/v1/test/" +
@@ -187,21 +188,31 @@ export async function FetchAllTests(
           Accept: "application/json",
         },
       },
-    );
+    ),
+    (err): JSONError => {
+      console.log("Couldn't list tests: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't list tests because of in-browser error",
+        };
+      }
 
-    if (!rawRes.ok) {
-      return (await rawRes.json()) as JSONError;
+      return { error: "couldn't list tests because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      return ResultAsync.fromPromise(
+        r.json() as Promise<JSONError>,
+        (): JSONError => ({
+          error: "couldn't parse error body",
+        }),
+      ).andThen((body) => errAsync(body as JSONError));
     }
 
-    const totals = (await rawRes.json()) as { tests: Test[]; total: number };
-    console.log("totals: ", totals);
-    return totals;
-  } catch (err) {
-    console.log(err);
-    return {
-      error: "network error",
-    } as JSONError;
-  }
+    return ResultAsync.fromPromise(r.json(), (): JSONError => ({
+      error: "couldn't parse response body",
+    })).andThen((body: Tests) => okAsync(body));
+  });
 }
 
 type PostTestRequest = {

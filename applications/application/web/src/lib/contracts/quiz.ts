@@ -339,7 +339,7 @@ export function FetchParsedQuiz(
       })).andThen((body) => errAsync<ParsedQuiz, JSONError>(body as JSONError));
     }
     return ResultAsync.fromPromise(r.json(), (): JSONError => ({
-      error: "couldn't parse error body",
+      error: "couldn't parse response body",
     })).andThen((body: ParsedQuizResponse) => {
       const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
       console.log("ETag:", etag);

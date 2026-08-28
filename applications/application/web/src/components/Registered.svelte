@@ -107,10 +107,15 @@
                       >
 
                       <PeekDialogSquare
-                        callback={() => (clickFocused = user.uuid)}
+                        callback={() => {
+                          clickFocused = user.uuid;
+                          console.log("user is", user);
+                        }}
                         title="User peeker"
-                        contentGetter={async () =>
-                          new Promise((res) => res(user))}
+                        contentGetter={async () => {
+                          console.log("user in resolve", user);
+                          return Promise.resolve($state.snapshot(user));
+                        }}
                       >
                         {#snippet children({ content }: { content: User })}
                           <UserPeek {content} />

@@ -7,7 +7,7 @@
     FetchAllTests,
     FetchTest,
     type Test,
-    type TestsOrError,
+    type Tests,
   } from "../lib/contracts/test";
   import CreateDialog from "./CreateDialog.svelte";
   import CreateTestForm from "./CreateTestForm.svelte";
@@ -24,20 +24,32 @@
   let page = $state(1);
   let pageSize = $derived(Math.trunc((height - 39 - 45) / 39));
 
+  let statusMessage = $state("");
+  let loading = $state(true);
+  let listTests: Tests = $state(null as never);
+
   let trigger = $state(0);
   let time: number;
-  const paginatedTestPromises = $derived.by(() => {
+  $effect(() => {
     const p = page;
     const ps = pageSize;
     trigger;
+    loading = true;
 
     console.log("detected change");
     clearTimeout(time);
 
-    return new Promise<TestsOrError>((resolve) => {
-      time = setTimeout(() => {
-        resolve(FetchAllTests(p - 1, ps));
-      }, 500);
+    time = setTimeout(async () => {
+      statusMessage = await FetchAllTests(p - 1, ps)
+        .map((r) => {
+          listTests = r;
+          loading = false;
+          return r;
+        })
+        .match(
+          () => "",
+          (err: JSONError) => err.error,
+        );
     });
   });
 
@@ -49,15 +61,15 @@
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
   bind:clientHeight={height}
 >
-  {#await paginatedTestPromises}
+  {#if loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
-  {:then paginatedTests}
-    {#if IsJSONError(paginatedTests)}
-      <div>{paginatedTests.error}</div>
+  {:else}
+    {#if statusMessage !== ""}
+      <div>{statusMessage}</div>
     {:else}
-      {#if paginatedTests.total == 0}
+      {#if listTests?.total === 0}
         <CreateDialog
           name="Create your first test"
           title="Create your first test"
@@ -78,7 +90,7 @@
           </thead>
 
           <tbody>
-            {#each paginatedTests.tests as test}
+            {#each listTests.tests as test}
               <tr
                 onmouseenter={() => (focused = test.uuid)}
                 onmouseleave={() => (focused = "")}
@@ -146,7 +158,7 @@
 
         <div class="flex justify-between items-center gap-4 w-full self-end">
           <Pagination
-            count={paginatedTests?.total ?? 0}
+            count={listTests?.total ?? 0}
             {pageSize}
             {page}
             onPageChange={(event) => (page = event.page)}
@@ -183,5 +195,5 @@
         </div>
       {/if}
     {/if}
-  {/await}
+  {/if}
 </div>
