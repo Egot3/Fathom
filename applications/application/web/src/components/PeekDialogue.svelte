@@ -1,19 +1,18 @@
 <script lang="ts">
   import { X } from "@lucide/svelte";
   import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
+  import type { Snippet } from "svelte";
 
   const {
     title,
     children,
-    callback = () => {},
     content,
     trigger,
   }: {
     title: string;
     children: any;
-    callback?: () => void;
     trigger: any;
-    content: Promise<unknown>;
+    content?: Promise<unknown>;
   } = $props();
 </script>
 
@@ -39,7 +38,7 @@
         {#await content}
           <div>loading</div>
         {:then content}
-          {@render children({ content })}
+          {@render children?.({ content })}
         {/await}
       </Dialog.Content>
     </Dialog.Positioner>

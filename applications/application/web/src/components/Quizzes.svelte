@@ -76,7 +76,7 @@
 
           <tbody>
             {#each paginatedQuizzes.quizzes as quiz (quiz.uuid)}
-              {@const name = quiz.path.startsWith("/data/quizzes/")
+              {const name = quiz.path.startsWith("/data/quizzes/")
                 ? quiz.path.slice(14)
                 : quiz.path}
               <tr

@@ -16,7 +16,7 @@ export async function TokenizedFetch(
       console.log("session control: ", sessionControl);
       if (sessionControl !== null) {
         const reg = maxAgeRegex.exec(sessionControl);
-        if (reg == null || reg.length < 2) {
+        if (reg === null || reg.length < 2) {
           return res;
         }
         const maxAge = parseInt(reg[1], 10);
