@@ -1,7 +1,3 @@
-import {
-  FetchCurrentlyRunningQuizUUIDs,
-  FetchCurrentlyRunningTestInfo,
-} from "../contracts/test";
 import { IsJSONError, type JSONError } from "../statuses/jsonerror";
 
 export type ETagInfo = {
@@ -20,44 +16,22 @@ type currentlyRunningData = {
 let currentlyRunning: currentlyRunningData | null = $state(null);
 const CurrentlyRunningKey = "currentlyRunning";
 
-export type NullableTestOrError = currentlyRunningData | null | JSONError;
+export function SetCurrentlyRunning(newCRD: currentlyRunningData) {
+  window.localStorage.setItem(CurrentlyRunningKey, JSON.stringify(newCRD));
+  currentlyRunning = newCRD;
+}
 
-export async function GetCurrentlyRunning(): Promise<NullableTestOrError> {
-  if (currentlyRunning !== null) {
-    return currentlyRunning;
+export function GetCurrentlyRunning(): currentlyRunningData | null {
+  if (currentlyRunning === null) {
+    const cached = window.localStorage.getItem(CurrentlyRunningKey);
+    console.log("cached: ", cached);
+    if (cached === null) {
+      return currentlyRunning;
+    }
+
+    return JSON.parse(cached);
   }
 
-  const testInfoResponse = await FetchCurrentlyRunningTestInfo();
-  if (testInfoResponse === null) {
-    currentlyRunning = null;
-    return null;
-  }
-  if (IsJSONError(testInfoResponse)) {
-    return testInfoResponse;
-  }
-
-  const cr: currentlyRunningData = {
-    UUID: testInfoResponse.test.uuid,
-    Name: testInfoResponse.test.name,
-    Deadline: testInfoResponse.deadline,
-    IsPaused: testInfoResponse.isPaused,
-    QuizUUIDs: [] as string[],
-  };
-
-  const ETag = GetCurrentlyRunningCaching()?.ETag;
-  const quizzesResponse = await FetchCurrentlyRunningQuizUUIDs(ETag);
-  if (quizzesResponse === null) {
-    currentlyRunning = null;
-    return null;
-  }
-  if (IsJSONError(quizzesResponse)) {
-    return quizzesResponse;
-  }
-
-  SetCurrentlyRunningCaching(quizzesResponse.Caching);
-
-  cr.QuizUUIDs = quizzesResponse.UUIDs;
-  currentlyRunning = cr;
   return currentlyRunning;
 }
 
@@ -67,13 +41,13 @@ let currentlyRunningCaching: ETagInfo = $state({
 });
 const CurrentlyRunningCaching = "currentlyRunningCaching";
 
-function GetCurrentlyRunningCaching(): ETagInfo | null {
+export function GetCurrentlyRunningCaching(): ETagInfo | null {
   if (
     currentlyRunningCaching.ExpiresAt < new Date() ||
     currentlyRunningCaching.ETag == ""
   ) {
     const cached = window.localStorage.getItem(CurrentlyRunningCaching);
-    if (cached == null) {
+    if (cached === null) {
       return currentlyRunningCaching;
     }
 
@@ -83,10 +57,7 @@ function GetCurrentlyRunningCaching(): ETagInfo | null {
   return currentlyRunningCaching;
 }
 
-function SetCurrentlyRunningCaching(newETagInfo: ETagInfo) {
-  window.localStorage.setItem(
-    CurrentlyRunningCaching,
-    JSON.stringify(newETagInfo),
-  );
-  currentlyRunningCaching = newETagInfo;
+export function SetCurrentlyRunningCaching(newETag: ETagInfo) {
+  window.localStorage.setItem(CurrentlyRunningCaching, JSON.stringify(newETag));
+  currentlyRunningCaching = newETag;
 }

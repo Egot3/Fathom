@@ -1,5 +1,10 @@
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
-import type { ETagInfo } from "../bgdata/currentlyrunning.svelte";
+import {
+  GetCurrentlyRunning,
+  GetCurrentlyRunningCaching,
+  SetCurrentlyRunningCaching,
+  type ETagInfo,
+} from "../bgdata/currentlyrunning.svelte";
 import type { JSONError } from "../statuses/jsonerror";
 import type { Quiz } from "./quiz";
 import { maxAgeRegex, TokenizedFetch } from "./tokenizedFetch";
@@ -76,96 +81,160 @@ export async function FetchCurrentlyRunningTestInfo(): Promise<
   }
 }
 
-export async function FetchCurrentlyRunningQuizUUIDs(
-  ETag?: string,
-): Promise<{ Caching: ETagInfo; UUIDs: string[] } | JSONError | null> {
-  if (ETag === undefined) {
-    try {
-      const res = await TokenizedFetch(
-        "https://" +
-          import.meta.env.VITE_DOMAIN +
-          "/api/v1/test/running/quizzes",
-      );
-      if (!res.ok) {
-        if (res.status === 423) {
-          return null;
-        }
-        return (await res.json()) as JSONError;
-      }
-
-      const etag = res.headers.get("ETag");
-      if (etag == null) {
-        return {
-          UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-          Caching: { ETag: "", ExpiresAt: new Date() },
-        };
-      }
-
-      const reg = maxAgeRegex.exec(res.headers.get("Cache-Control") ?? "");
-      if (reg == null || reg.length < 2) {
-        return {
-          UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-          Caching: { ETag: "", ExpiresAt: new Date() },
-        };
-      }
-      const maxAge = parseInt(reg[1], 10);
-      return {
-        UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-        Caching: {
-          ETag: etag,
-          ExpiresAt: new Date(Date.now() + maxAge * 1000),
-        },
-      };
-    } catch (e) {
-      console.log("couldn't fetch current test info due to unknown error: ", e);
-      return {
-        error: "got network error while fetching current test",
-      } as JSONError;
-    }
-  }
-
-  try {
-    const res = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/running/quizzes",
-      { headers: {} },
-    );
-    if (!res.ok) {
-      if (res.status === 304) {
-        return null;
-      }
-      return (await res.json()) as JSONError;
-    }
-
-    const etag = res.headers.get("ETag");
-    if (etag == null) {
-      return {
-        UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-        Caching: { ETag: "", ExpiresAt: new Date() },
-      };
-    }
-
-    const reg = maxAgeRegex.exec(res.headers.get("Cache-Control") ?? "");
-    if (reg == null || reg.length < 2) {
-      return {
-        UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-        Caching: { ETag: "", ExpiresAt: new Date() },
-      };
-    }
-    const maxAge = parseInt(reg[1], 10);
-    return {
-      UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-      Caching: {
-        ETag: etag,
-        ExpiresAt: new Date(Date.now() + maxAge * 1000),
+export function FetchCurrentlyRunningQuizUUIDs(): ResultAsync<
+  string[],
+  JSONError
+> {
+  const ETagInfo = GetCurrentlyRunningCaching();
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/quizzes`,
+      {
+        headers: ETagInfo
+          ? ETagInfo.ExpiresAt > new Date()
+            ? { "If-None-Match": `"${ETagInfo.ETag}"` }
+            : {}
+          : {},
       },
-    };
-  } catch (e) {
-    console.log("couldn't fetch current test info due to unknown error: ", e);
-    return {
-      error: "got network error while fetching current test",
-    } as JSONError;
-  }
+    ),
+    (err): JSONError => {
+      console.log("Couldn't fetch running test: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch running test because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch running test because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (r.status === 304 && ETagInfo) {
+      const cached = GetCurrentlyRunning();
+      if (cached !== null) return okAsync(cached);
+    }
+    if (r.status === 423) {
+      SetCurrentlyRunningCaching({
+        ETag: "",
+        ExpiresAt: new Date(Date.now() - 100), // the Date.now() - x is used because I am pretty sure someone is still living in the 50-s
+      });
+    }
+    if (!r.ok) {
+      return ResultAsync.fromPromise(r.json(), (): JSONError => ({
+        error: "couldn't parse error body",
+      })).andThen((body) => errAsync<string[], JSONError>(body as JSONError));
+    }
+
+    return ResultAsync.fromPromise(r.json(), (): JSONError => ({
+      error: "couldn't parse response body",
+    })).andThen((r) => {
+      const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
+      const cch = r.headers.get("Cache-Control");
+      const reg = maxAgeRegex.exec(cch);
+      if (reg === null || reg.length < 2) {
+        console.log("couldn't cache the response. Got header: ", cch);
+        return okAsync(r);
+      }
+      const offset = parseInt(reg[1], 10);
+
+      SetCurrentlyRunningCaching({
+        ETag: etag,
+        ExpiresAt: new Date(Date.now() + offset * 1000),
+      });
+
+      return okAsync(r);
+    });
+  });
 }
+
+// export async function FetchCurrentlyRunningQuizUUIDs(
+//   ETag?: string,
+// ): Promise<{ Caching: ETagInfo; UUIDs: string[] } | JSONError | null> {
+//   if (ETag === undefined) {
+//     try {
+//       const res = await TokenizedFetch(
+//         "https://" +
+//           import.meta.env.VITE_DOMAIN +
+//           "/api/v1/test/running/quizzes",
+//       );
+//       if (!res.ok) {
+//         if (res.status === 423) {
+//           return null;
+//         }
+//         return (await res.json()) as JSONError;
+//       }
+
+//       const etag = res.headers.get("ETag");
+//       if (etag == null) {
+//         return {
+//           UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
+//           Caching: { ETag: "", ExpiresAt: new Date() },
+//         };
+//       }
+
+//       const reg = maxAgeRegex.exec(res.headers.get("Cache-Control") ?? "");
+//       if (reg == null || reg.length < 2) {
+//         return {
+//           UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
+//           Caching: { ETag: "", ExpiresAt: new Date() },
+//         };
+//       }
+//       const maxAge = parseInt(reg[1], 10);
+//       return {
+//         UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
+//         Caching: {
+//           ETag: etag,
+//           ExpiresAt: new Date(Date.now() + maxAge * 1000),
+//         },
+//       };
+//     } catch (e) {
+//       console.log("couldn't fetch current test info due to unknown error: ", e);
+//       return {
+//         error: "got network error while fetching current test",
+//       } as JSONError;
+//     }
+//   }
+
+//   try {
+//     const res = await TokenizedFetch(
+//       "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/running/quizzes",
+//       { headers: {} },
+//     );
+//     if (!res.ok) {
+//       if (res.status === 304) {
+//         return null;
+//       }
+//       return (await res.json()) as JSONError;
+//     }
+
+//     const etag = res.headers.get("ETag");
+//     if (etag == null) {
+//       return {
+//         UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
+//         Caching: { ETag: "", ExpiresAt: new Date() },
+//       };
+//     }
+
+//     const reg = maxAgeRegex.exec(res.headers.get("Cache-Control") ?? "");
+//     if (reg == null || reg.length < 2) {
+//       return {
+//         UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
+//         Caching: { ETag: "", ExpiresAt: new Date() },
+//       };
+//     }
+//     const maxAge = parseInt(reg[1], 10);
+//     return {
+//       UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
+//       Caching: {
+//         ETag: etag,
+//         ExpiresAt: new Date(Date.now() + maxAge * 1000),
+//       },
+//     };
+//   } catch (e) {
+//     console.log("couldn't fetch current test info due to unknown error: ", e);
+//     return {
+//       error: "got network error while fetching current test",
+//     } as JSONError;
+//   }
+// }
 
 export type Tests = { tests: Test[]; total: number };
 

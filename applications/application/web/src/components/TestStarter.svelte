@@ -53,7 +53,7 @@
           type="button"
           class={`chip capitalize preset-outlined-surface-400-600 ${chosen === test.uuid ? "preset-tonal-primary" : ""}`}
           onclick={() => {
-            chosen;
+            chosen = test.uuid;
           }}
         >
           {#if chosen === test.uuid}<CheckIcon size={14} />{/if}
@@ -91,5 +91,9 @@
         </Pagination>
       </div>
     {/if}
+    <button disabled={chosen === ""} class="btn preset-filled-brand">
+      Run
+    </button>
+    <!-- hollup, I might rename it. Imagine using screan reader and hearing that -->
   {/if}
 {/if}

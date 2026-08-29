@@ -20,7 +20,7 @@
   let ct = $state<Promise<unknown>>(new Promise(() => {}));
 </script>
 
-<PeekDialogue content={ct} {title} {callback} {children}>
+<PeekDialogue content={ct} {title} {children}>
   {#snippet trigger()}
     <Dialog.Trigger
       onmouseenter={() => (moused = true)}

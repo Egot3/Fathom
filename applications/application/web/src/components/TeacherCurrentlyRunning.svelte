@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { Dialog } from "@skeletonlabs/skeleton-svelte";
   import { GetCurrentlyRunning } from "../lib/bgdata/currentlyrunning.svelte";
   import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
   import ChipSelector from "./ChipSelector.svelte";
+  import PeekDialogue from "./PeekDialogue.svelte";
   import TestStarter from "./TestStarter.svelte";
 
   let currentlyRunningPromise = $state(GetCurrentlyRunning());
@@ -49,13 +51,15 @@
     <div
       class="mt-auto flex flex-col lg:flex-row space-x-0 lg:space-x-1 space-y-1 lg:space-y-0"
     >
-      <button
-        class="btn preset-filled-primary-500"
-        onclick={() => (choosing = true)}>Start new</button
-      >
-      <!-- <PeekDialog title="Test chooser" open={choosing}>
-        <TestStarter></TestStarter>
-      </PeekDialog> -->
+      <PeekDialogue title="Test starter">
+        {#snippet trigger()}
+          <Dialog.Trigger
+            class="btn preset-filled-primary-500"
+            onclick={() => (choosing = true)}>Start new</Dialog.Trigger
+          >
+        {/snippet}
+        <TestStarter />
+      </PeekDialogue>
 
       <button class="btn preset-outlined-error-500" disabled={!loaded}
         >End test</button
