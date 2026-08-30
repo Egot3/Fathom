@@ -43,7 +43,7 @@
   );
 </script>
 
-<div class="grid gap-2 w-full place-items-center h-full overflow-auto">
+<div class="w-full h-full overflow-auto gap-2">
   {#await paginatedGroupPromises}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
@@ -56,7 +56,7 @@
         {#each paginatedGroups.groups as group (group.uuid)}
           <button
             type="button"
-            class={`chip capitalize preset-outlined-surface-400-600 ${chosen.has(group.uuid) ? "preset-tonal-primary" : ""}`}
+            class={`chip preset-outlined-surface-400-600 ${chosen.has(group.uuid) ? "preset-tonal-primary" : ""}`}
             onclick={() => {
               if (chosen.has(group.uuid)) {
                 chosen.delete(group.uuid);
