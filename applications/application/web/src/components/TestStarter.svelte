@@ -1,10 +1,25 @@
 <script lang="ts">
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
-  import { FetchAllTests, type Tests } from "../lib/contracts/test";
+  import {
+    FetchAllTests,
+    FetchTestStart,
+    type Tests,
+  } from "../lib/contracts/test";
   import type { JSONError } from "../lib/statuses/jsonerror";
   import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "@lucide/svelte";
+  import { SvelteSet } from "svelte/reactivity";
+  import GroupChips from "./GroupChips.svelte";
 
-  let chosen = $state("");
+  const { callback }: { callback: () => void } = $props();
+
+  let hours: number = $state(0);
+  let minutes: number = $state(0);
+  let seconds: number = $state(0);
+
+  let chosenTest = $state("");
+  let chosenGroups: SvelteSet<string> = $state(new SvelteSet<string>());
+  let duration: string = $derived(`${hours}h${minutes}m${seconds}s`);
+
   let page = $state(1);
   let pageSize = $state(5);
 
@@ -37,6 +52,39 @@
         );
     });
   });
+
+  async function startTest() {
+    if (chosenTest === "") {
+      statusMessage = "can't run test with no test selected";
+      return;
+    }
+    if (chosenGroups.size === 0) {
+      statusMessage = "can't run test with no groups selected";
+      return;
+    }
+    if (duration === "0h0m0s") {
+      statusMessage = "can't run test with no duration";
+      return;
+    }
+
+    statusMessage = await FetchTestStart(
+      chosenTest,
+      duration,
+      Array.from(chosenGroups),
+    ).match(
+      (r) => {
+        callback();
+        return "";
+      },
+      (e) => e.error,
+    );
+
+    console.log("resp got");
+
+    return;
+  }
+
+  $inspect(duration);
 </script>
 
 {#if loading}
@@ -51,12 +99,12 @@
       {#each listTests.tests as test (test.uuid)}
         <button
           type="button"
-          class={`chip capitalize preset-outlined-surface-400-600 ${chosen === test.uuid ? "preset-tonal-primary" : ""}`}
+          class={`chip preset-outlined-surface-400-600 ${chosenTest === test.uuid ? "preset-tonal-primary" : ""}`}
           onclick={() => {
-            chosen = test.uuid;
+            chosenTest = test.uuid;
           }}
         >
-          {#if chosen === test.uuid}<CheckIcon size={14} />{/if}
+          {#if chosenTest === test.uuid}<CheckIcon size={14} />{/if}
           <span>{test.name}</span>
         </button>
       {/each}
@@ -90,8 +138,49 @@
           </Pagination.NextTrigger>
         </Pagination>
       </div>
+
+      <GroupChips bind:chosen={chosenGroups} />
+
+      <form action="">
+        <fieldset>
+          <legend></legend>
+          <label class="label">
+            <span class="label-text">Hours</span>
+            <input
+              type="number"
+              class="input border-2"
+              min="0"
+              bind:value={hours}
+            />
+          </label>
+          <label class="label">
+            <span class="label-text">Minutes</span>
+            <input
+              type="number"
+              class="input border-2"
+              min="0"
+              bind:value={minutes}
+            />
+          </label>
+          <label class="label">
+            <span class="label-text">Seconds</span>
+            <input
+              type="number"
+              class="input border-2"
+              min="0"
+              bind:value={seconds}
+            />
+          </label>
+        </fieldset>
+      </form>
     {/if}
-    <button disabled={chosen === ""} class="btn preset-filled-brand">
+    <button
+      disabled={chosenTest === "" ||
+        chosenGroups.size === 0 ||
+        duration === "0h0m0s"}
+      class="btn preset-filled-brand"
+      onclick={startTest}
+    >
       Run
     </button>
     <!-- hollup, I might rename it. Imagine using screan reader and hearing that -->

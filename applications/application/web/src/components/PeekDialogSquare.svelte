@@ -27,7 +27,6 @@
       onmouseleave={() => (moused = false)}
       onclick={() => {
         callback();
-        console.log("cgetter being called");
         ct = contentGetter();
       }}
       class="btn mb-0 mt-0 preset-filled-surface-300-700 hover:preset-filled-primary-300-700 aspect-square h-auto w-auto p-1 m-px"

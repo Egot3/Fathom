@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Popover, usePopover } from "@skeletonlabs/skeleton-svelte";
   import { ClassForStatus, InputStatus } from "../lib/statuses/input";
+  import { onMount } from "svelte";
 
   let {
     value = $bindable(""),
@@ -18,8 +19,9 @@
 
   const popover = $derived(usePopover({ id: uid }));
 
-  // svelte-ignore state_referenced_locally
-  value = value || initValue;
+  onMount(() => {
+    value = value || initValue;
+  });
 
   $effect(() => {
     ready = checker(value);

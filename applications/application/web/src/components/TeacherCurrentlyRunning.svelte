@@ -1,16 +1,32 @@
 <script lang="ts">
   import { Dialog } from "@skeletonlabs/skeleton-svelte";
-  import { GetCurrentlyRunning } from "../lib/bgdata/currentlyrunning.svelte";
   import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
   import ChipSelector from "./ChipSelector.svelte";
   import PeekDialogue from "./PeekDialogue.svelte";
   import TestStarter from "./TestStarter.svelte";
+  import {
+    FetchCurrentlyRunningTestInfo,
+    type Test,
+  } from "../lib/contracts/test";
 
-  let currentlyRunningPromise = $state(GetCurrentlyRunning());
+  let currentlyRunningPromise: Promise<
+    | {
+        test: Test;
+        deadline: Date;
+        isPaused: boolean;
+      }
+    | JSONError
+    | null
+  > = $state(null as never);
+  let trig = $state(0);
+
+  $effect(() => {
+    trig;
+
+    currentlyRunningPromise = FetchCurrentlyRunningTestInfo();
+  });
 
   let loaded = $state(false);
-
-  let choosing = $state(false);
 </script>
 
 <article class="flex flex-col h-full space-y-5">
@@ -27,19 +43,19 @@
         <button
           class="btn preset-filled-warning-500"
           onclick={() => {
-            currentlyRunningPromise = GetCurrentlyRunning();
+            currentlyRunningPromise = FetchCurrentlyRunningTestInfo();
           }}>Reload?</button
         >
       {:else}
         {(loaded = true)}
-        <p>Test {currentlyRunning.Name}</p>
+        <p>Test {currentlyRunning.test.name}</p>
         <div class="flex space-x-1">
-          Deadline: {currentlyRunning.Deadline}
+          Deadline: {currentlyRunning.deadline}
           <button class="chip preset-outlined-primary-500">Extend</button>
         </div>
         <ChipSelector
           options={["running", "paused"]}
-          selected={currentlyRunning.IsPaused ? 1 : 0}
+          selected={currentlyRunning.isPaused ? 1 : 0}
         ></ChipSelector>
 
         <div class="flex space-x-1">
@@ -55,10 +71,14 @@
         {#snippet trigger()}
           <Dialog.Trigger
             class="btn preset-filled-primary-500"
-            onclick={() => (choosing = true)}>Start new</Dialog.Trigger
+            onclick={() => {}}>Start new</Dialog.Trigger
           >
         {/snippet}
-        <TestStarter />
+        <TestStarter
+          callback={() => {
+            trig++;
+          }}
+        />
       </PeekDialogue>
 
       <button class="btn preset-outlined-error-500" disabled={!loaded}

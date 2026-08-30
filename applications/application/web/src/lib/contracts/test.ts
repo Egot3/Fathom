@@ -455,11 +455,7 @@ export async function FetchTestPrune(
 
   try {
     const response = await TokenizedFetch(
-      "https://" +
-        import.meta.env.VITE_DOMAIN +
-        "/api/v1/test/" +
-        testUUID +
-        "/quizzes",
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/quizzes`,
       {
         method: "DELETE",
         headers: {
@@ -484,4 +480,56 @@ export async function FetchTestPrune(
 
     return { error: "couldn't send quiz patch because of unknown error" };
   }
+}
+
+type TestStartRequest = {
+  duration: string;
+  test_uuid: string;
+  group_uuids: string[];
+};
+
+/** @param duration - time in go's duration string. ex: 1h30m6s. Ex on what it can't understand: 2:05, PT1H30M6S, green
+ */
+export function FetchTestStart(
+  UUID: string,
+  duration: string,
+  groupUUIDs: string[],
+): ResultAsync<null, JSONError> {
+  const body: string = JSON.stringify({
+    test_uuid: UUID,
+    duration: duration,
+    group_uuids: groupUUIDs,
+  } as TestStartRequest);
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/start`,
+      {
+        method: "POST",
+        body: body,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "*/*;q=0", //those who nose
+        },
+      },
+    ),
+    (err): JSONError => {
+      console.log("Couldn't fetch quiz patch for quiz: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send quiz patch because of in-browser error",
+        };
+      }
+
+      return { error: "couldn't send quiz patch because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
+        console.log("couldn't parse error's body: ", err);
+        return { error: "couldn't parse error's body" };
+      }).andThen((e: JSONError) => errAsync(e));
+    }
+
+    return okAsync(null);
+  });
 }
