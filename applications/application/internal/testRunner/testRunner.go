@@ -53,6 +53,7 @@ type concreteTestRunner struct {
 	TestUUID   uuid.UUID
 	GroupUUIDs uuid.UUIDs
 	checksum   uint64
+	giveup     chan struct{}
 }
 
 func NewTestRunner(i do.Injector) (TestRunner, error) {
@@ -79,30 +80,36 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 	)
 
 	logger.Debug("starting runner...")
-	ultimateChecksum := make([]uint64, len(tr.quizzes))
+	ultimateChecksum := make([]uint64, len(quizPaths))
 	quizzes := make([]quiz.Quiz, len(quizPaths))
 	for i, path := range quizPaths {
-		if !filepath.IsAbs(path) {
-			return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
-		}
-		f, err := os.Open(path)
+		err := func() error {
+			if !filepath.IsAbs(path) {
+				return fmt.Errorf("unsupported path scheme %q: only local paths are currently supported", path) //registry is not implemented
+			}
+			f, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			quiz, err := quizparser.ParseQuiz(f)
+			if err != nil {
+				return fmt.Errorf("parsing quiz at %q: %w", path, err)
+			}
+			quiz.UUID = quizUUIDs[i]
+
+			quiz.Checksum, err = hashutils.HashFile(f)
+			if err != nil {
+				return err
+			}
+			ultimateChecksum[i] = quiz.Checksum
+			quizzes[i] = *quiz
+			return nil
+		}()
 		if err != nil {
 			return err
 		}
-		defer f.Close()
-
-		quiz, err := quizparser.ParseQuiz(f)
-		if err != nil {
-			return fmt.Errorf("parsing quiz at %q: %w", path, err)
-		}
-		quiz.UUID = quizUUIDs[i]
-
-		quiz.Checksum, err = hashutils.HashFile(f)
-		if err != nil {
-			return err
-		}
-		ultimateChecksum = append(ultimateChecksum, quiz.Checksum)
-		quizzes[i] = *quiz
 	}
 
 	tr.mu.Lock()
@@ -120,17 +127,21 @@ func (tr *concreteTestRunner) Start(ctx context.Context, duration time.Duration,
 	tr.generation++
 	gen := tr.generation
 
-	tr.timer = time.AfterFunc(time.Until(tr.deadline), func() {
-		tr.cleanup(gen)
-	})
+	tr.timer = time.NewTimer(time.Until(tr.deadline))
+
+	tr.giveup = make(chan struct{})
+	stop := tr.giveup
+
+	go func(gen uint64, t *time.Timer, stop <-chan struct{}) {
+		select {
+		case <-t.C:
+			tr.cleanup(gen)
+		case <-stop:
+			tr.cleanup(gen)
+		}
+		logger.Info("test stopped!")
+	}(gen, tr.timer, stop)
 	tr.mu.Unlock()
-
-	go func() {
-
-		<-tr.timer.C
-		tr.cleanup(gen)
-
-	}()
 
 	return nil
 }
@@ -140,10 +151,9 @@ func (tr *concreteTestRunner) cleanup(gen uint64) {
 	defer tr.mu.Unlock()
 	if tr.generation == gen {
 		tr.quizzes = nil
-		if tr.cancel != nil {
-			tr.cancel()
-			tr.cancel = nil
-		}
+
+		tr.giveup = nil
+
 		tr.TestUUID = uuid.Nil
 		tr.checksum = 0
 	}
@@ -153,7 +163,7 @@ func (tr *concreteTestRunner) Get(quizUUID uuid.UUID) (*quiz.Quiz, error) {
 	tr.mu.RLock()
 	defer tr.mu.RUnlock()
 
-	if tr.cancel == nil {
+	if tr.giveup == nil {
 		return nil, ErrRunnerInactive
 	}
 
@@ -169,9 +179,9 @@ func (tr *concreteTestRunner) Get(quizUUID uuid.UUID) (*quiz.Quiz, error) {
 func (tr *concreteTestRunner) Stop() {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
-	if tr.cancel != nil {
-		tr.cancel()
-		tr.cancel = nil
+	if tr.giveup != nil {
+		close(tr.giveup)
+		tr.giveup = nil
 	}
 	if tr.timer != nil {
 		tr.timer.Stop()
@@ -187,7 +197,7 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUID
 	}
 
 	tr.mu.RLock()
-	if tr.cancel == nil { // reading a bunch of files might fry the potato
+	if tr.giveup == nil { // reading a bunch of files might fry the potato
 		tr.mu.RUnlock()
 		return ErrRunnerInactive
 	}
@@ -215,7 +225,7 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUID
 
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
-	if tr.cancel == nil { //TOCTOU
+	if tr.giveup == nil { //TOCTOU
 		return ErrRunnerInactive
 	}
 	tr.quizzes = append(tr.quizzes, quizzes...)
@@ -230,12 +240,11 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUID
 	return nil
 }
 
-// remember: parioal deletion, return 200 207 OR 404
 func (tr *concreteTestRunner) RemoveQuiz(uuids uuid.UUIDs) error {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 
-	if tr.cancel == nil {
+	if tr.giveup == nil {
 		return ErrRunnerInactive
 	}
 
@@ -264,7 +273,7 @@ func (tr *concreteTestRunner) ExtendTime(duration time.Duration) error {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 
-	if tr.cancel == nil {
+	if tr.giveup == nil {
 		return ErrRunnerInactive
 	}
 
@@ -284,7 +293,7 @@ func (tr *concreteTestRunner) Pause() error {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 
-	if tr.cancel == nil {
+	if tr.giveup == nil {
 		return ErrRunnerInactive
 	}
 	if tr.isPaused {
@@ -303,7 +312,7 @@ func (tr *concreteTestRunner) Pause() error {
 func (tr *concreteTestRunner) Resume() error {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
-	if tr.cancel == nil {
+	if tr.giveup == nil {
 		return ErrRunnerInactive
 	}
 	if !tr.isPaused {
@@ -314,16 +323,16 @@ func (tr *concreteTestRunner) Resume() error {
 	tr.deadline = tr.deadline.Add(sincePause)
 
 	if sincePause <= 0 {
-		tr.cancel()
-		tr.cancel = nil
+		tr.giveup <- struct{}{}
+		tr.giveup = nil
 		tr.quizzes = nil
 		tr.isPaused = false
 		return ErrRunnerInactive
 	}
 
 	if time.Until(tr.deadline) <= 0 {
-		tr.cancel()
-		tr.cancel = nil
+		tr.giveup <- struct{}{}
+		tr.giveup = nil
 		tr.quizzes = nil
 		tr.isPaused = false
 		return ErrRunnerExpired
@@ -346,7 +355,7 @@ func (tr *concreteTestRunner) Deadline() (*time.Time, error) {
 	tr.mu.RLock()
 	defer tr.mu.RUnlock()
 
-	if tr.cancel == nil {
+	if tr.giveup == nil {
 		return nil, ErrRunnerInactive
 	}
 
