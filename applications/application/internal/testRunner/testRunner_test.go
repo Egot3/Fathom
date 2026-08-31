@@ -1,17 +1,21 @@
-package testrunner
+package testrunner_test
 
 import (
+	"log/slog"
 	"os"
 	"testing"
 	"time"
 
+	charmlog "github.com/charmbracelet/log"
+	"github.com/egot3/fathom/internal/logging"
+	testrunner "github.com/egot3/fathom/internal/testRunner"
 	"github.com/egot3/fathom/internal/testutils"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
 	"github.com/stretchr/testify/require"
 )
 
-func TestTestRunner_Start(t *testing.T) {
+func TestRunner_Start(t *testing.T) {
 	t.Parallel()
 
 	quizUUID, err := uuid.NewV7()
@@ -27,16 +31,25 @@ func TestTestRunner_Start(t *testing.T) {
 	require.NoError(t, err)
 
 	i := do.New()
-	do.Provide(i, NewTestRunner)
+	do.Provide(i, testrunner.NewTestRunner)
 
 	t.Run("Valid start", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
-		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
+		ctx := logging.WithLogger(t.Context(), slog.New(charmlog.NewWithOptions(os.Stderr, charmlog.Options{
+			Level: charmlog.DebugLevel,
+		})))
+
+		err = r.Start(ctx, 15*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
+
+		deadline, err := r.Deadline()
+		require.NoError(t, err)
+		require.Equal(t, r.CurrentTestUUID(), testUUID)
+		require.WithinDuration(t, *deadline, time.Now().Add(15*time.Second), 2*time.Second)
 	})
 
 	t.Run("Invalid start", func(t *testing.T) {
@@ -61,10 +74,11 @@ func TestTestRunner_Start(t *testing.T) {
 				t.Run(tC.desc, func(t *testing.T) {
 					i := i.Scope(tC.desc)
 
-					r := do.MustInvoke[TestRunner](i)
+					r := do.MustInvoke[testrunner.TestRunner](i)
 
 					err := r.Start(t.Context(), time.Minute, tC.quizPathes, tC.quizUUIDs, nil, testUUID)
 					require.Error(t, err)
+					t.Log(err.Error())
 				})
 			}
 
@@ -72,9 +86,9 @@ func TestTestRunner_Start(t *testing.T) {
 
 		t.Run("Not found", func(t *testing.T) {
 			i := do.New()
-			do.Provide(i, NewTestRunner)
+			do.Provide(i, testrunner.NewTestRunner)
 
-			r := do.MustInvoke[TestRunner](i)
+			r := do.MustInvoke[testrunner.TestRunner](i)
 
 			err = r.Start(t.Context(), 10*time.Second, []string{"/unknown.md"}, quizUUIDs, nil, testUUID)
 			require.Error(t, err)
@@ -82,9 +96,9 @@ func TestTestRunner_Start(t *testing.T) {
 
 		t.Run("Not absolute", func(t *testing.T) {
 			i := do.New()
-			do.Provide(i, NewTestRunner)
+			do.Provide(i, testrunner.NewTestRunner)
 
-			r := do.MustInvoke[TestRunner](i)
+			r := do.MustInvoke[testrunner.TestRunner](i)
 
 			err = r.Start(t.Context(), 10*time.Second, []string{"./unknown.md"}, quizUUIDs, nil, testUUID)
 			require.Error(t, err)
@@ -92,7 +106,7 @@ func TestTestRunner_Start(t *testing.T) {
 	})
 }
 
-func TestTestRunner_Get(t *testing.T) {
+func TestRunner_Get(t *testing.T) {
 	t.Parallel()
 
 	quizUUID, err := uuid.NewV7()
@@ -108,13 +122,13 @@ func TestTestRunner_Get(t *testing.T) {
 	require.NoError(t, err)
 
 	i := do.New()
-	do.Provide(i, NewTestRunner)
+	do.Provide(i, testrunner.NewTestRunner)
 
 	t.Run("Valid get", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
@@ -128,9 +142,9 @@ func TestTestRunner_Get(t *testing.T) {
 
 	t.Run("Not found", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
@@ -139,11 +153,11 @@ func TestTestRunner_Get(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, q)
 
-		require.ErrorIs(t, err, ErrQuizNotCached)
+		require.ErrorIs(t, err, testrunner.ErrQuizNotCached)
 	})
 }
 
-func TestTestRunner_Stop(t *testing.T) {
+func TestRunner_Stop(t *testing.T) {
 	t.Parallel()
 
 	quizUUID, err := uuid.NewV7()
@@ -159,31 +173,31 @@ func TestTestRunner_Stop(t *testing.T) {
 	require.NoError(t, err)
 
 	i := do.New()
-	do.Provide(i, NewTestRunner)
+	do.Provide(i, testrunner.NewTestRunner)
 
 	t.Run("Valid stop", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
 
 		r.Stop() /* this doesn't even return an error
 		because there is no "invalid stop"
-		Server always have valid testRunner
+		Server always have valid testrunner.TestRunner
 		running multiple stops will do nothing */
 
 		q, err := r.Get(quizUUID)
 		require.Error(t, err)
 		require.Nil(t, q)
 
-		require.ErrorIs(t, err, ErrRunnerInactive)
+		require.ErrorIs(t, err, testrunner.ErrRunnerInactive)
 	})
 }
 
-func TestTestRunner_Upsert(t *testing.T) {
+func TestRunner_Upsert(t *testing.T) {
 	t.Parallel()
 
 	quizUUID, err := uuid.NewV7()
@@ -199,13 +213,13 @@ func TestTestRunner_Upsert(t *testing.T) {
 	require.NoError(t, err)
 
 	i := do.New()
-	do.Provide(i, NewTestRunner)
+	do.Provide(i, testrunner.NewTestRunner)
 
 	t.Run("Valid upsert", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
@@ -235,9 +249,9 @@ func TestTestRunner_Upsert(t *testing.T) {
 	t.Run("Unequal", func(t *testing.T) {
 		t.Run("No UUID", func(t *testing.T) {
 			i := do.New()
-			do.Provide(i, NewTestRunner)
+			do.Provide(i, testrunner.NewTestRunner)
 
-			r := do.MustInvoke[TestRunner](i)
+			r := do.MustInvoke[testrunner.TestRunner](i)
 
 			err = r.Start(t.Context(), 10*time.Second, nil, nil, nil, testUUID)
 			require.NoError(t, err)
@@ -249,14 +263,14 @@ func TestTestRunner_Upsert(t *testing.T) {
 			err = r.UpsertQuiz([]string{newQ.Name()}, nil)
 			require.Error(t, err)
 
-			require.ErrorIs(t, err, ErrBadQuizzes)
+			require.ErrorIs(t, err, testrunner.ErrBadQuizzes)
 		})
 
 		t.Run("No path", func(t *testing.T) {
 			i := do.New()
-			do.Provide(i, NewTestRunner)
+			do.Provide(i, testrunner.NewTestRunner)
 
-			r := do.MustInvoke[TestRunner](i)
+			r := do.MustInvoke[testrunner.TestRunner](i)
 
 			err = r.Start(t.Context(), 10*time.Second, nil, nil, nil, testUUID)
 			require.NoError(t, err)
@@ -267,15 +281,15 @@ func TestTestRunner_Upsert(t *testing.T) {
 			err = r.UpsertQuiz(nil, uuid.UUIDs{newQUUID})
 			require.Error(t, err)
 
-			require.ErrorIs(t, err, ErrBadQuizzes)
+			require.ErrorIs(t, err, testrunner.ErrBadQuizzes)
 		})
 	})
 
 	t.Run("Empty", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 10*time.Second, nil, nil, nil, testUUID)
 		require.NoError(t, err)
@@ -285,7 +299,7 @@ func TestTestRunner_Upsert(t *testing.T) {
 	})
 }
 
-func TestTestRunner_Remove(t *testing.T) {
+func TestRunner_Remove(t *testing.T) {
 	t.Parallel()
 	quizUUID := uuid.Must(uuid.NewV7())
 	quizUUIDs := uuid.UUIDs{quizUUID}
@@ -299,13 +313,13 @@ func TestTestRunner_Remove(t *testing.T) {
 	require.NoError(t, err)
 
 	i := do.New()
-	do.Provide(i, NewTestRunner)
+	do.Provide(i, testrunner.NewTestRunner)
 
 	t.Run("Valid remove", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
@@ -323,14 +337,14 @@ func TestTestRunner_Remove(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, q)
 
-		require.ErrorIs(t, err, ErrQuizNotCached)
+		require.ErrorIs(t, err, testrunner.ErrQuizNotCached)
 	})
 
 	t.Run("Empty", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 10*time.Second, nil, nil, nil, testUUID)
 		require.NoError(t, err)
@@ -341,9 +355,9 @@ func TestTestRunner_Remove(t *testing.T) {
 
 	t.Run("Not found", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
@@ -356,7 +370,7 @@ func TestTestRunner_Remove(t *testing.T) {
 
 		err = r.RemoveQuiz(uuid.UUIDs{uuid.Nil})
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrQuizNotCached)
+		require.ErrorIs(t, err, testrunner.ErrQuizNotCached)
 
 		q, err = r.Get(quizUUID)
 		require.NoError(t, err)
@@ -366,7 +380,7 @@ func TestTestRunner_Remove(t *testing.T) {
 	})
 }
 
-func TestTestRunner_Deadline(t *testing.T) {
+func TestRunner_Deadline(t *testing.T) {
 	quizUUID := uuid.Must(uuid.NewV7())
 	quizUUIDs := uuid.UUIDs{quizUUID}
 
@@ -380,9 +394,9 @@ func TestTestRunner_Deadline(t *testing.T) {
 
 	t.Run("Valid deadline", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		timeEnd := time.Now().Add(10 * time.Second)
 		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
@@ -395,9 +409,9 @@ func TestTestRunner_Deadline(t *testing.T) {
 
 	t.Run("Not active", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 0*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
@@ -408,11 +422,11 @@ func TestTestRunner_Deadline(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, ti)
 
-		require.ErrorIs(t, err, ErrRunnerInactive)
+		require.ErrorIs(t, err, testrunner.ErrRunnerInactive)
 	})
 }
 
-func TestTestRunner_CurrentTestUUID(t *testing.T) {
+func TestRunner_CurrentTestUUID(t *testing.T) {
 	quizUUID := uuid.Must(uuid.NewV7())
 	quizUUIDs := uuid.UUIDs{quizUUID}
 
@@ -426,9 +440,9 @@ func TestTestRunner_CurrentTestUUID(t *testing.T) {
 
 	t.Run("Valid deadline", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
@@ -439,16 +453,16 @@ func TestTestRunner_CurrentTestUUID(t *testing.T) {
 
 	t.Run("Not active", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		ti := r.CurrentTestUUID()
 		require.Equal(t, uuid.Nil, ti)
 	})
 }
 
-func TestTestRunner_Extend(t *testing.T) {
+func TestRunner_Extend(t *testing.T) {
 	quizUUID := uuid.Must(uuid.NewV7())
 	quizUUIDs := uuid.UUIDs{quizUUID}
 
@@ -462,9 +476,9 @@ func TestTestRunner_Extend(t *testing.T) {
 
 	t.Run("Valid extension", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		timeEnd := time.Now().Add(10 * time.Second)
 		err = r.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, nil, testUUID)
@@ -480,9 +494,9 @@ func TestTestRunner_Extend(t *testing.T) {
 
 	t.Run("Not active", func(t *testing.T) {
 		i := do.New()
-		do.Provide(i, NewTestRunner)
+		do.Provide(i, testrunner.NewTestRunner)
 
-		r := do.MustInvoke[TestRunner](i)
+		r := do.MustInvoke[testrunner.TestRunner](i)
 
 		err = r.Start(t.Context(), 0*time.Second, quizPathes, quizUUIDs, nil, testUUID)
 		require.NoError(t, err)
@@ -492,11 +506,11 @@ func TestTestRunner_Extend(t *testing.T) {
 		err := r.ExtendTime(time.Hour)
 		require.Error(t, err)
 
-		require.ErrorIs(t, err, ErrRunnerInactive)
+		require.ErrorIs(t, err, testrunner.ErrRunnerInactive)
 	})
 }
 
-func TestTestRunner_PauseResume(t *testing.T) {
+func TestRunner_PauseResume(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Valid pause resumance", func(t *testing.T) {
@@ -505,7 +519,7 @@ func TestTestRunner_PauseResume(t *testing.T) {
 			t.Parallel()
 
 			i := do.New()
-			do.Provide(i, NewTestRunner)
+			do.Provide(i, testrunner.NewTestRunner)
 
 			quizUUID := uuid.Must(uuid.NewV7())
 			quizUUIDs := uuid.UUIDs{quizUUID}
@@ -518,7 +532,7 @@ func TestTestRunner_PauseResume(t *testing.T) {
 			testUUID, err := uuid.NewV7()
 			require.NoError(t, err)
 
-			r := do.MustInvoke[TestRunner](i)
+			r := do.MustInvoke[testrunner.TestRunner](i)
 
 			err = r.Start(t.Context(), 10*time.Minute, quizPathes, quizUUIDs, nil, testUUID)
 			require.NoError(t, err)
@@ -556,9 +570,9 @@ func TestTestRunner_PauseResume(t *testing.T) {
 			t.Parallel()
 
 			i := do.New()
-			do.Provide(i, NewTestRunner)
+			do.Provide(i, testrunner.NewTestRunner)
 
-			r := do.MustInvoke[TestRunner](i)
+			r := do.MustInvoke[testrunner.TestRunner](i)
 
 			quizUUID := uuid.Must(uuid.NewV7())
 			quizUUIDs := uuid.UUIDs{quizUUID}
@@ -611,9 +625,9 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 			t.Run("Paused", func(t *testing.T) {
 				i := do.New()
-				do.Provide(i, NewTestRunner)
+				do.Provide(i, testrunner.NewTestRunner)
 
-				r := do.MustInvoke[TestRunner](i)
+				r := do.MustInvoke[testrunner.TestRunner](i)
 
 				quizUUID := uuid.Must(uuid.NewV7())
 				quizUUIDs := uuid.UUIDs{quizUUID}
@@ -634,17 +648,17 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 				err = r.Pause()
 				require.Error(t, err)
-				require.ErrorIs(t, err, ErrRunnerPaused)
+				require.ErrorIs(t, err, testrunner.ErrRunnerPaused)
 			})
 			t.Run("Inactive", func(t *testing.T) {
 				i := do.New()
-				do.Provide(i, NewTestRunner)
+				do.Provide(i, testrunner.NewTestRunner)
 
-				r := do.MustInvoke[TestRunner](i)
+				r := do.MustInvoke[testrunner.TestRunner](i)
 
 				err := r.Pause()
 				require.Error(t, err)
-				require.ErrorIs(t, err, ErrRunnerInactive)
+				require.ErrorIs(t, err, testrunner.ErrRunnerInactive)
 			})
 		})
 
@@ -653,9 +667,9 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 			t.Run("Running", func(t *testing.T) {
 				i := do.New()
-				do.Provide(i, NewTestRunner)
+				do.Provide(i, testrunner.NewTestRunner)
 
-				r := do.MustInvoke[TestRunner](i)
+				r := do.MustInvoke[testrunner.TestRunner](i)
 
 				quizUUID := uuid.Must(uuid.NewV7())
 				quizUUIDs := uuid.UUIDs{quizUUID}
@@ -679,18 +693,18 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 				err = r.Resume()
 				require.Error(t, err)
-				require.ErrorIs(t, err, ErrRunnerNotPaused)
+				require.ErrorIs(t, err, testrunner.ErrRunnerNotPaused)
 			})
 
 			t.Run("Inactive", func(t *testing.T) {
 				i := do.New()
-				do.Provide(i, NewTestRunner)
+				do.Provide(i, testrunner.NewTestRunner)
 
-				r := do.MustInvoke[TestRunner](i)
+				r := do.MustInvoke[testrunner.TestRunner](i)
 
 				err := r.Resume()
 				require.Error(t, err)
-				require.ErrorIs(t, err, ErrRunnerInactive)
+				require.ErrorIs(t, err, testrunner.ErrRunnerInactive)
 			})
 		})
 
@@ -699,9 +713,9 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 			t.Run("Expiration during pause", func(t *testing.T) {
 				i := do.New()
-				do.Provide(i, NewTestRunner)
+				do.Provide(i, testrunner.NewTestRunner)
 
-				r := do.MustInvoke[TestRunner](i)
+				r := do.MustInvoke[testrunner.TestRunner](i)
 
 				quizUUID := uuid.Must(uuid.NewV7())
 				quizUUIDs := uuid.UUIDs{quizUUID}
@@ -739,9 +753,9 @@ func TestTestRunner_PauseResume(t *testing.T) {
 			})
 			t.Run("Manual expiration during pause", func(t *testing.T) {
 				i := do.New()
-				do.Provide(i, NewTestRunner)
+				do.Provide(i, testrunner.NewTestRunner)
 
-				r := do.MustInvoke[TestRunner](i)
+				r := do.MustInvoke[testrunner.TestRunner](i)
 
 				quizUUID := uuid.Must(uuid.NewV7())
 				quizUUIDs := uuid.UUIDs{quizUUID}
@@ -765,7 +779,7 @@ func TestTestRunner_PauseResume(t *testing.T) {
 
 				err = r.Resume()
 				require.Error(t, err)
-				require.ErrorIs(t, err, ErrRunnerExpired)
+				require.ErrorIs(t, err, testrunner.ErrRunnerExpired)
 			})
 		})
 	})

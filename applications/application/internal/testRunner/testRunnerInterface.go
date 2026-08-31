@@ -6,6 +6,7 @@ import (
 
 	"github.com/egot3/fathom/internal/quiz"
 	"github.com/google/uuid"
+	"github.com/samber/do/v2"
 )
 
 type TestRunner interface {
@@ -26,3 +27,7 @@ type TestRunner interface {
 	GetAll() uuid.UUIDs
 	Checksum() uint64
 }
+
+var TestRunnerPackage = do.Package(
+	do.Lazy(NewTestRunner),
+)
