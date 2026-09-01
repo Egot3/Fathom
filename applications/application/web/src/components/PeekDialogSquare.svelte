@@ -2,7 +2,6 @@
   import { Eye, EyeClosed, X } from "@lucide/svelte";
   import { Dialog } from "@skeletonlabs/skeleton-svelte";
   import PeekDialogue from "./PeekDialogue.svelte";
-  import type { Snippet } from "svelte";
 
   const {
     title,
