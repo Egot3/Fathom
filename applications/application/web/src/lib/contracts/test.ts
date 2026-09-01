@@ -53,32 +53,58 @@ export async function FetchTest(testUUID: string): Promise<Test | JSONError> {
   }
 }
 
-export async function FetchCurrentlyRunningTestInfo(): Promise<
-  { test: Test; deadline: Date; isPaused: boolean } | JSONError | null
-> {
-  try {
-    const res = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/running",
-    );
-    if (!res.ok) {
-      if (res.status === 423) {
-        return null;
-      }
-      return (await res.json()) as JSONError;
-    }
+export type TestInfo = {
+  test: Test;
+  deadline: Date;
+  isPaused: boolean;
+};
 
-    const respJSON = (await res.json()) as GetTestResponse;
-    return {
-      test: respJSON.test,
-      deadline: new Date(respJSON.deadline),
-      isPaused: respJSON.is_paused,
-    };
-  } catch (e) {
-    console.log("couldn't fetch current test info due to unknown error: ", e);
-    return {
-      error: "got network error while fetching current test",
-    } as JSONError;
-  }
+export function FetchCurrentlyRunningTestInfo(): ResultAsync<
+  TestInfo | null,
+  JSONError
+> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running`,
+    ),
+    (err): JSONError => {
+      console.log(
+        "couldn't fetch current test info due to unknown error: ",
+        err,
+      );
+      return {
+        error: "got network error while fetching current test",
+      } as JSONError;
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      if (r.status === 423) {
+        return okAsync(null);
+      }
+      return ResultAsync.fromPromise(
+        r.json() as Promise<JSONError>,
+        (err): JSONError => {
+          console.log("couldn't parse error body: ", err);
+          return { error: "couldn't parse error body" };
+        },
+      ).andThen((body) => {
+        return errAsync<TestInfo | null, JSONError>(body as JSONError);
+      });
+    }
+    return ResultAsync.fromPromise(
+      r.json() as Promise<GetTestResponse>,
+      (err): JSONError => {
+        console.log("couldn't parse response body: ", err);
+        return { error: "couldn't parse response body" };
+      },
+    ).andThen((r) =>
+      okAsync({
+        test: r.test,
+        deadline: new Date(r.deadline),
+        isPaused: r.is_paused,
+      } as TestInfo),
+    );
+  });
 }
 
 export function FetchCurrentlyRunningQuizUUIDs(): ResultAsync<

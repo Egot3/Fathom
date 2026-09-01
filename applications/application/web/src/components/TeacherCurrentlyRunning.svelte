@@ -7,47 +7,53 @@
   import {
     FetchCurrentlyRunningTestInfo,
     type Test,
+    type TestInfo,
   } from "../lib/contracts/test";
 
-  let currentlyRunningPromise: Promise<
-    | {
-        test: Test;
-        deadline: Date;
-        isPaused: boolean;
-      }
-    | JSONError
-    | null
-  > = $state(null as never);
+  let currentlyRunning: TestInfo | null = $state(null);
   let trig = $state(0);
+  let loading = $state(true);
+  let statusMessage = $state("");
 
   $effect(() => {
     trig;
 
-    currentlyRunningPromise = FetchCurrentlyRunningTestInfo();
-  });
+    loading = true;
 
-  let loaded = $state(false);
+    (async () => {
+      currentlyRunning = await FetchCurrentlyRunningTestInfo()
+        .andTee((r) => {
+          loading = false;
+        })
+        .match(
+          (r) => r,
+          (err) => {
+            statusMessage = err.error;
+            return null;
+          },
+        );
+    })();
+  });
 </script>
 
 <article class="flex flex-col h-full space-y-5">
-  {#await currentlyRunningPromise}
+  {#if loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
-  {:then currentlyRunning}
-    {#if currentlyRunning === null}
-      <div>NOTHING</div>
+  {:else}
+    {#if statusMessage !== ""}
+      <div>{statusMessage}</div>
+      <button
+        class="btn preset-filled-warning-500"
+        onclick={() => {
+          trig++;
+        }}>Reload?</button
+      >
     {:else}
-      {#if IsJSONError(currentlyRunning)}
-        <div>{currentlyRunning.error}</div>
-        <button
-          class="btn preset-filled-warning-500"
-          onclick={() => {
-            currentlyRunningPromise = FetchCurrentlyRunningTestInfo();
-          }}>Reload?</button
-        >
+      {#if currentlyRunning === null}
+        <div>NOTHING</div>
       {:else}
-        {(loaded = true)}
         <p>Test {currentlyRunning.test.name}</p>
         <div class="flex space-x-1">
           Deadline: {currentlyRunning.deadline}
@@ -81,10 +87,10 @@
         />
       </PeekDialogue>
 
-      <button class="btn preset-outlined-error-500" disabled={!loaded}
+      <button class="btn preset-outlined-error-500" disabled={!loading}
         >End test</button
       >
       <!-- not stop as it could be confused for pause -->
     </div>
-  {/await}
+  {/if}
 </article>
