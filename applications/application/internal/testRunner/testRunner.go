@@ -63,6 +63,8 @@ func NewTestRunner(i do.Injector) (TestRunner, error) {
 }
 
 func (tr *concreteTestRunner) CurrentTestUUID() uuid.UUID {
+	tr.mu.RLock()
+	defer tr.mu.RUnlock()
 	return tr.TestUUID
 }
 
@@ -346,7 +348,7 @@ func (tr *concreteTestRunner) Resume() error {
 
 func (tr *concreteTestRunner) IsPaused() bool {
 	tr.mu.RLock()
-	defer tr.mu.Unlock()
+	defer tr.mu.RUnlock()
 
 	return tr.isPaused
 }
