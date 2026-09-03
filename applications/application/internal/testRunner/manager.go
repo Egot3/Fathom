@@ -13,9 +13,15 @@ import (
 	"github.com/zeebo/xxh3"
 )
 
+type runnerInfo struct {
+	TestUUID   uuid.UUID
+	GroupUUIDs uuid.UUIDs
+}
+
 type Manager struct {
-	mu      sync.RWMutex
-	runners map[uint64]TestRunner
+	mu         sync.RWMutex
+	runners    map[uint64]TestRunner
+	runnerInfo map[uint64]runnerInfo
 }
 
 func (m *Manager) Start(ctx context.Context, duration time.Duration,
@@ -30,6 +36,9 @@ func (m *Manager) Start(ctx context.Context, duration time.Duration,
 	}
 	tr := &concreteTestRunner{}
 	m.runners[key] = tr
+	m.runnerInfo[key] = runnerInfo{
+		TestUUID: testUUID, GroupUUIDs: groupUUIDs,
+	}
 	m.mu.Unlock()
 
 	if err := tr.start(ctx, duration, quizPaths, quizUUIDs, groupUUIDs, testUUID,
@@ -45,6 +54,7 @@ func (m *Manager) remove(key uint64, tr *concreteTestRunner) {
 	defer m.mu.Unlock()
 	if cur, ok := m.runners[key]; ok && cur == tr {
 		delete(m.runners, key)
+		delete(m.runnerInfo, key)
 	}
 }
 
@@ -55,6 +65,7 @@ func (m *Manager) Get(key uint64) (TestRunner, bool) {
 	return tr, ok
 }
 
+// deterministic key derivement
 func deriveKey(groupUUIDs uuid.UUIDs, testUUID uuid.UUID) uint64 {
 	grStrings := groupUUIDs.Strings()
 	slices.SortFunc(grStrings, strings.Compare)
@@ -65,6 +76,27 @@ func deriveKey(groupUUIDs uuid.UUIDs, testUUID uuid.UUID) uint64 {
 	}
 	checksums[len(checksums)-1] = xxh3.Hash(testUUID[:])
 	return hashutils.HashHashes(checksums)
+}
+
+func (m *Manager) GetAll() []uint64 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	keys := make([]uint64, len(m.runners))
+	i := 0
+	for key, _ := range m.runners {
+		keys[i] = key
+		i++
+	}
+
+	return keys
+}
+
+func (m *Manager) GetInfo(key uint64) (runnerInfo, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	ri, ok := m.runnerInfo[key]
+	return ri, ok
 }
 
 func NewManager(i do.Injector) (Manager, error) {
