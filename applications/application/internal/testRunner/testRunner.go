@@ -62,6 +62,13 @@ func NewTestRunner(i do.Injector) (TestRunner, error) {
 	return &concreteTestRunner{}, nil
 }
 
+func (tr *concreteTestRunner) CurrentTestUUID() uuid.UUID {
+	tr.mu.RLock()
+	defer tr.mu.RUnlock()
+
+	return tr.TestUUID
+}
+
 func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID, cleanup func()) error {
 	if len(quizPaths) != len(quizUUIDs) {
 		return ErrBadQuizzes
