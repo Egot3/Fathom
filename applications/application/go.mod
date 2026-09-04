@@ -1,6 +1,6 @@
 module github.com/egot3/fathom
 
-go 1.26.3
+go 1.27.0
 
 require (
 	github.com/go-chi/cors v1.2.2

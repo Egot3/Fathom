@@ -155,39 +155,24 @@ func (r *bunTotalRepository) AnswerScore(ctx context.Context, userUUID, testUUID
 	return score, nil
 }
 
-func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (*contracts.Total, error) {
-	total := new(contracts.Total)
-	err := r.db.NewSelect().Model((*models.UserGroupsTests)(nil)).
-		Where("test_uuid = ?", testUUID).
-		Where("user_uuid = ?", userUUID).
-		Where("group_uuid = ?", groupUUID).Scan(ctx, total)
+func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (contracts.Total, error) {
+	total := contracts.Total{}
+	err := r.db.NewSelect().TableExpr("users_groups_tests AS ugt").
+		Where("ugt.test_uuid = ?", testUUID).
+		Where("ugt.user_uuid = ?", userUUID).
+		Where("ugt.group_uuid = ?", groupUUID).
+		Join("JOIN users_groups_tests_quiz_answers AS ugtqa").
+		JoinOn("ugt.test_uuid = ugtqa.test_uuid").JoinOn("ugt.group_uuid = ugtqa.group_uuid").JoinOn("ugt.user_uuid = ugtqa.user_uuid").
+		Join("JOIN quizzes AS q").JoinOn("q.uuid = ugtqa.quiz_uuid").
+		ColumnExpr("COALESCE(SUM(q.score), 0) AS max_score").
+		Scan(ctx, &total)
 	if err != nil {
-		return nil, err
+		return contracts.Total{}, err
 	}
 
 	return total, nil
 }
 
-// those unholy twins are ABSOLUTLY THE SAME
-// even after 100 tests they get the same results
-// But because alpha introduces c(another allocant) will stick to beta
-// alpha
-/* func (r *bunTotalRepository) UserTotals(ctx context.Context, userUUID uuid.UUID) ([]models.UserGroupsTests, error) {
-	var totals []models.UserGroupsTests
-	c, err := r.db.NewSelect().Model(&totals).
-		Where("user_uuid = ?", userUUID).ScanAndCount(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if c == 0 {
-		return nil, sql.ErrNoRows
-	}
-
-	return totals, nil
-} */
-
-// beta
 func (r *bunTotalRepository) UserTotals(ctx context.Context, userUUID uuid.UUID, page, size int) ([]contracts.Total, int, error) {
 	var totals []contracts.Total
 	total, err := r.db.NewSelect().TableExpr("users_groups_tests AS ugt").
@@ -265,10 +250,16 @@ func (r *bunTotalRepository) AnswersInTest(ctx context.Context, userUUID, testUU
 
 	total, err := r.db.NewSelect().TableExpr("users_groups_tests_quiz_answers AS ugtqa").
 		Where("ugtqa.user_uuid = ?", userUUID).
-		ColumnExpr("ugtqa.score AS score, ugtqa.test_uuid AS test_uuid, ugtqa.group_uuid AS group_uuid, ugtqa.quiz_uuid AS quiz_uuid, ugtqa.user_uuid AS user_uuid, ugtqa.answered_at AS answered_at").
+		ColumnExpr("ugtqa.score AS score, "+
+			"ugtqa.test_uuid AS test_uuid, "+
+			"ugtqa.group_uuid AS group_uuid, "+
+			"ugtqa.quiz_uuid AS quiz_uuid, "+
+			"ugtqa.user_uuid AS user_uuid, "+
+			"ugtqa.answered_at AS answered_at, "+
+			"ugtqa.answer_value AS answer_value"). //wow
 		Join("JOIN groups AS g").JoinOn("g.uuid = ugtqa.group_uuid").ColumnExpr("g.name AS group_name").
 		Join("JOIN tests AS t").JoinOn("t.uuid = ugtqa.test_uuid").ColumnExpr("t.name AS test_name").
-		Join("JOIN quizzes AS q").JoinOn("q.uuid = ugtqa.quiz_uuid").ColumnExpr("q.correct_answer AS correct").
+		Join("JOIN quizzes AS q").JoinOn("q.uuid = ugtqa.quiz_uuid").ColumnExpr("q.correct_answer AS correct").ColumnExpr("q.path AS quiz_name").ColumnExpr("q.score AS max_score").
 		OrderBy("ugtqa.answered_at", bun.OrderDesc).
 		Offset(page*size).Limit(size).
 		ScanAndCount(ctx, &answers)

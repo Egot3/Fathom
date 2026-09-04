@@ -3,10 +3,12 @@ package quiz
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/models"
+	"github.com/egot3/fathom/internal/quiz"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
 	"github.com/uptrace/bun"
@@ -96,7 +98,7 @@ func (r *bunQuizRepository) UpdateChecksum(ctx context.Context, quizUUID uuid.UU
 	return err
 }
 
-func (r *bunQuizRepository) PatchQuiz(ctx context.Context, quizUUID uuid.UUID, path *string, score *int) error {
+func (r *bunQuizRepository) PatchQuiz(ctx context.Context, quizUUID uuid.UUID, path *string, score *int, answer *quiz.QuizAnswers, checksum *[8]byte) error {
 	q := r.db.NewUpdate().Model((*models.Quiz)(nil)).
 		Where("uuid = ?", quizUUID)
 
@@ -105,6 +107,17 @@ func (r *bunQuizRepository) PatchQuiz(ctx context.Context, quizUUID uuid.UUID, p
 	}
 	if score != nil {
 		q = q.Set("score = ?", score)
+	}
+	if answer != nil {
+		ans, err := json.Marshal(answer)
+		if err != nil {
+			return err
+		}
+
+		q = q.Set("correct_answer = ?", string(ans))
+	}
+	if checksum != nil {
+		q = q.Set("checksum = ?", checksum)
 	}
 
 	_, err := q.Exec(ctx)

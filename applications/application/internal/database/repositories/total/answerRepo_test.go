@@ -575,6 +575,7 @@ func TestAnswer_Totals(t *testing.T) {
 			require.Equal(t, 1, total)
 			require.Len(t, totals, 1)
 			require.Equal(t, totals[0].Score, score)
+			t.Logf("%+v", totals)
 		})
 	})
 }

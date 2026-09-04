@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	mrand "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -31,6 +32,7 @@ import (
 
 func RegisterM2M(db *bun.DB) {
 	db.RegisterModel((*models.TestsQuizzes)(nil))
+	db.RegisterModel((*models.GroupsUsers)(nil))
 }
 
 func TestTestHandler_AddQuizzes(t *testing.T) {
@@ -1518,5 +1520,80 @@ func TestTestHandler_List(t *testing.T) {
 
 			require.Equal(t, 422, rec.Code)
 		})
+	})
+}
+
+func TestTestHandler_Start(t *testing.T) {
+	t.Parallel()
+
+	token, err := jwtutils.GenerateToken(uuid.Nil, true)
+	require.NoError(t, err)
+
+	t.Run("Valid", func(t *testing.T) {
+		t.Parallel()
+
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+			testrunner.TestRunnerPackage,
+		)
+		do.ProvideValue(i, slog.New(charmlog.NewWithOptions(os.Stderr, charmlog.Options{
+			Level: charmlog.DebugLevel,
+		})))
+
+		do.Provide(i, handler.NewTestService)
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		tr := do.MustInvoke[testrunner.TestRunner](i)
+
+		db := do.MustInvoke[*bun.DB](i)
+		RegisterM2M(db)
+
+		test := models.Test{
+			Name: rand.Text(),
+		}
+		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
+		require.NoError(t, err)
+
+		group := models.Group{
+			Name: rand.Text(),
+		}
+		err = db.NewInsert().Model(&group).Returning("*").Scan(t.Context())
+		require.NoError(t, err)
+
+		d := mrand.N(5 * time.Hour)
+
+		reqJSON, err := json.Marshal(contracts.StartRequest{
+			TestUUID:    test.UUID,
+			Duration:    d.String(),
+			GroupsUUIDs: uuid.UUIDs{group.UUID},
+		})
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/api/v1/test/running/start",
+			bytes.NewReader(reqJSON),
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
+		})
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusNoContent, rec.Code)
+
+		deadline, err := tr.Deadline()
+		require.NoError(t, err)
+		require.Equal(t, tr.CurrentTestUUID(), test.UUID)
+		require.WithinDuration(t, *deadline, time.Now().Add(d), time.Minute)
 	})
 }

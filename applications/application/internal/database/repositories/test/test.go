@@ -40,17 +40,17 @@ func (r *bunTestRepository) TestPathes(ctx context.Context, UUIDs uuid.UUIDs) ([
 	return pathes, nil
 }
 
-func (r *bunTestRepository) CreateTest(ctx context.Context, name string) (*models.Test, error) {
+func (r *bunTestRepository) CreateTest(ctx context.Context, name string) (models.Test, error) {
 	var test = models.Test{Name: name}
 	err := r.db.NewInsert().Ignore().Model(&test).Returning("name").Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &carefulness.Conflict{Conflictor: "name"}
+			return models.Test{}, &carefulness.Conflict{Conflictor: "name"}
 		}
-		return nil, err
+		return models.Test{}, err
 	}
 
-	return &test, nil
+	return test, nil
 }
 
 func (r *bunTestRepository) BundleQuizzesToTest(ctx context.Context, testUUID uuid.UUID, quizUUIDs uuid.UUIDs) error {
@@ -139,14 +139,14 @@ func (r *bunTestRepository) PruneQuizzesFromTest(ctx context.Context, testUUID u
 	return nil
 }
 
-func (r *bunTestRepository) Test(ctx context.Context, UUID uuid.UUID) (*models.Test, error) {
+func (r *bunTestRepository) Test(ctx context.Context, UUID uuid.UUID) (models.Test, error) {
 	var test = models.Test{UUID: UUID}
 	err := r.db.NewSelect().Model(&test).WherePK().Relation("Quizzes").Scan(ctx)
 	if err != nil {
-		return nil, err
+		return models.Test{}, err
 	}
 
-	return &test, nil
+	return test, nil
 }
 
 func (r *bunTestRepository) DeleteTest(ctx context.Context, UUID uuid.UUID) error {

@@ -21,10 +21,12 @@ type Answer struct {
 	Correct     string    `json:"correct" bun:"correct"`
 	SubmittedAt time.Time `json:"submitted_at" bun:"answered_at"`
 
-	Score float32 `json:"score" bun:"score"`
+	Score    float32 `json:"score" bun:"score"`
+	MaxScore uint    `json:"max_score" bun:"max_score"`
 
 	GroupName string `json:"group_name" bun:"group_name"`
 	TestName  string `json:"test_name" bun:"test_name"`
+	QuizName  string `json:"quiz_name" bun:"quiz_name"`
 }
 
 type Total struct {
@@ -36,6 +38,7 @@ type Total struct {
 	UserName    string    `json:"user_name" bun:"user_name"`
 	FinalizedAt time.Time `json:"finalized_at" bun:"finalized_at"`
 	Score       float64   `json:"score" bun:"score"`
+	MaxScore    uint      `json:"max_score" bun:"max_score"`
 }
 
 type AnswerResponse struct {
