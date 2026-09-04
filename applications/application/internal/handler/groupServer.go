@@ -42,7 +42,7 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -161,7 +161,7 @@ func (c *chiService) GetGroup(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.GetGroupResponse{
-		Group: *group,
+		Group: group,
 	})
 }
 
@@ -190,7 +190,7 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -269,7 +269,7 @@ func (c *chiService) PostGroup(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -369,7 +369,7 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}

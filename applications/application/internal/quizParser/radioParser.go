@@ -10,23 +10,24 @@ import (
 )
 
 func RadioParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
-	quizP.Options.Radio = quiz.OptionsRadioAndCheck{Choices: make([]quiz.Choice, 2)}
+	quizP.Options.Radio = quiz.OptionsRadioAndCheck{Choices: []quiz.Choice{}}
 	quizP.Answer.Radio.ChoiceIdx = -1
-	for id := 0; ; id++ {
+
+	for {
 		line := reader.Text()
 		trimmedLine := strings.TrimSpace(line)
 
-		if strings.HasPrefix(trimmedLine, "- [x]") {
+		if ans, f := strings.CutPrefix(trimmedLine, "- [x]"); f {
 			if quizP.Answer.Radio.ChoiceIdx != -1 {
 				return fmt.Errorf("radio can't have multiple answers")
 			}
 
-			opt := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- [x] "))
+			id := len(quizP.Options.Radio.Choices)
 			quizP.Answer.Radio.ChoiceIdx = id
 
-			quizP.Options.Radio.Choices = append(quizP.Options.Radio.Choices, quiz.Choice{Id: id, Label: opt})
-		} else if strings.HasPrefix(trimmedLine, "- [ ]") {
-			opt := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- [ ] "))
+			quizP.Options.Radio.Choices = append(quizP.Options.Radio.Choices, quiz.Choice{Id: id, Label: ans})
+		} else if opt, f := strings.CutPrefix(trimmedLine, "- [ ]"); f {
+			id := len(quizP.Options.Radio.Choices)
 
 			quizP.Options.Radio.Choices = append(quizP.Options.Radio.Choices, quiz.Choice{Id: id, Label: opt})
 		}

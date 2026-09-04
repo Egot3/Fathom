@@ -52,7 +52,7 @@ func (c *chiService) AddQuizzes(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -111,7 +111,7 @@ func (c *chiService) AddQuizzesToRunning(w http.ResponseWriter, r *http.Request)
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -221,7 +221,7 @@ func (c *chiService) ExtendTest(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -294,7 +294,7 @@ func (c *chiService) GetTest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.GetTestResponse{Test: *test})
+	json.NewEncoder(w).Encode(contracts.GetTestResponse{Test: test})
 }
 
 // PatchTest implements [Service].
@@ -322,7 +322,7 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -430,7 +430,7 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -529,7 +529,7 @@ func (c *chiService) RemoveQuizzes(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -592,7 +592,7 @@ func (c *chiService) RemoveQuizzesFromRunning(w http.ResponseWriter, r *http.Req
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -668,7 +668,7 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, carefulness.ErrMalformedRequest) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 			return
 		}
@@ -920,7 +920,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, carefulness.ErrMalformedRequest):
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError()) // no err check as рукописи не горят
+			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
 
 		case errors.Is(err, carefulness.ErrUnprocessableRequest):
 			w.WriteHeader(422)
@@ -1145,7 +1145,7 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.RunningInfoResponse{
-		Test:     *test,
+		Test:     test,
 		Deadline: *deadline,
 		IsPaused: c.runner.IsPaused(),
 	})

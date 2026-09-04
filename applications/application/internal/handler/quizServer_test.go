@@ -21,6 +21,7 @@ import (
 	"github.com/egot3/fathom/internal/handler"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/quiz"
+	quizparser "github.com/egot3/fathom/internal/quizParser"
 	testrunner "github.com/egot3/fathom/internal/testRunner"
 	"github.com/egot3/fathom/internal/testutils"
 	"github.com/egot3/fathom/server"
@@ -477,195 +478,22 @@ func TestQuizHandler_Delete(t *testing.T) {
 	})
 }
 
-func TestQuizHandler_Put(t *testing.T) {
-	t.Parallel()
-
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
-
-	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
-
-		i := testutils.NewTestInjector(t,
-			repositories.RepositoryPackage,
-		)
-		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
-
-		path := "/home/ETS/programming/Fathom/application/internal/testutils/put.md"
-		var quizUUID uuid.UUID
-		score := 1
-		db := do.MustInvoke[*bun.DB](i)
-		err = db.NewInsert().Model(&models.Quiz{
-			Path:          path,
-			Checksum:      [8]byte{},
-			Score:         score,
-			CorrectAnswer: "x",
-		}).Returning("uuid").
-			Scan(t.Context(), &quizUUID)
-		require.NoError(t, err)
-
-		do.Provide(i, handler.NewTestService)
-		router, err := server.ChiServer(i)
-		require.NoError(t, err)
-
-		check := rand.Text()
-		body :=
-			fmt.Sprintf(`# quiz!
-		there is a body! %v
-		[yeah!]`, check)
-		reqJSON, _ := json.Marshal(contracts.PutQuizRequest{
-			Body: body,
-			Meta: quiz.Frontmatter{
-				Kind:  quiz.Input,
-				Score: 1,
-			},
-		})
-		req := httptest.NewRequest(
-			http.MethodPut,
-			fmt.Sprintf("/api/v1/quiz/%v", quizUUID),
-			bytes.NewReader(reqJSON),
-		)
-		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
-		rec := httptest.NewRecorder()
-
-		router.ServeHTTP(rec, req)
-
-		bodyString := rec.Body.String()
-		require.Equal(t, http.StatusNoContent, rec.Code, bodyString)
-
-		require.FileExists(t, path)
-		b, err := os.ReadFile(path)
-		require.NoError(t, err)
-
-		require.Contains(t, string(b), body, string(b))
-	})
-
-	t.Run("Orphans", func(t *testing.T) {
-		meta := quiz.Frontmatter{
-			Kind:  quiz.Input,
-			Score: 1,
-		}
-		testCases := []struct {
-			desc string
-			name string
-			body string
-			meta quiz.Frontmatter
-		}{
-			{
-				desc: "No name",
-				name: "",
-				body: rand.Text(),
-				meta: meta,
-			},
-			{
-				desc: "No body",
-				name: rand.Text(),
-				body: "",
-				meta: meta,
-			},
-			{
-				desc: "No meta",
-				name: rand.Text(),
-				body: rand.Text(),
-				meta: quiz.Frontmatter{},
-			},
-			{
-				desc: "Nothing",
-				name: "",
-				body: "",
-				meta: quiz.Frontmatter{},
-			},
-		}
-		for _, tC := range testCases {
-			t.Run(tC.desc, func(t *testing.T) {
-				t.Parallel()
-
-				i := testutils.NewTestInjector(t,
-					repositories.RepositoryPackage,
-				)
-				do.ProvideValue(i, slog.Default())
-				do.Provide(i, testrunner.NewTestRunner)
-
-				do.Provide(i, handler.NewTestService)
-				router, err := server.ChiServer(i)
-				require.NoError(t, err)
-
-				var quizUUID uuid.UUID
-				score := 1
-				db := do.MustInvoke[*bun.DB](i)
-				err = db.NewInsert().Model(&models.Quiz{
-					Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
-					Checksum:      [8]byte{},
-					Score:         score,
-					CorrectAnswer: "x",
-				}).Returning("uuid").
-					Scan(t.Context(), &quizUUID)
-				require.NoError(t, err)
-
-				reqJSON, _ := json.Marshal(contracts.PutQuizRequest{
-					Body: tC.body,
-					Meta: tC.meta,
-				})
-				req := httptest.NewRequest(
-					http.MethodPut,
-					fmt.Sprintf("/api/v1/quiz/%v", quizUUID),
-					bytes.NewReader(reqJSON),
-				)
-				req.Header.Set("Content-Type", "application/json")
-				req.AddCookie(&http.Cookie{
-					Name:     "jwt_token",
-					Value:    token,
-					Path:     "/",
-					Expires:  time.Now().Add(jwtutils.JWTTTL),
-					HttpOnly: true,
-					SameSite: http.SameSiteNoneMode,
-					Secure:   true,
-				})
-				rec := httptest.NewRecorder()
-
-				router.ServeHTTP(rec, req)
-
-				bodyString := rec.Body.String()
-				require.Equal(t, http.StatusBadRequest, rec.Code, bodyString)
-			})
-		}
-	})
-}
-
 func TestQuizHandler_Patch(t *testing.T) {
-	t.Parallel()
 
 	token, err := jwtutils.GenerateToken(uuid.Nil, true)
 	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
 		do.Provide(i, testrunner.NewTestRunner)
-
-		file, err := os.CreateTemp(".", "*_tmp.md")
-		require.NoError(t, err)
-		defer file.Close()
 		// defer os.Remove(file.Name())
 
-		template, err := os.ReadFile("/home/ETS/programming/Fathom/application/internal/testutils/placebo.md")
-		require.NoError(t, err)
-
-		_, err = file.Write(template)
+		file := testutils.TestQuiz(t)
+		defer file.Close()
 
 		path, err := filepath.Abs(file.Name())
 		require.NoError(t, err)
@@ -686,12 +514,19 @@ func TestQuizHandler_Patch(t *testing.T) {
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
 
-		newName := rand.Text()
+		tmp, err := os.CreateTemp(".", rand.Text())
+		require.NoError(t, err)
+		defer tmp.Close()
+
+		newName := tmp.Name()
 		newScore := mrand.IntN(25) + 1
 
 		reqJSON, _ := json.Marshal(contracts.PatchQuizRequest{
-			Name:  &newName,
-			Score: &newScore,
+			Name: &newName,
+			Meta: &quiz.Frontmatter{
+				Score: newScore,
+				Kind:  quiz.Input,
+			},
 		})
 		req := httptest.NewRequest(
 			http.MethodPatch,
@@ -725,6 +560,11 @@ func TestQuizHandler_Patch(t *testing.T) {
 			Scan(t.Context(), &scoreCheck)
 
 		require.Equal(t, newScore, scoreCheck)
+
+		q, err := quizparser.ParseQuiz(file)
+		require.NoError(t, err)
+		require.Equal(t, score, q.Meta.Score)
+
 	})
 
 	t.Run("Orphans", func(t *testing.T) {
@@ -752,8 +592,6 @@ func TestQuizHandler_Patch(t *testing.T) {
 		}
 		for _, tC := range testCases {
 			t.Run(tC.desc, func(t *testing.T) {
-				t.Parallel()
-
 				i := testutils.NewTestInjector(t,
 					repositories.RepositoryPackage,
 				)
@@ -789,14 +627,12 @@ func TestQuizHandler_Patch(t *testing.T) {
 					nameJ = &tC.name
 				}
 
-				scoreJ := new(int)
-				if tC.score != 0 {
-					scoreJ = &tC.score
-				}
-
 				reqJSON, _ := json.Marshal(contracts.PatchQuizRequest{
-					Name:  nameJ,
-					Score: scoreJ,
+					Name: nameJ,
+					Meta: &quiz.Frontmatter{
+						Score: tC.score,
+						Kind:  quiz.Input,
+					},
 				})
 				req := httptest.NewRequest(
 					http.MethodPatch,
@@ -831,8 +667,6 @@ func TestQuizHandler_Patch(t *testing.T) {
 
 	t.Run("Zeros", func(t *testing.T) {
 		t.Run("Name", func(t *testing.T) {
-			t.Parallel()
-
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
@@ -872,8 +706,11 @@ func TestQuizHandler_Patch(t *testing.T) {
 			newScore := mrand.IntN(25) + 1
 
 			reqJSON, _ := json.Marshal(contracts.PatchQuizRequest{
-				Name:  &newName,
-				Score: &newScore,
+				Name: &newName,
+				Meta: &quiz.Frontmatter{
+					Score: newScore,
+					Kind:  quiz.Input,
+				},
 			})
 			req := httptest.NewRequest(
 				http.MethodPatch,
@@ -898,8 +735,6 @@ func TestQuizHandler_Patch(t *testing.T) {
 		})
 
 		t.Run("Score", func(t *testing.T) {
-			t.Parallel()
-
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
@@ -939,8 +774,11 @@ func TestQuizHandler_Patch(t *testing.T) {
 			newScore := 0
 
 			reqJSON, _ := json.Marshal(contracts.PatchQuizRequest{
-				Name:  &newName,
-				Score: &newScore,
+				Name: &newName,
+				Meta: &quiz.Frontmatter{
+					Score: newScore,
+					Kind:  quiz.Input,
+				},
 			})
 			req := httptest.NewRequest(
 				http.MethodPatch,
@@ -966,8 +804,6 @@ func TestQuizHandler_Patch(t *testing.T) {
 	})
 
 	t.Run("Invalid score", func(t *testing.T) {
-		t.Parallel()
-
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
@@ -1007,8 +843,11 @@ func TestQuizHandler_Patch(t *testing.T) {
 		newScore := -5423
 
 		reqJSON, _ := json.Marshal(contracts.PatchQuizRequest{
-			Name:  &newName,
-			Score: &newScore,
+			Name: &newName,
+			Meta: &quiz.Frontmatter{
+				Score: newScore,
+				Kind:  quiz.Input,
+			},
 		})
 		req := httptest.NewRequest(
 			http.MethodPatch,
@@ -1045,58 +884,116 @@ func TestQuizHandler_GetParsed(t *testing.T) {
 	do.ProvideValue(i, slog.Default())
 	do.Provide(i, testrunner.NewTestRunner)
 
-	f := testutils.TestQuiz(t)
-
-	var quizUUID uuid.UUID
-	score := 1
-	db := do.MustInvoke[*bun.DB](i)
-	err = db.NewInsert().Model(&models.Quiz{
-		Path:          f.Name(),
-		Checksum:      [8]byte{},
-		Score:         score,
-		CorrectAnswer: "x",
-	}).Returning("uuid").
-		Scan(t.Context(), &quizUUID)
-	require.NoError(t, err)
-
-	err = f.Close()
-	require.NoError(t, err)
-
 	t.Run("Valid", func(t *testing.T) {
-
 		i = i.Scope("valid")
+		t.Run("Input", func(t *testing.T) {
+			i = i.Scope("input")
 
-		do.Provide(i, handler.NewTestService)
-		router, err := server.ChiServer(i)
-		require.NoError(t, err)
+			f := testutils.TestQuiz(t)
 
-		req := httptest.NewRequest(
-			http.MethodGet,
-			fmt.Sprintf("/api/v1/quiz/%v/parsed", quizUUID),
-			nil,
-		)
-		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
+			var quizUUID uuid.UUID
+			score := 1
+			db := do.MustInvoke[*bun.DB](i)
+			err = db.NewInsert().Model(&models.Quiz{
+				Path:          f.Name(),
+				Checksum:      [8]byte{},
+				Score:         score,
+				CorrectAnswer: "x",
+			}).Returning("uuid").
+				Scan(t.Context(), &quizUUID)
+			require.NoError(t, err)
+
+			err = f.Close()
+			require.NoError(t, err)
+
+			do.Provide(i, handler.NewTestService)
+			router, err := server.ChiServer(i)
+			require.NoError(t, err)
+
+			req := httptest.NewRequest(
+				http.MethodGet,
+				fmt.Sprintf("/api/v1/quiz/%v/parsed", quizUUID),
+				nil,
+			)
+			req.Header.Set("Content-Type", "application/json")
+			req.AddCookie(&http.Cookie{
+				Name:     "jwt_token",
+				Value:    token,
+				Path:     "/",
+				Expires:  time.Now().Add(jwtutils.JWTTTL),
+				HttpOnly: true,
+				SameSite: http.SameSiteNoneMode,
+				Secure:   true,
+			})
+			rec := httptest.NewRecorder()
+
+			router.ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+			var contract contracts.ParsedQuizResponse
+			err = json.NewDecoder(rec.Body).Decode(&contract)
+			require.NoError(t, err)
+
+			require.Equal(t, score, contract.Quiz.Meta.Score)
+			require.Equal(t, contract.Quiz.Body, "there is a body!")
 		})
-		rec := httptest.NewRecorder()
 
-		router.ServeHTTP(rec, req)
+		t.Run("Not Input", func(t *testing.T) {
+			i = i.Scope("notInput")
 
-		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+			do.Provide(i, handler.NewTestService)
+			router, err := server.ChiServer(i)
+			require.NoError(t, err)
 
-		var contract contracts.ParsedQuizResponse
-		err = json.NewDecoder(rec.Body).Decode(&contract)
-		require.NoError(t, err)
+			f := testutils.TestRadioQuiz(t)
 
-		require.Equal(t, score, contract.Quiz.Meta.Score)
-		require.Equal(t, contract.Quiz.Body, "there is a body!")
+			var quizUUID uuid.UUID
+			score := 1
+			db := do.MustInvoke[*bun.DB](i)
+			err = db.NewInsert().Model(&models.Quiz{
+				Path:          f.Name(),
+				Checksum:      [8]byte{},
+				Score:         score,
+				CorrectAnswer: "x",
+			}).Returning("uuid").
+				Scan(t.Context(), &quizUUID)
+			require.NoError(t, err)
+
+			err = f.Close()
+			require.NoError(t, err)
+
+			req := httptest.NewRequest(
+				http.MethodGet,
+				fmt.Sprintf("/api/v1/quiz/%v/parsed", quizUUID),
+				nil,
+			)
+			req.Header.Set("Content-Type", "application/json")
+			req.AddCookie(&http.Cookie{
+				Name:     "jwt_token",
+				Value:    token,
+				Path:     "/",
+				Expires:  time.Now().Add(jwtutils.JWTTTL),
+				HttpOnly: true,
+				SameSite: http.SameSiteNoneMode,
+				Secure:   true,
+			})
+			rec := httptest.NewRecorder()
+
+			router.ServeHTTP(rec, req)
+
+			require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+			var contract contracts.ParsedQuizResponse
+			err = json.NewDecoder(rec.Body).Decode(&contract)
+			require.NoError(t, err)
+
+			require.Equal(t, score, contract.Quiz.Meta.Score)
+			require.Equal(t, contract.Quiz.Body, "what's the question?")
+			require.Len(t, contract.Quiz.Options.Radio.Choices, 3)
+			require.Equal(t, contract.Quiz.Answer.Radio.ChoiceIdx, 0)
+		})
+
 	})
 
 	t.Run("Invalid", func(t *testing.T) {

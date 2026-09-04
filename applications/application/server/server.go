@@ -95,7 +95,6 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				r.Group(func(r chi.Router) {
 					r.Use(middlewares.ParseUUID)
 					r.Patch("/{uuid}", svc.PatchQuiz)
-					r.Put("/{uuid}", svc.PutQuiz)
 					r.Get("/{uuid}", svc.GetQuiz)
 					r.Delete("/{uuid}", svc.DeleteQuiz)
 				})
