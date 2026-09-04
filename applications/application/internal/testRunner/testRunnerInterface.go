@@ -10,17 +10,20 @@ import (
 )
 
 type TestRunner interface {
-	start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs, cleanup func()) error
+	start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID, cleanup func()) error
 	Get(quizUUID uuid.UUID) (*quiz.Quiz, error)
 	Stop()
 	ExtendTime(duration time.Duration) error
 	Resume() error
 	Pause() error
 	IsPaused() bool
-	Deadline() (*time.Time, error)
+	Deadline() time.Time
 
+	Groups() uuid.UUIDs
+	Quizzes() uuid.UUIDs
 	GetAll() uuid.UUIDs
 	Checksum() uint64
+	test() uuid.UUID
 }
 
 var TestRunnerPackage = do.Package(

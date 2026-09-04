@@ -2,6 +2,7 @@ package testrunner
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -13,15 +14,9 @@ import (
 	"github.com/zeebo/xxh3"
 )
 
-type runnerInfo struct {
-	TestUUID   uuid.UUID
-	GroupUUIDs uuid.UUIDs
-}
-
 type Manager struct {
-	mu         sync.RWMutex
-	runners    map[uint64]TestRunner
-	runnerInfo map[uint64]runnerInfo
+	mu      sync.RWMutex
+	runners map[uint64]TestRunner
 }
 
 func (m *Manager) Start(ctx context.Context, duration time.Duration,
@@ -36,12 +31,9 @@ func (m *Manager) Start(ctx context.Context, duration time.Duration,
 	}
 	tr := &concreteTestRunner{}
 	m.runners[key] = tr
-	m.runnerInfo[key] = runnerInfo{
-		TestUUID: testUUID, GroupUUIDs: groupUUIDs,
-	}
 	m.mu.Unlock()
 
-	if err := tr.start(ctx, duration, quizPaths, quizUUIDs,
+	if err := tr.start(ctx, duration, quizPaths, quizUUIDs, groupUUIDs, testUUID,
 		func() { m.remove(key, tr) }); err != nil {
 		m.remove(key, tr)
 		return nil, err
@@ -54,7 +46,6 @@ func (m *Manager) remove(key uint64, tr *concreteTestRunner) {
 	defer m.mu.Unlock()
 	if cur, ok := m.runners[key]; ok && cur == tr {
 		delete(m.runners, key)
-		delete(m.runnerInfo, key)
 	}
 }
 
@@ -82,21 +73,33 @@ func (m *Manager) GetAll() []uint64 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	keys := make([]uint64, len(m.runners))
-	i := 0
-	for key, _ := range m.runners {
-		keys[i] = key
-		i++
-	}
-
-	return keys
+	return slices.Collect(maps.Keys(m.runners))
 }
 
-func (m *Manager) GetInfo(key uint64) (runnerInfo, bool) {
+func (m *Manager) IsQuizRunning(searchedUUID uuid.UUID) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	ri, ok := m.runnerInfo[key]
-	return ri, ok
+
+	for _, runner := range m.runners {
+		for _, quiz := range runner.Quizzes() {
+			if quiz == searchedUUID {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (m *Manager) AllTests() uuid.UUIDs {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	testUUIDs := make(uuid.UUIDs, 0, len(m.runners))
+	for _, r := range m.runners {
+		testUUIDs = append(testUUIDs, r.test())
+	}
+
+	return testUUIDs
 }
 
 func NewManager(i do.Injector) (Manager, error) {

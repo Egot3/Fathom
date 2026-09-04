@@ -1162,6 +1162,6 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *chiService) GetAllRunning() uuid.UUIDs {
-	return c.runner.GetAll()
+func (c *chiService) IsRunning(quiz uuid.UUID) bool {
+	return c.manager.IsQuizRunning(quiz)
 }

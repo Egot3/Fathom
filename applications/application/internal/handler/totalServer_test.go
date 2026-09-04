@@ -1136,10 +1136,10 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
-		r := do.MustInvoke[testrunner.TestRunner](i)
+		r := do.MustInvoke[testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -1158,7 +1158,7 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		err := r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
+		_, err := r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
 		require.NoError(t, err)
 
 		_, err = db.NewInsert().Model(&models.GroupsUsers{
@@ -1283,10 +1283,10 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
-		r := do.MustInvoke[testrunner.TestRunner](i)
+		r := do.MustInvoke[testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -1305,7 +1305,7 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		err := r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
+		_, err := r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
 		require.NoError(t, err)
 
 		_, err = db.NewInsert().Model(&models.GroupsUsers{
@@ -1394,10 +1394,10 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
-		r := do.MustInvoke[testrunner.TestRunner](i)
+		r := do.MustInvoke[testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -1420,7 +1420,7 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		err = r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
+		_, err = r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
 		require.NoError(t, err)
 
 		_, err = db.NewInsert().Model(&models.GroupsUsers{
@@ -1537,10 +1537,10 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
-		r := do.MustInvoke[testrunner.TestRunner](i)
+		r := do.MustInvoke[testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -1562,7 +1562,7 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		err = r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
+		_, err = r.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
 		require.NoError(t, err)
 
 		_, err = db.NewInsert().Model(&models.GroupsUsers{
