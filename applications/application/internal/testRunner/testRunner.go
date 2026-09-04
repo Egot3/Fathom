@@ -137,7 +137,7 @@ func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration,
 	return nil
 }
 
-func (tr *concreteTestRunner) test() uuid.UUID {
+func (tr *concreteTestRunner) Test() uuid.UUID {
 	return tr.testUUID
 }
 

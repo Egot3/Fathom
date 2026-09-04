@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/logging"
@@ -28,14 +29,22 @@ func TestNotRunning(uuidGetter func() uuid.UUID) func(http.Handler) http.Handler
 	}
 }
 
-func Running(uuidGetter func() uuid.UUID) func(http.Handler) http.Handler {
+func Running(uuidGetter func(uint64) uuid.UUID) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			logger := logging.LoggerFromContext(r.Context())
 			logger = logger.With(slog.String("layer", "middleware"))
 
+			runnerKey, err := strconv.ParseUint(chi.URLParam(r, "runnerKey"), 10, 64)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest)
+				return
+			}
+			logger = logger.With(slog.Uint64("runner_key", runnerKey))
+
 			logger.Debug("checking if test uuid is running")
-			if uuidGetter() != uuid.Nil {
+			if uuidGetter(runnerKey) != uuid.Nil {
 				next.ServeHTTP(w, r)
 				return
 			}

@@ -98,6 +98,7 @@ type Service interface {
 	AllowedToTest(ctx context.Context, userUUID uuid.UUID, key uint64) (bool, error)
 	GetDeadline(key uint64) (time.Time, error)
 	IsRunning(quiz uuid.UUID) bool
+	GetTestUUID(uint64) uuid.UUID
 }
 
 func NewTestService(i do.Injector) (Service, error) {

@@ -1114,3 +1114,12 @@ func (c *chiService) GetDeadline(key uint64) (time.Time, error) {
 
 	return tr.Deadline(), nil
 }
+
+func (c *chiService) GetTestUUID(key uint64) uuid.UUID {
+	tr, ok := c.manager.Get(key)
+	if !ok {
+		return uuid.Nil
+	}
+
+	return tr.Test()
+}
