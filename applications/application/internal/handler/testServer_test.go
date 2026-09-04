@@ -1591,9 +1591,8 @@ func TestTestHandler_Start(t *testing.T) {
 
 		require.Equal(t, http.StatusNoContent, rec.Code)
 
-		deadline, err := tr.Deadline()
 		require.NoError(t, err)
 		require.Equal(t, tr.CurrentTestUUID(), test.UUID)
-		require.WithinDuration(t, *deadline, time.Now().Add(d), time.Minute)
+		require.WithinDuration(t, tr.Deadline(), time.Now().Add(d), time.Minute)
 	})
 }

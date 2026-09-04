@@ -44,22 +44,24 @@ func (e *NotCachedError) Is(target error) bool {
 }
 
 type concreteTestRunner struct {
-	mu       sync.RWMutex
-	quizzes  []quiz.Quiz
-	timer    *time.Timer
-	isPaused bool
-	deadline time.Time
-	pausedAt time.Time
-	checksum uint64
-	giveup   chan struct{}
-	cleanup  func()
+	mu         sync.RWMutex
+	quizzes    []quiz.Quiz
+	timer      *time.Timer
+	isPaused   bool
+	deadline   time.Time
+	pausedAt   time.Time
+	checksum   uint64
+	giveup     chan struct{}
+	cleanup    func()
+	groupUUIDs uuid.UUIDs
+	testUUID   uuid.UUID
 }
 
 func NewTestRunner(i do.Injector) (TestRunner, error) {
 	return &concreteTestRunner{}, nil
 }
 
-func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs, cleanup func()) error {
+func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID, cleanup func()) error {
 	if len(quizPaths) != len(quizUUIDs) {
 		return ErrBadQuizzes
 	}
@@ -109,6 +111,8 @@ func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration,
 		tr.timer.Stop()
 	}
 
+	tr.testUUID = testUUID
+
 	tr.checksum = hashutils.HashHashes(ultimateChecksum)
 	tr.quizzes = quizzes
 	tr.isPaused = false
@@ -131,6 +135,10 @@ func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration,
 	tr.mu.Unlock()
 
 	return nil
+}
+
+func (tr *concreteTestRunner) test() uuid.UUID {
+	return tr.testUUID
 }
 
 func (tr *concreteTestRunner) Get(quizUUID uuid.UUID) (*quiz.Quiz, error) {
@@ -325,11 +333,11 @@ func (tr *concreteTestRunner) IsPaused() bool {
 	return tr.isPaused
 }
 
-func (tr *concreteTestRunner) Deadline() (*time.Time, error) {
+func (tr *concreteTestRunner) Deadline() time.Time {
 	tr.mu.RLock()
 	defer tr.mu.RUnlock()
 
-	return &tr.deadline, nil
+	return tr.deadline
 }
 
 func (tr *concreteTestRunner) GetAll() uuid.UUIDs {
@@ -345,5 +353,24 @@ func (tr *concreteTestRunner) GetAll() uuid.UUIDs {
 }
 
 func (tr *concreteTestRunner) Checksum() uint64 {
+	tr.mu.RLock()
+	defer tr.mu.RUnlock()
+
 	return tr.checksum
+}
+
+func (tr *concreteTestRunner) Quizzes() uuid.UUIDs {
+	tr.mu.RLock()
+	defer tr.mu.RUnlock()
+
+	return lo.Map(tr.quizzes, func(item quiz.Quiz, _ int) uuid.UUID {
+		return item.UUID
+	})
+}
+
+func (tr *concreteTestRunner) Groups() uuid.UUIDs {
+	tr.mu.RLock()
+	defer tr.mu.RUnlock()
+
+	return tr.groupUUIDs
 }

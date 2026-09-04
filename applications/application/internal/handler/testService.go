@@ -65,8 +65,6 @@ type TestService interface {
 	StopTest(w http.ResponseWriter, r *http.Request)
 	PauseTest(w http.ResponseWriter, r *http.Request)
 	AddQuizzes(w http.ResponseWriter, r *http.Request)
-	AddQuizzesToRunning(w http.ResponseWriter, r *http.Request)
-	RemoveQuizzesFromRunning(w http.ResponseWriter, r *http.Request)
 	RemoveQuizzes(w http.ResponseWriter, r *http.Request)
 	ExtendTest(w http.ResponseWriter, r *http.Request)
 	ResumeTest(w http.ResponseWriter, r *http.Request)
@@ -97,10 +95,9 @@ type Service interface {
 	QuizService
 	TestService
 	TotalService
-	GetTestUUID() uuid.UUID
 	AllowedToTest(ctx context.Context, userUUID uuid.UUID, key uint64) (bool, error)
-	GetDeadline() (*time.Time, error)
-	GetAllRunning() uuid.UUIDs
+	GetDeadline(key uint64) (time.Time, error)
+	IsRunning(quiz uuid.UUID) bool
 }
 
 func NewTestService(i do.Injector) (Service, error) {

@@ -99,7 +99,7 @@ func IsInGroup(testUUIDGetter func() uuid.UUID, allowedChecker func(context.Cont
 						return res, nil
 					}
 
-					key, err := strconv.ParseUint(r.PathValue("testKey"), 10, 64)
+					key, err := strconv.ParseUint(r.PathValue("runnerKey"), 10, 64)
 					if err != nil {
 						return false, err
 					}
