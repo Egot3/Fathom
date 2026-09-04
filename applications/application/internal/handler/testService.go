@@ -22,7 +22,7 @@ type chiService struct {
 	testRepo   test.TestRepository
 	answerRepo total.TotalRepository
 
-	runner testrunner.TestRunner
+	manager *testrunner.Manager
 }
 
 type UserService interface {
@@ -98,7 +98,7 @@ type Service interface {
 	TestService
 	TotalService
 	GetTestUUID() uuid.UUID
-	AllowedToTest(ctx context.Context, userUUID uuid.UUID) (bool, error)
+	AllowedToTest(ctx context.Context, userUUID uuid.UUID, key uint64) (bool, error)
 	GetDeadline() (*time.Time, error)
 	GetAllRunning() uuid.UUIDs
 }
@@ -110,7 +110,7 @@ func NewTestService(i do.Injector) (Service, error) {
 	tR := do.MustInvoke[test.TestRepository](i)
 	aR := do.MustInvoke[total.TotalRepository](i)
 
-	r := do.MustInvoke[testrunner.TestRunner](i)
+	ma := do.MustInvoke[*testrunner.Manager](i)
 
 	return &chiService{
 		userRepo:   uR,
@@ -118,6 +118,6 @@ func NewTestService(i do.Injector) (Service, error) {
 		groupRepo:  gR,
 		testRepo:   tR,
 		answerRepo: aR,
-		runner:     r,
+		manager:    ma,
 	}, nil
 }

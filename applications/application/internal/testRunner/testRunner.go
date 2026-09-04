@@ -44,32 +44,22 @@ func (e *NotCachedError) Is(target error) bool {
 }
 
 type concreteTestRunner struct {
-	mu         sync.RWMutex
-	quizzes    []quiz.Quiz
-	cancel     context.CancelFunc
-	timer      *time.Timer
-	isPaused   bool
-	deadline   time.Time
-	pausedAt   time.Time
-	TestUUID   uuid.UUID
-	GroupUUIDs uuid.UUIDs
-	checksum   uint64
-	giveup     chan struct{}
-	cleanup    func()
+	mu       sync.RWMutex
+	quizzes  []quiz.Quiz
+	timer    *time.Timer
+	isPaused bool
+	deadline time.Time
+	pausedAt time.Time
+	checksum uint64
+	giveup   chan struct{}
+	cleanup  func()
 }
 
 func NewTestRunner(i do.Injector) (TestRunner, error) {
 	return &concreteTestRunner{}, nil
 }
 
-func (tr *concreteTestRunner) CurrentTestUUID() uuid.UUID {
-	tr.mu.RLock()
-	defer tr.mu.RUnlock()
-
-	return tr.TestUUID
-}
-
-func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID, cleanup func()) error {
+func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs, cleanup func()) error {
 	if len(quizPaths) != len(quizUUIDs) {
 		return ErrBadQuizzes
 	}
@@ -78,8 +68,6 @@ func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration,
 		slog.String("duration", duration.String()),
 		slog.Any("quizPathes", quizPaths),
 		slog.Any("quizUUIDs", quizUUIDs.Strings()),
-		slog.Any("groupUUIDs", groupUUIDs.Strings()),
-		slog.String("testUUID", testUUID.String()),
 	)
 
 	logger.Debug("starting runner...")
@@ -122,7 +110,6 @@ func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration,
 	}
 
 	tr.checksum = hashutils.HashHashes(ultimateChecksum)
-	tr.TestUUID = testUUID
 	tr.quizzes = quizzes
 	tr.isPaused = false
 	tr.deadline = time.Now().Add(duration)
@@ -343,10 +330,6 @@ func (tr *concreteTestRunner) Deadline() (*time.Time, error) {
 	defer tr.mu.RUnlock()
 
 	return &tr.deadline, nil
-}
-
-func (tr *concreteTestRunner) AllowedGroupUUIDs() uuid.UUIDs {
-	return tr.GroupUUIDs
 }
 
 func (tr *concreteTestRunner) GetAll() uuid.UUIDs {
