@@ -96,7 +96,7 @@ func (m *Manager) AllTests() uuid.UUIDs {
 
 	testUUIDs := make(uuid.UUIDs, 0, len(m.runners))
 	for _, r := range m.runners {
-		testUUIDs = append(testUUIDs, r.test())
+		testUUIDs = append(testUUIDs, r.Test())
 	}
 
 	return testUUIDs

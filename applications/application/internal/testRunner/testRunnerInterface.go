@@ -23,7 +23,7 @@ type TestRunner interface {
 	Quizzes() uuid.UUIDs
 	GetAll() uuid.UUIDs
 	Checksum() uint64
-	test() uuid.UUID
+	Test() uuid.UUID
 }
 
 var TestRunnerPackage = do.Package(

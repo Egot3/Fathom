@@ -38,9 +38,9 @@ func TestRunner_Start(t *testing.T) {
 		r, err := m.Start(t.Context(), 10*time.Second, quizPathes, quizUUIDs, uuid.UUIDs{}, testUUID)
 		require.NoError(t, err)
 
-		deadline, err := r.Deadline()
+		deadline := r.Deadline()
 		require.NoError(t, err)
-		require.WithinDuration(t, *deadline, time.Now().Add(10*time.Second), 2*time.Second)
+		require.WithinDuration(t, deadline, time.Now().Add(10*time.Second), 2*time.Second)
 		require.Equal(t, r.GetAll(), quizUUIDs)
 	})
 
@@ -213,9 +213,9 @@ func TestRunner_Deadline(t *testing.T) {
 
 		timeEnd := time.Now().Add(10 * time.Second)
 
-		ti, err := r.Deadline()
+		ti := r.Deadline()
 		require.NoError(t, err)
-		require.WithinDuration(t, timeEnd, *ti, 2*time.Second)
+		require.WithinDuration(t, timeEnd, ti, 2*time.Second)
 	})
 }
 
@@ -246,9 +246,9 @@ func TestRunner_Extend(t *testing.T) {
 		err = r.ExtendTime(time.Hour)
 		require.NoError(t, err)
 
-		ti, err := r.Deadline()
+		ti := r.Deadline()
 		require.NoError(t, err)
-		require.WithinDuration(t, timeEnd.Add(time.Hour), *ti, 10*time.Second)
+		require.WithinDuration(t, timeEnd.Add(time.Hour), ti, 10*time.Second)
 	})
 }
 
@@ -283,9 +283,7 @@ func TestRunner_PauseResume(t *testing.T) {
 			err = r.Pause()
 			require.NoError(t, err)
 
-			o, err := r.Deadline()
-
-			oldDeadline := *o
+			oldDeadline := r.Deadline()
 
 			require.NoError(t, err)
 			require.WithinDuration(t, time.Now().Add(10*time.Minute), oldDeadline, time.Second)
@@ -294,16 +292,14 @@ func TestRunner_PauseResume(t *testing.T) {
 			time.Sleep(10 * time.Second)
 			t.Log("Thanks for your patience!")
 
-			n, err := r.Deadline()
-			newNotch := *n
+			newNotch := r.Deadline()
 			require.NoError(t, err)
 			require.Equal(t, oldDeadline, newNotch)
 
 			err = r.Resume()
 			require.NoError(t, err)
 
-			n, err = r.Deadline()
-			newNotch = *n
+			newNotch = r.Deadline()
 
 			require.NoError(t, err)
 			require.WithinDuration(t, oldDeadline.Add(10*time.Second), newNotch, 2*time.Second)
@@ -333,17 +329,13 @@ func TestRunner_PauseResume(t *testing.T) {
 			err = r.Pause()
 			require.NoError(t, err)
 
-			o, err := r.Deadline()
+			oldDeadline := r.Deadline()
 
-			oldDeadline := *o
-
-			require.NoError(t, err)
 			require.WithinDuration(t, time.Now().Add(10*time.Minute), oldDeadline, time.Second)
 
 			err = r.ExtendTime(10 * time.Second)
 
-			n, err := r.Deadline()
-			newNotch := *n
+			newNotch := r.Deadline()
 			require.NoError(t, err)
 			require.NotEqual(t, oldDeadline, newNotch)
 			require.Equal(t, oldDeadline.Add(10*time.Second), newNotch)
@@ -351,10 +343,8 @@ func TestRunner_PauseResume(t *testing.T) {
 			err = r.Resume()
 			require.NoError(t, err)
 
-			n, err = r.Deadline()
-			newNotch = *n
+			newNotch = r.Deadline()
 
-			require.NoError(t, err)
 			require.WithinDuration(t, oldDeadline.Add(10*time.Second), newNotch, 2*time.Second)
 		})
 	})
@@ -453,9 +443,7 @@ func TestRunner_PauseResume(t *testing.T) {
 				err = r.Pause()
 				require.NoError(t, err)
 
-				d, err := r.Deadline()
-				require.NoError(t, err)
-				deadline := *d
+				deadline := r.Deadline()
 
 				t.Log("Please, stand by. Get yourself some tea")
 				time.Sleep(5 * time.Second)
@@ -464,9 +452,7 @@ func TestRunner_PauseResume(t *testing.T) {
 				err = r.Resume()
 				require.NoError(t, err)
 
-				n, err := r.Deadline()
-				require.NoError(t, err)
-				newDeadline := *n
+				newDeadline := r.Deadline()
 
 				require.WithinDuration(t, deadline, newDeadline, 6*time.Second)
 			})

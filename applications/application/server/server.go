@@ -128,8 +128,6 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 					r.Post("/stop", svc.StopTest)
 					r.Post("/pause", svc.PauseTest)
 					r.Post("/resume", svc.ResumeTest)
-					r.Post("/", svc.AddQuizzesToRunning)
-					r.Delete("/", svc.RemoveQuizzesFromRunning)
 					r.Post("/extend", svc.ExtendTest)
 				})
 
