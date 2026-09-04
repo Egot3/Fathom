@@ -10,7 +10,7 @@ import (
 )
 
 type TestRunner interface {
-	start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID, cleanup func()) error
+	start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs uuid.UUIDs, cleanup func()) error
 	Get(quizUUID uuid.UUID) (*quiz.Quiz, error)
 	Stop()
 	ExtendTime(duration time.Duration) error

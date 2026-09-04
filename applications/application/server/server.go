@@ -112,7 +112,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 
 			r.Get("/", svc.ListTests)
 
-			r.Route("/running", func(r chi.Router) {
+			r.Route("/running/{testKey:^[0-9]{1,20}$}", func(r chi.Router) {
 				r.Use(middleware.Maybe(
 					middlewares.IsInGroup(svc.GetTestUUID, svc.AllowedToTest, svc.GetDeadline), func(r *http.Request) bool {
 						return !middlewares.IsTeacherCondition(r)
@@ -156,7 +156,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 		r.Route("/total", func(r chi.Router) {
 			r.Use(middlewares.JWT)
 
-			r.Route("/{group_uuid}/{user_uuid}/running", func(r chi.Router) {
+			r.Route("/{group_uuid}/{user_uuid}/running/{testKey:^[0-9]{1,20}$}", func(r chi.Router) {
 				r.Use(middleware.Maybe(
 					middlewares.IsInGroup(svc.GetTestUUID, svc.AllowedToTest, svc.GetDeadline), func(r *http.Request) bool {
 						return !middlewares.IsTeacherCondition(r)

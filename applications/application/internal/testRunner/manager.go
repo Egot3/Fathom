@@ -41,7 +41,7 @@ func (m *Manager) Start(ctx context.Context, duration time.Duration,
 	}
 	m.mu.Unlock()
 
-	if err := tr.start(ctx, duration, quizPaths, quizUUIDs, groupUUIDs, testUUID,
+	if err := tr.start(ctx, duration, quizPaths, quizUUIDs,
 		func() { m.remove(key, tr) }); err != nil {
 		m.remove(key, tr)
 		return nil, err

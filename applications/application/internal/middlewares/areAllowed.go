@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -42,7 +43,7 @@ func (c *userCache) currentGeneration(testUUID uuid.UUID) *generation {
 
 // BEHOLD, THE HOLY CODE
 // Most iterated function
-func IsInGroup(testUUIDGetter func() uuid.UUID, allowedChecker func(context.Context, uuid.UUID) (bool, error), deadlineGetter func() (*time.Time, error)) func(http.Handler) http.Handler {
+func IsInGroup(testUUIDGetter func() uuid.UUID, allowedChecker func(context.Context, uuid.UUID, uint64) (bool, error), deadlineGetter func() (*time.Time, error)) func(http.Handler) http.Handler {
 	cache := &userCache{}
 
 	return func(next http.Handler) http.Handler {
@@ -98,7 +99,12 @@ func IsInGroup(testUUIDGetter func() uuid.UUID, allowedChecker func(context.Cont
 						return res, nil
 					}
 
-					allow, fetchErr := allowedChecker(r.Context(), userUUID)
+					key, err := strconv.ParseUint(r.PathValue("testKey"), 10, 64)
+					if err != nil {
+						return false, err
+					}
+
+					allow, fetchErr := allowedChecker(r.Context(), userUUID, key)
 					if fetchErr != nil {
 						return false, fetchErr
 					}
