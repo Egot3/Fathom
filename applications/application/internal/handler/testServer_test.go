@@ -35,10 +35,8 @@ func RegisterM2M(db *bun.DB) {
 }
 
 func TestTestHandler_AddQuizzes(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -119,7 +117,6 @@ quiz sample(different): %v`,
 	})
 
 	t.Run("Empty", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -170,7 +167,6 @@ quiz sample(different): %v`,
 	})
 
 	t.Run("Conflict!", func(t *testing.T) { // on conflict just append
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -263,10 +259,8 @@ quiz sample(different): %v`,
 }
 
 func TestTestHandler_Delete(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -307,7 +301,6 @@ func TestTestHandler_Delete(t *testing.T) {
 	})
 
 	t.Run("Not found", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -349,10 +342,8 @@ func TestTestHandler_Delete(t *testing.T) {
 }
 
 func TestTestHandler_Get(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -395,7 +386,6 @@ func TestTestHandler_Get(t *testing.T) {
 	})
 
 	t.Run("Not found", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -432,10 +422,8 @@ func TestTestHandler_Get(t *testing.T) {
 }
 
 func TestTestHandler_Patch(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -484,7 +472,6 @@ func TestTestHandler_Patch(t *testing.T) {
 	})
 
 	t.Run("Not found", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -534,7 +521,6 @@ func TestTestHandler_Patch(t *testing.T) {
 	})
 
 	t.Run("No changes", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -581,7 +567,6 @@ func TestTestHandler_Patch(t *testing.T) {
 
 	t.Run("Naming issues", func(t *testing.T) {
 		t.Run("Too big", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -630,7 +615,6 @@ func TestTestHandler_Patch(t *testing.T) {
 		})
 
 		t.Run("Smol", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -681,11 +665,9 @@ func TestTestHandler_Patch(t *testing.T) {
 }
 
 func TestTestHandler_Post(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Run("No children", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -724,7 +706,6 @@ func TestTestHandler_Post(t *testing.T) {
 		})
 
 		t.Run("yes children", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -796,7 +777,6 @@ func TestTestHandler_Post(t *testing.T) {
 	})
 
 	t.Run("Conflict!", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -838,7 +818,6 @@ func TestTestHandler_Post(t *testing.T) {
 
 	t.Run("Bad names", func(t *testing.T) {
 		t.Run("Too big", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -886,7 +865,6 @@ func TestTestHandler_Post(t *testing.T) {
 		})
 
 		t.Run("Smol", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -929,10 +907,8 @@ func TestTestHandler_Post(t *testing.T) {
 }
 
 func TestTestHandler_RemoveQuizzes(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -1018,7 +994,6 @@ quiz sample(different): %v`,
 	})
 
 	t.Run("Empty", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -1069,7 +1044,6 @@ quiz sample(different): %v`,
 	})
 
 	t.Run("Partial deletion", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -1151,10 +1125,8 @@ quiz sample(different): %v`,
 }
 
 func TestTestHandler_List(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -1200,7 +1172,6 @@ func TestTestHandler_List(t *testing.T) {
 
 	t.Run("Bad args", func(t *testing.T) {
 		t.Run("Page -", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -1236,7 +1207,6 @@ func TestTestHandler_List(t *testing.T) {
 		})
 
 		t.Run("Size -", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -1272,7 +1242,6 @@ func TestTestHandler_List(t *testing.T) {
 		})
 
 		t.Run("Size 0", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -1310,10 +1279,8 @@ func TestTestHandler_List(t *testing.T) {
 }
 
 func TestTestHandler_Start(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,

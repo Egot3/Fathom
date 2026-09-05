@@ -29,10 +29,8 @@ func RegisterModels(db *bun.DB) {
 }
 
 func TestGroupHandler_Post(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Create valid group", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -82,7 +80,6 @@ func TestGroupHandler_Post(t *testing.T) {
 		require.Empty(t, bodyString)
 	})
 	t.Run("Conflict!", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -140,7 +137,6 @@ func TestGroupHandler_Post(t *testing.T) {
 	})
 
 	t.Run("With appendants", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -195,7 +191,6 @@ func TestGroupHandler_Post(t *testing.T) {
 	})
 
 	t.Run("Too short nickname", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -243,7 +238,6 @@ func TestGroupHandler_Post(t *testing.T) {
 		require.Equal(t, 422, rec.Code, bodyString)
 	})
 	t.Run("Too long nickname", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -293,10 +287,8 @@ func TestGroupHandler_Post(t *testing.T) {
 }
 
 func TestGroupHandler_Delete(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Delete group *validly*", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -351,10 +343,8 @@ func TestGroupHandler_Delete(t *testing.T) {
 }
 
 func TestGroupHandler_Patch(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid name change", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -408,7 +398,6 @@ func TestGroupHandler_Patch(t *testing.T) {
 	})
 
 	t.Run("Valid no name change", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -462,7 +451,6 @@ func TestGroupHandler_Patch(t *testing.T) {
 	})
 
 	t.Run("Not found", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -516,9 +504,8 @@ func TestGroupHandler_Patch(t *testing.T) {
 	})
 
 	t.Run("Bad name changes", func(t *testing.T) {
-		t.Parallel()
+
 		t.Run("Too short", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -572,7 +559,6 @@ func TestGroupHandler_Patch(t *testing.T) {
 			require.Contains(t, bodyString, "too short")
 		})
 		t.Run("Too long", func(t *testing.T) {
-			t.Parallel()
 
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
@@ -629,10 +615,8 @@ func TestGroupHandler_Patch(t *testing.T) {
 }
 
 func TestGroupHandler_Get(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Found", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -688,7 +672,6 @@ func TestGroupHandler_Get(t *testing.T) {
 	})
 
 	t.Run("Not found", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -743,10 +726,8 @@ func TestGroupHandler_Get(t *testing.T) {
 }
 
 func TestGroupHandler_List(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Size 0", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -776,7 +757,6 @@ func TestGroupHandler_List(t *testing.T) {
 	})
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,

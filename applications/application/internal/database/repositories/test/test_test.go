@@ -36,7 +36,6 @@ func RegisterModels(db *bun.DB) {
 }
 
 func TestTest_Creation(t *testing.T) {
-	t.Parallel()
 
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
@@ -45,7 +44,6 @@ func TestTest_Creation(t *testing.T) {
 	RegisterModels(db)
 
 	t.Run("New test", func(t *testing.T) {
-		t.Parallel()
 
 		name := rand.Text()
 		_, err := r.CreateTest(t.Context(), name)
@@ -58,7 +56,6 @@ func TestTest_Creation(t *testing.T) {
 	})
 
 	t.Run("Existing test", func(t *testing.T) {
-		t.Parallel()
 
 		name := rand.Text()
 		_, err := r.CreateTest(t.Context(), name)
@@ -77,7 +74,6 @@ func TestTest_Creation(t *testing.T) {
 }
 
 func TestTest_Deletion(t *testing.T) {
-	t.Parallel()
 
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
@@ -90,7 +86,6 @@ func TestTest_Deletion(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Existing test", func(t *testing.T) {
-		t.Parallel()
 
 		err := r.DeleteTest(t.Context(), test.UUID)
 		require.NoError(t, err)
@@ -101,7 +96,6 @@ func TestTest_Deletion(t *testing.T) {
 	})
 
 	t.Run("Non-existing test", func(t *testing.T) {
-		t.Parallel()
 
 		err := r.DeleteTest(t.Context(), uuid.Nil)
 		require.Error(t, err, test)
@@ -110,7 +104,6 @@ func TestTest_Deletion(t *testing.T) {
 }
 
 func TestTest_Update(t *testing.T) {
-	t.Parallel()
 
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
@@ -123,7 +116,6 @@ func TestTest_Update(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Found test", func(t *testing.T) {
-		t.Parallel()
 
 		err := r.UpdateTest(t.Context(), test.UUID, rand.Text())
 		require.NoError(t, err)
@@ -135,7 +127,6 @@ func TestTest_Update(t *testing.T) {
 		require.NotEqual(t, test.Name, testR.Name)
 	})
 	t.Run("Not found test", func(t *testing.T) {
-		t.Parallel()
 
 		err := r.UpdateTest(t.Context(), uuid.Nil, rand.Text())
 		require.Error(t, err)
@@ -144,7 +135,6 @@ func TestTest_Update(t *testing.T) {
 }
 
 func TestTest_Read(t *testing.T) {
-	t.Parallel()
 
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
@@ -157,7 +147,6 @@ func TestTest_Read(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Found test", func(t *testing.T) {
-		t.Parallel()
 
 		testR, err := r.Test(t.Context(), test.UUID)
 		require.NoError(t, err)
@@ -170,7 +159,6 @@ func TestTest_Read(t *testing.T) {
 	})
 
 	t.Run("Not found test", func(t *testing.T) {
-		t.Parallel()
 
 		testR, err := r.Test(t.Context(), uuid.Nil)
 		require.Error(t, err)
@@ -180,7 +168,6 @@ func TestTest_Read(t *testing.T) {
 }
 
 func TestTest_Bundle(t *testing.T) {
-	t.Parallel()
 
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
@@ -383,7 +370,6 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 }
 
 func TestTest_Prune(t *testing.T) {
-	t.Parallel()
 
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)

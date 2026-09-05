@@ -14,7 +14,6 @@ import (
 )
 
 func TestRunner_Start(t *testing.T) {
-	t.Parallel()
 
 	quizUUID, err := uuid.NewV7()
 	require.NoError(t, err, "are we for real?")
@@ -98,7 +97,6 @@ func TestRunner_Start(t *testing.T) {
 }
 
 func TestRunner_Get(t *testing.T) {
-	t.Parallel()
 
 	quizUUID, err := uuid.NewV7()
 	require.NoError(t, err, "are we for real?")
@@ -147,7 +145,6 @@ func TestRunner_Get(t *testing.T) {
 }
 
 func TestRunner_Stop(t *testing.T) {
-	t.Parallel()
 
 	quizUUID, err := uuid.NewV7()
 	require.NoError(t, err, "are we for real?")
@@ -253,14 +250,12 @@ func TestRunner_Extend(t *testing.T) {
 }
 
 func TestRunner_PauseResume(t *testing.T) {
-	t.Parallel()
 
 	i := do.New()
 
 	t.Run("Valid pause resumance", func(t *testing.T) {
-		t.Parallel()
+
 		t.Run("By waiting", func(t *testing.T) {
-			t.Parallel()
 
 			i := i.Scope("wait")
 			do.Provide(i, testrunner.NewManager)
@@ -306,7 +301,6 @@ func TestRunner_PauseResume(t *testing.T) {
 		})
 
 		t.Run("By extending in the meantime", func(t *testing.T) {
-			t.Parallel()
 
 			i := i.Scope("extending")
 			do.Provide(i, testrunner.NewManager)
@@ -350,10 +344,8 @@ func TestRunner_PauseResume(t *testing.T) {
 	})
 
 	t.Run("Invalid pause+resume sequence", func(t *testing.T) {
-		t.Parallel()
 
 		t.Run("Pausing", func(t *testing.T) {
-			t.Parallel()
 
 			t.Run("Paused", func(t *testing.T) {
 				i := i.Scope("paused")
@@ -384,7 +376,7 @@ func TestRunner_PauseResume(t *testing.T) {
 		})
 
 		t.Run("Resuming", func(t *testing.T) {
-			t.Parallel()
+
 			i := do.New()
 
 			t.Run("Running", func(t *testing.T) {
@@ -419,7 +411,6 @@ func TestRunner_PauseResume(t *testing.T) {
 		})
 
 		t.Run("Expired", func(t *testing.T) {
-			t.Parallel()
 
 			t.Run("Expiration during pause", func(t *testing.T) {
 				i := i.Scope("ExpDuringPause")
