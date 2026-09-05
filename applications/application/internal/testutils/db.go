@@ -2,7 +2,7 @@ package testutils
 
 import (
 	"database/sql"
-	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/egot3/fathom/internal/config"
@@ -16,7 +16,7 @@ import (
 func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 	tb.Helper()
 
-	config.PathToQuizzes = os.TempDir()
+	cfg := &config.Config{QuizPath: filepath.Join(tb.TempDir(), "quizzes")}
 
 	dsn := "file::memory:?cache=private"
 
@@ -40,6 +40,8 @@ func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 	i := do.New(
 		packages...,
 	)
+
+	do.ProvideValue(i, cfg)
 
 	do.Provide(i, func(i do.Injector) (*bun.DB, error) {
 		return db, nil

@@ -23,7 +23,6 @@ import (
 
 	acceptutils "github.com/egot3/fathom/internal/acceptUtils"
 	"github.com/egot3/fathom/internal/carefulness"
-	"github.com/egot3/fathom/internal/config"
 	"github.com/egot3/fathom/internal/contracts"
 	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
 	"github.com/egot3/fathom/internal/logging"
@@ -272,7 +271,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	abs, err := config.TurnToAbs(req.Name)
+	abs, err := c.cfg.TurnToAbs(req.Name)
 	if err != nil {
 		logger.Error("couldn't turn filepath to abs", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
@@ -332,6 +331,13 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := os.MkdirAll(filepath.Dir(abs), 0o755); err != nil {
+		logger.Error("couldn't ensure quiz directory exists", slog.String("Error", err.Error()))
+
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't ensure quiz directory exists"})
+		return
+	}
 	err = os.WriteFile(abs, []byte(sb.String()), 0644)
 	if err != nil {
 		logger.Error("couldn't write file",
@@ -554,7 +560,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 
 	var newAbs *string = nil
 	if req.Name != nil {
-		if v, err := config.TurnToAbs(*req.Name); err == nil {
+		if v, err := c.cfg.TurnToAbs(*req.Name); err == nil {
 			newAbs = &v
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -565,6 +571,13 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if newAbs != nil {
+		if err := os.MkdirAll(filepath.Dir(*newAbs), 0o755); err != nil {
+			logger.Error("couldn't ensure quiz directory exists", slog.String("Error", err.Error()))
+
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+			return
+		}
 		err := os.Rename(abs, *newAbs)
 		if err != nil {
 			logger.Error("couldn't get rename to abs name", slog.String("Error", err.Error()))
@@ -778,7 +791,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
-	tmpDir, err := os.MkdirTemp(config.PathToQuizzes, "tmp-")
+	tmpDir, err := os.MkdirTemp("", "tmp-")
 	if err != nil {
 		logger.Error("failed to create tmpDir",
 			slog.String("Error", err.Error()),
@@ -893,7 +906,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = os.Rename(tmpDir, filepath.Join(config.PathToQuizzes, handler.Filename[:len(handler.Filename)-4]))
+		err = os.Rename(tmpDir, filepath.Join("", handler.Filename[:len(handler.Filename)-4]))
 		w.WriteHeader(http.StatusNoContent)
 		return
 	case "application/tar":
@@ -995,7 +1008,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = os.Rename(tmpDir, filepath.Join(config.PathToQuizzes, handler.Filename[:len(handler.Filename)-4]))
+		err = os.Rename(tmpDir, filepath.Join("", handler.Filename[:len(handler.Filename)-4]))
 		w.WriteHeader(http.StatusNoContent)
 		return
 	case "application/gzip":
@@ -1108,7 +1121,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		err = os.Rename(tmpDir, filepath.Join(config.PathToQuizzes, handler.Filename[:len(handler.Filename)-4]))
+		err = os.Rename(tmpDir, filepath.Join("", handler.Filename[:len(handler.Filename)-4]))
 		w.WriteHeader(http.StatusNoContent)
 		return
 	default:
