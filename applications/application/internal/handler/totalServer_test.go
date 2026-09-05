@@ -60,8 +60,10 @@ func randomQuiz(t *testing.T, db *bun.DB) (uuid.UUID, string) {
 func predefinedQuiz(t *testing.T, db *bun.DB) (quizUUID uuid.UUID, path string) {
 	t.Helper()
 
+	f := testutils.TestQuiz(t)
+
 	err := db.NewInsert().Model(&models.Quiz{
-		Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
+		Path:          f.Name(),
 		Score:         1,
 		Checksum:      [8]byte{},
 		CorrectAnswer: rand.Text(),

@@ -101,12 +101,10 @@ func TestUser_Login(t *testing.T) {
 			user, err := r.Login(t.Context(), tC.nickname, tC.password)
 
 			if tC.ExpectFail {
-				require.Nil(t, user)
 				require.Error(t, err)
 				require.ErrorIs(t, err, sql.ErrNoRows)
 			} else {
 				require.NoError(t, err)
-				require.NotNil(t, user)
 				require.Equal(t, origUser.UUID, user.UUID)
 			}
 		})
@@ -155,7 +153,7 @@ func TestUser_User(t *testing.T) {
 			if tC.ExpectNotFound {
 				require.True(t, errors.Is(err, sql.ErrNoRows))
 			} else {
-				require.Equal(t, &models.User{
+				require.Equal(t, models.User{
 					Nickname:     user.Nickname,
 					UUID:         user.UUID,
 					IsTeacher:    user.IsTeacher,
