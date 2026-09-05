@@ -418,9 +418,9 @@ func TestAnswer_Totals(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("User total", func(t *testing.T) {
-		t.Parallel()
+
 		t.Run("Valid", func(t *testing.T) {
-			t.Parallel()
+
 			total, err := r.Total(t.Context(), userUUID, testM.UUID, groupUUID)
 			require.NoError(t, err)
 			require.Equal(t, score, total.Score, total)
@@ -477,7 +477,7 @@ func TestAnswer_Totals(t *testing.T) {
 		}
 		for _, etc := range errTestCases {
 			t.Run(etc.desc, func(t *testing.T) {
-				t.Parallel()
+
 				retrieved, err := r.Total(t.Context(), etc.userUUID, etc.testUUID, etc.groupUUID)
 				require.Error(t, err, retrieved)
 				require.ErrorIs(t, err, sql.ErrNoRows)
@@ -486,9 +486,9 @@ func TestAnswer_Totals(t *testing.T) {
 	})
 
 	t.Run("Group totals", func(t *testing.T) {
-		t.Parallel()
+
 		t.Run("Valid", func(t *testing.T) {
-			t.Parallel()
+
 			totals, err := r.GroupTestTotals(t.Context(), testM.UUID, groupUUID)
 			require.NoError(t, err)
 			require.Len(t, totals, 1)
@@ -518,7 +518,7 @@ func TestAnswer_Totals(t *testing.T) {
 		}
 		for _, etc := range errTestCases {
 			t.Run(etc.desc, func(t *testing.T) {
-				t.Parallel()
+
 				retrieved, err := r.GroupTestTotals(t.Context(), etc.testUUID, etc.groupUUID)
 				require.Error(t, err)
 				require.ErrorIs(t, err, sql.ErrNoRows)
@@ -528,16 +528,16 @@ func TestAnswer_Totals(t *testing.T) {
 	})
 
 	t.Run("Test totals", func(t *testing.T) {
-		t.Parallel()
+
 		t.Run("Valid", func(t *testing.T) {
-			t.Parallel()
+
 			totals, err := r.TestTotals(t.Context(), testM.UUID)
 			require.NoError(t, err)
 			require.Len(t, totals, 1)
 			require.Equal(t, totals[0].Score, score)
 		})
 		t.Run("Invalid", func(t *testing.T) {
-			t.Parallel()
+
 			totals, err := r.TestTotals(t.Context(), uuid.Nil)
 			require.Error(t, err)
 			require.Nil(t, totals)
@@ -545,9 +545,9 @@ func TestAnswer_Totals(t *testing.T) {
 	})
 
 	t.Run("User totals", func(t *testing.T) {
-		t.Parallel()
+
 		t.Run("Valid", func(t *testing.T) {
-			t.Parallel()
+
 			totals, total, err := r.UserTotals(t.Context(), userUUID, 0, 1)
 			require.NoError(t, err)
 			require.Equal(t, 1, total)
@@ -555,7 +555,7 @@ func TestAnswer_Totals(t *testing.T) {
 			require.Equal(t, totals[0].Score, score)
 		})
 		t.Run("Invalid", func(t *testing.T) {
-			t.Parallel()
+
 			totals, total, err := r.UserTotals(t.Context(), uuid.Nil, 0, 1)
 			require.Len(t, totals, 0)
 
@@ -566,9 +566,9 @@ func TestAnswer_Totals(t *testing.T) {
 	})
 
 	t.Run("All totals", func(t *testing.T) {
-		t.Parallel()
+
 		t.Run("Valid", func(t *testing.T) {
-			t.Parallel()
+
 			totals, total, err := r.ListTotals(t.Context(), 0, 1)
 			require.NoError(t, err)
 			require.Equal(t, 1, total)

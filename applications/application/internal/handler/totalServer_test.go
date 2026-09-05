@@ -100,13 +100,11 @@ func randomUser(t *testing.T, db *bun.DB) uuid.UUID {
 }
 
 func TestTotalHandler_GetAnswer(t *testing.T) {
-	t.Parallel()
 
 	token, err := jwtutils.GenerateToken(uuid.Nil, true)
 	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -186,7 +184,6 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 	})
 
 	t.Run("Not inferred", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -321,13 +318,11 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 }
 
 func TestTotalHandler_GetGroupTotals(t *testing.T) {
-	t.Parallel()
 
 	token, err := jwtutils.GenerateToken(uuid.Nil, true)
 	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -413,7 +408,6 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 	})
 
 	t.Run("Not inferred", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -525,13 +519,11 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 }
 
 func TestTotalHandler_GetTestTotals(t *testing.T) {
-	t.Parallel()
 
 	token, err := jwtutils.GenerateToken(uuid.Nil, true)
 	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -616,7 +608,6 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 	})
 
 	t.Run("Not inferred", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -715,13 +706,11 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 }
 
 func TestTotalHandler_GetUserTotal(t *testing.T) {
-	t.Parallel()
 
 	token, err := jwtutils.GenerateToken(uuid.Nil, true)
 	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -808,7 +797,6 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 	})
 
 	t.Run("Not inferred", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -937,13 +925,11 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 }
 
 func TestTotalHandler_GetUserTotals(t *testing.T) {
-	t.Parallel()
 
 	token, err := jwtutils.GenerateToken(uuid.Nil, true)
 	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -1030,7 +1016,6 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 	})
 
 	t.Run("Not inferred", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -1129,7 +1114,6 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 }
 
 func TestTotalHandler_PostAnswer(t *testing.T) {
-	t.Parallel()
 
 	token, err := jwtutils.GenerateToken(uuid.Nil, true)
 	require.NoError(t, err)
@@ -1390,7 +1374,6 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 }
 
 func TestTotalHandler_Totalize(t *testing.T) {
-	t.Parallel()
 
 	t.Run("Valid", func(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)

@@ -31,7 +31,6 @@ import (
 )
 
 func TestQuizHandler_Post(t *testing.T) {
-	t.Parallel()
 
 	dir := t.TempDir()
 
@@ -47,7 +46,6 @@ func TestQuizHandler_Post(t *testing.T) {
 	do.ProvideValue(i, cfg)
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i := i.Scope("valid")
 
@@ -134,7 +132,6 @@ func TestQuizHandler_Post(t *testing.T) {
 		}
 		for _, tC := range testCases {
 			t.Run(tC.desc, func(t *testing.T) {
-				t.Parallel()
 
 				i := testutils.NewTestInjector(t,
 					repositories.RepositoryPackage,
@@ -169,7 +166,6 @@ func TestQuizHandler_Post(t *testing.T) {
 	})
 
 	t.Run("Conflict!", func(t *testing.T) {
-		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
@@ -224,7 +220,6 @@ func TestQuizHandler_Post(t *testing.T) {
 }
 
 func TestQuizHandler_Get(t *testing.T) {
-	t.Parallel()
 
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
@@ -248,7 +243,6 @@ func TestQuizHandler_Get(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i = i.Scope("valid")
 
@@ -279,7 +273,6 @@ func TestQuizHandler_Get(t *testing.T) {
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
-		t.Parallel()
 
 		i = i.Scope("invalid")
 
@@ -304,7 +297,6 @@ func TestQuizHandler_Get(t *testing.T) {
 }
 
 func TestQuizHandler_List(t *testing.T) {
-	t.Parallel()
 
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
@@ -357,7 +349,6 @@ func TestQuizHandler_List(t *testing.T) {
 }
 
 func TestQuizHandler_Delete(t *testing.T) {
-	t.Parallel()
 
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
@@ -381,7 +372,6 @@ func TestQuizHandler_Delete(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
 
 		i = i.Scope("valid")
 
@@ -406,7 +396,6 @@ func TestQuizHandler_Delete(t *testing.T) {
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
-		t.Parallel()
 
 		i = i.Scope("invalid")
 
