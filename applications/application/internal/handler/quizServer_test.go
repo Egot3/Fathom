@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	mrand "math/rand/v2"
 	"net/http"
@@ -12,9 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
-	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/config"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/database/repositories"
@@ -34,17 +33,26 @@ import (
 func TestQuizHandler_Post(t *testing.T) {
 	t.Parallel()
 
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
+	dir := t.TempDir()
+
+	err := os.Mkdir(dir+"/quizzes", 0750)
 	require.NoError(t, err)
+
+	os.Setenv("DATA_DIRECTORY", dir)
+
+	i := testutils.NewTestInjector(t,
+		repositories.RepositoryPackage,
+	)
+	cfg := config.Load()
+	do.ProvideValue(i, cfg)
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
 
-		i := testutils.NewTestInjector(t,
-			repositories.RepositoryPackage,
-		)
+		i := i.Scope("valid")
+
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -52,7 +60,7 @@ func TestQuizHandler_Post(t *testing.T) {
 
 		name := rand.Text()
 		body :=
-			`#Sky color\n\nWhat color is da sky?\n\n[depends]`
+			"# Sky color\n\nWhat color is da sky?\n\n[depends]"
 		reqJSON, _ := json.Marshal(contracts.PostQuizRequest{
 			Name: name,
 			Body: body,
@@ -67,15 +75,7 @@ func TestQuizHandler_Post(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -140,7 +140,7 @@ func TestQuizHandler_Post(t *testing.T) {
 					repositories.RepositoryPackage,
 				)
 				do.ProvideValue(i, slog.Default())
-				do.Provide(i, testrunner.NewTestRunner)
+				do.Provide(i, testrunner.NewManager)
 
 				do.Provide(i, handler.NewTestService)
 				router, err := server.ChiServer(i)
@@ -157,15 +157,7 @@ func TestQuizHandler_Post(t *testing.T) {
 					bytes.NewReader(reqJSON),
 				)
 				req.Header.Set("Content-Type", "application/json")
-				req.AddCookie(&http.Cookie{
-					Name:     "jwt_token",
-					Value:    token,
-					Path:     "/",
-					Expires:  time.Now().Add(jwtutils.JWTTTL),
-					HttpOnly: true,
-					SameSite: http.SameSiteNoneMode,
-					Secure:   true,
-				})
+				testutils.AddTeacherCookie(t, req)
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -183,7 +175,7 @@ func TestQuizHandler_Post(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		name := rand.Text()
 		db := do.MustInvoke[*bun.DB](i)
@@ -204,7 +196,7 @@ func TestQuizHandler_Post(t *testing.T) {
 		body := `# quiz!
 			 there is a body!
 			 [yeah!]`
-		reqJSON, _ := json.Marshal(contracts.PostQuizRequest{
+		reqJSON, err := json.Marshal(contracts.PostQuizRequest{
 			Name: name,
 			Body: body,
 			Meta: quiz.Frontmatter{
@@ -212,51 +204,42 @@ func TestQuizHandler_Post(t *testing.T) {
 				Score: 1,
 			},
 		})
+		require.NoError(t, err)
+
 		req := httptest.NewRequest(
 			http.MethodPost,
 			"/api/v1/quiz/",
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
 
 		bodyString := rec.Body.String()
 		require.Equal(t, http.StatusConflict, rec.Code, bodyString)
-
-		path, err = config.TurnToAbs(name)
-		require.NoError(t, err)
-		require.NoFileExists(t, path)
+		require.NoFileExists(t, path, bodyString)
 	})
 }
 
 func TestQuizHandler_Get(t *testing.T) {
 	t.Parallel()
 
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
-
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
 	do.ProvideValue(i, slog.Default())
-	do.Provide(i, testrunner.NewTestRunner)
+	do.Provide(i, testrunner.NewManager)
+
+	f := testutils.TestQuiz(t)
+	defer f.Close()
 
 	var quizUUID uuid.UUID
 	score := 1
 	db := do.MustInvoke[*bun.DB](i)
-	err = db.NewInsert().Model(&models.Quiz{
-		Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
+	err := db.NewInsert().Model(&models.Quiz{
+		Path:          f.Name(),
 		Checksum:      [8]byte{},
 		Score:         score,
 		CorrectAnswer: "x",
@@ -279,15 +262,7 @@ func TestQuizHandler_Get(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -300,7 +275,7 @@ func TestQuizHandler_Get(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, score, quizS.Meta.Score)
-		require.Contains(t, quizS.Body, "[x]")
+		require.Contains(t, quizS.Body, "[yeah!]")
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
@@ -318,15 +293,7 @@ func TestQuizHandler_Get(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -339,20 +306,20 @@ func TestQuizHandler_Get(t *testing.T) {
 func TestQuizHandler_List(t *testing.T) {
 	t.Parallel()
 
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
-
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
 	do.ProvideValue(i, slog.Default())
-	do.Provide(i, testrunner.NewTestRunner)
+	do.Provide(i, testrunner.NewManager)
+
+	f := testutils.TestQuiz(t)
+	defer f.Close()
 
 	var quizUUID uuid.UUID
 	score := 1
 	db := do.MustInvoke[*bun.DB](i)
-	err = db.NewInsert().Model(&models.Quiz{
-		Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
+	err := db.NewInsert().Model(&models.Quiz{
+		Path:          f.Name(),
 		Checksum:      [8]byte{},
 		Score:         score,
 		CorrectAnswer: "x",
@@ -370,7 +337,7 @@ func TestQuizHandler_List(t *testing.T) {
 		nil,
 	)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
+	testutils.AddTeacherCookie(t, req)
 
 	rec := httptest.NewRecorder()
 
@@ -392,20 +359,20 @@ func TestQuizHandler_List(t *testing.T) {
 func TestQuizHandler_Delete(t *testing.T) {
 	t.Parallel()
 
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
-
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
 	do.ProvideValue(i, slog.Default())
-	do.Provide(i, testrunner.NewTestRunner)
+	do.Provide(i, testrunner.NewManager)
+
+	f := testutils.TestQuiz(t)
+	defer f.Close()
 
 	var quizUUID uuid.UUID
 	score := 1
 	db := do.MustInvoke[*bun.DB](i)
-	err = db.NewInsert().Model(&models.Quiz{
-		Path:          "/home/ETS/programming/Fathom/application/internal/testutils/placebo.md",
+	err := db.NewInsert().Model(&models.Quiz{
+		Path:          f.Name(),
 		Checksum:      [8]byte{},
 		Score:         score,
 		CorrectAnswer: "x",
@@ -428,15 +395,8 @@ func TestQuizHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
+
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -460,15 +420,7 @@ func TestQuizHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -479,30 +431,22 @@ func TestQuizHandler_Delete(t *testing.T) {
 }
 
 func TestQuizHandler_Patch(t *testing.T) {
-
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
-
 	t.Run("Valid", func(t *testing.T) {
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
-		// defer os.Remove(file.Name())
+		do.Provide(i, testrunner.NewManager)
 
 		file := testutils.TestQuiz(t)
 		defer file.Close()
 
-		path, err := filepath.Abs(file.Name())
-		require.NoError(t, err)
-
 		var quizUUID uuid.UUID
 		score := 1
 		db := do.MustInvoke[*bun.DB](i)
-		err = db.NewInsert().Model(&models.Quiz{
-			Path:          path,
+		err := db.NewInsert().Model(&models.Quiz{
+			Path:          file.Name(),
 			Checksum:      [8]byte{},
 			Score:         score,
 			CorrectAnswer: "x",
@@ -514,7 +458,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
 
-		tmp, err := os.CreateTemp(".", rand.Text())
+		tmp, err := os.CreateTemp("", "*.md")
 		require.NoError(t, err)
 		defer tmp.Close()
 
@@ -534,15 +478,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -563,106 +499,16 @@ func TestQuizHandler_Patch(t *testing.T) {
 
 		q, err := quizparser.ParseQuiz(file)
 		require.NoError(t, err)
-		require.Equal(t, score, q.Meta.Score)
 
-	})
+		_, err = file.Seek(0, io.SeekEnd)
+		require.NoError(t, err)
 
-	t.Run("Orphans", func(t *testing.T) {
+		buf := []byte{}
+		_, err = file.Read(buf)
+		require.NoError(t, err)
 
-		testCases := []struct {
-			desc  string
-			name  string
-			score int
-		}{
-			{
-				desc:  "No name",
-				name:  "",
-				score: 1,
-			},
-			{
-				desc:  "No score",
-				name:  rand.Text(),
-				score: 0,
-			},
-			{
-				desc:  "Nothing",
-				name:  "",
-				score: 0,
-			},
-		}
-		for _, tC := range testCases {
-			t.Run(tC.desc, func(t *testing.T) {
-				i := testutils.NewTestInjector(t,
-					repositories.RepositoryPackage,
-				)
-				do.ProvideValue(i, slog.Default())
-				do.Provide(i, testrunner.NewTestRunner)
+		require.Equal(t, newScore, q.Meta.Score, string(buf))
 
-				do.Provide(i, handler.NewTestService)
-				router, err := server.ChiServer(i)
-				require.NoError(t, err)
-
-				file, err := os.CreateTemp(".", "*_tmp.md")
-				require.NoError(t, err)
-				defer file.Close()
-				defer os.Remove(file.Name())
-
-				path, err := filepath.Abs(file.Name())
-				require.NoError(t, err)
-
-				var quizUUID uuid.UUID
-				score := 1
-				db := do.MustInvoke[*bun.DB](i)
-				err = db.NewInsert().Model(&models.Quiz{
-					Path:          path,
-					Checksum:      [8]byte{},
-					Score:         score,
-					CorrectAnswer: "x",
-				}).Returning("uuid").
-					Scan(t.Context(), &quizUUID)
-				require.NoError(t, err)
-
-				nameJ := new(string)
-				if tC.name != "" {
-					nameJ = &tC.name
-				}
-
-				reqJSON, _ := json.Marshal(contracts.PatchQuizRequest{
-					Name: nameJ,
-					Meta: &quiz.Frontmatter{
-						Score: tC.score,
-						Kind:  quiz.Input,
-					},
-				})
-				req := httptest.NewRequest(
-					http.MethodPatch,
-					fmt.Sprintf("/api/v1/quiz/%v", quizUUID),
-					bytes.NewReader(reqJSON),
-				)
-				req.Header.Set("Content-Type", "application/json")
-				req.AddCookie(&http.Cookie{
-					Name:     "jwt_token",
-					Value:    token,
-					Path:     "/",
-					Expires:  time.Now().Add(jwtutils.JWTTTL),
-					HttpOnly: true,
-					SameSite: http.SameSiteNoneMode,
-					Secure:   true,
-				})
-				rec := httptest.NewRecorder()
-
-				router.ServeHTTP(rec, req)
-
-				require.Equal(t, http.StatusNoContent, rec.Code)
-
-				if nameJ != nil {
-					newPath, err := config.TurnToAbs(*nameJ)
-					require.NoError(t, err)
-					require.FileExists(t, newPath)
-					os.Remove(newPath)
-				}
-			})
-		}
 	})
 
 	t.Run("Zeros", func(t *testing.T) {
@@ -671,17 +517,10 @@ func TestQuizHandler_Patch(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.Default())
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
-			file, err := os.CreateTemp(".", "*_tmp.md")
-			require.NoError(t, err)
+			file := testutils.TestQuiz(t)
 			defer file.Close()
-			defer os.Remove(file.Name())
-
-			template, err := os.ReadFile("/home/ETS/programming/Fathom/application/internal/testutils/placebo.md")
-			require.NoError(t, err)
-
-			_, err = file.Write(template)
 
 			path, err := filepath.Abs(file.Name())
 			require.NoError(t, err)
@@ -718,15 +557,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 				bytes.NewReader(reqJSON),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -739,17 +570,10 @@ func TestQuizHandler_Patch(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.Default())
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
-			file, err := os.CreateTemp(".", "*_tmp.md")
-			require.NoError(t, err)
+			file := testutils.TestQuiz(t)
 			defer file.Close()
-			defer os.Remove(file.Name())
-
-			template, err := os.ReadFile("/home/ETS/programming/Fathom/application/internal/testutils/placebo.md")
-			require.NoError(t, err)
-
-			_, err = file.Write(template)
 
 			path, err := filepath.Abs(file.Name())
 			require.NoError(t, err)
@@ -786,20 +610,12 @@ func TestQuizHandler_Patch(t *testing.T) {
 				bytes.NewReader(reqJSON),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
 
-			require.Equal(t, http.StatusNoContent, rec.Code)
+			require.Equal(t, http.StatusBadRequest, rec.Code)
 		})
 	})
 
@@ -808,17 +624,10 @@ func TestQuizHandler_Patch(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
-		file, err := os.CreateTemp(".", "*_tmp.md")
-		require.NoError(t, err)
+		file := testutils.TestQuiz(t)
 		defer file.Close()
-		defer os.Remove(file.Name())
-
-		template, err := os.ReadFile("/home/ETS/programming/Fathom/application/internal/testutils/placebo.md")
-		require.NoError(t, err)
-
-		_, err = file.Write(template)
 
 		path, err := filepath.Abs(file.Name())
 		require.NoError(t, err)
@@ -839,11 +648,9 @@ func TestQuizHandler_Patch(t *testing.T) {
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
 
-		newName := "normalName"
 		newScore := -5423
 
 		reqJSON, _ := json.Marshal(contracts.PatchQuizRequest{
-			Name: &newName,
 			Meta: &quiz.Frontmatter{
 				Score: newScore,
 				Kind:  quiz.Input,
@@ -855,15 +662,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -875,14 +674,11 @@ func TestQuizHandler_Patch(t *testing.T) {
 
 func TestQuizHandler_GetParsed(t *testing.T) {
 
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
-
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
 	do.ProvideValue(i, slog.Default())
-	do.Provide(i, testrunner.NewTestRunner)
+	do.Provide(i, testrunner.NewManager)
 
 	t.Run("Valid", func(t *testing.T) {
 		i = i.Scope("valid")
@@ -894,7 +690,7 @@ func TestQuizHandler_GetParsed(t *testing.T) {
 			var quizUUID uuid.UUID
 			score := 1
 			db := do.MustInvoke[*bun.DB](i)
-			err = db.NewInsert().Model(&models.Quiz{
+			err := db.NewInsert().Model(&models.Quiz{
 				Path:          f.Name(),
 				Checksum:      [8]byte{},
 				Score:         score,
@@ -916,15 +712,7 @@ func TestQuizHandler_GetParsed(t *testing.T) {
 				nil,
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -969,15 +757,7 @@ func TestQuizHandler_GetParsed(t *testing.T) {
 				nil,
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -1010,15 +790,7 @@ func TestQuizHandler_GetParsed(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)

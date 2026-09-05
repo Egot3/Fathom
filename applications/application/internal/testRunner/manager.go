@@ -102,8 +102,8 @@ func (m *Manager) AllTests() uuid.UUIDs {
 	return testUUIDs
 }
 
-func NewManager(i do.Injector) (Manager, error) {
-	return Manager{
+func NewManager(i do.Injector) (*Manager, error) {
+	return &Manager{
 		mu:      sync.RWMutex{},
 		runners: map[uint64]TestRunner{},
 	}, nil

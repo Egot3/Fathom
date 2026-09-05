@@ -48,7 +48,7 @@ func TestTestHandler_AddQuizzes(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -137,7 +137,7 @@ quiz sample(different): %v`,
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -196,7 +196,7 @@ quiz sample(different): %v`,
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -303,7 +303,7 @@ func TestTestHandler_Delete(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -352,7 +352,7 @@ func TestTestHandler_Delete(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -408,7 +408,7 @@ func TestTestHandler_Get(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -459,7 +459,7 @@ func TestTestHandler_Get(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -510,7 +510,7 @@ func TestTestHandler_Patch(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -567,7 +567,7 @@ func TestTestHandler_Patch(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -625,7 +625,7 @@ func TestTestHandler_Patch(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -680,7 +680,7 @@ func TestTestHandler_Patch(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
@@ -737,7 +737,7 @@ func TestTestHandler_Patch(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
@@ -803,7 +803,7 @@ func TestTestHandler_Post(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
@@ -850,7 +850,7 @@ func TestTestHandler_Post(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
@@ -930,7 +930,7 @@ func TestTestHandler_Post(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -980,7 +980,7 @@ func TestTestHandler_Post(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
@@ -1036,7 +1036,7 @@ func TestTestHandler_Post(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
@@ -1093,7 +1093,7 @@ func TestTestHandler_RemoveQuizzes(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -1187,7 +1187,7 @@ quiz sample(different): %v`,
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -1246,7 +1246,7 @@ quiz sample(different): %v`,
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -1342,7 +1342,7 @@ func TestTestHandler_List(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -1396,7 +1396,7 @@ func TestTestHandler_List(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
@@ -1440,7 +1440,7 @@ func TestTestHandler_List(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
@@ -1484,7 +1484,7 @@ func TestTestHandler_List(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
@@ -1592,7 +1592,7 @@ func TestTestHandler_Start(t *testing.T) {
 		require.Equal(t, http.StatusNoContent, rec.Code)
 
 		require.NoError(t, err)
-		require.Equal(t, tr.CurrentTestUUID(), test.UUID)
+		require.Equal(t, tr.Test(), test.UUID)
 		require.WithinDuration(t, tr.Deadline(), time.Now().Add(d), time.Minute)
 	})
 }

@@ -110,7 +110,7 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -190,7 +190,7 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
 		db := do.MustInvoke[*bun.DB](i)
@@ -331,7 +331,7 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -417,7 +417,7 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
 		db := do.MustInvoke[*bun.DB](i)
@@ -535,7 +535,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -620,7 +620,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
 		db := do.MustInvoke[*bun.DB](i)
@@ -725,7 +725,7 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -812,7 +812,7 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
 		db := do.MustInvoke[*bun.DB](i)
@@ -947,7 +947,7 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -1034,7 +1034,7 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
 		db := do.MustInvoke[*bun.DB](i)
@@ -1139,7 +1139,7 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
-		r := do.MustInvoke[testrunner.Manager](i)
+		r := do.MustInvoke[*testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -1216,7 +1216,7 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
 		db := do.MustInvoke[*bun.DB](i)
@@ -1286,7 +1286,7 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
-		r := do.MustInvoke[testrunner.Manager](i)
+		r := do.MustInvoke[*testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -1397,7 +1397,7 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
-		r := do.MustInvoke[testrunner.Manager](i)
+		r := do.MustInvoke[*testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -1477,7 +1477,7 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
 		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
 		db := do.MustInvoke[*bun.DB](i)
@@ -1540,7 +1540,7 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
-		r := do.MustInvoke[testrunner.Manager](i)
+		r := do.MustInvoke[*testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)

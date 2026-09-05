@@ -17,7 +17,6 @@ import (
 	"github.com/egot3/fathom/internal/quiz"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
 	"github.com/google/uuid"
-	"github.com/samber/do/v2"
 	"github.com/samber/lo"
 )
 
@@ -55,10 +54,6 @@ type concreteTestRunner struct {
 	cleanup    func()
 	groupUUIDs uuid.UUIDs
 	testUUID   uuid.UUID
-}
-
-func NewTestRunner(i do.Injector) (TestRunner, error) {
-	return &concreteTestRunner{}, nil
 }
 
 func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID, cleanup func()) error {
