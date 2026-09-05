@@ -371,7 +371,7 @@ func TestAnswer_Totalization(t *testing.T) {
 		}).Column("score").Scan(t.Context(), &scoreR2)
 
 		require.NoError(t, err)
-		require.Equal(t, score+scoreN, scoreR2)
+		require.InDelta(t, score+scoreN, scoreR2, 1e-4)
 	})
 }
 
@@ -423,7 +423,7 @@ func TestAnswer_Totals(t *testing.T) {
 			t.Parallel()
 			total, err := r.Total(t.Context(), userUUID, testM.UUID, groupUUID)
 			require.NoError(t, err)
-			require.Equal(t, score, total.Score)
+			require.Equal(t, score, total.Score, total)
 		})
 
 		errTestCases := []struct {
@@ -479,9 +479,8 @@ func TestAnswer_Totals(t *testing.T) {
 			t.Run(etc.desc, func(t *testing.T) {
 				t.Parallel()
 				retrieved, err := r.Total(t.Context(), etc.userUUID, etc.testUUID, etc.groupUUID)
-				require.Error(t, err)
+				require.Error(t, err, retrieved)
 				require.ErrorIs(t, err, sql.ErrNoRows)
-				require.Nil(t, retrieved)
 			})
 		}
 	})

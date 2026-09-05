@@ -3,7 +3,6 @@ package test_test //finnaly something remotely funny
 import (
 	"crypto/rand"
 	"database/sql"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -392,7 +391,7 @@ func TestTest_Prune(t *testing.T) {
 
 	RegisterModels(db)
 
-	t.Run("Valid bundle", func(t *testing.T) {
+	t.Run("Valid prune", func(t *testing.T) {
 		test := models.Test{Name: rand.Text()}
 		err := db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -430,7 +429,7 @@ func TestTest_Prune(t *testing.T) {
 		require.Empty(t, quizzesR)
 	})
 
-	t.Run("Patially valid bundle", func(t *testing.T) {
+	t.Run("Patially valid prune", func(t *testing.T) {
 		testM := models.Test{Name: rand.Text()}
 		err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -471,141 +470,13 @@ func TestTest_Prune(t *testing.T) {
 		require.Empty(t, quizzesR)
 	})
 
-	t.Run("Invalid bundle", func(t *testing.T) {
+	t.Run("Invalid prune", func(t *testing.T) {
 		testM := models.Test{Name: rand.Text()}
 		err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
-		err = r.BundleQuizzesToTest(t.Context(), testM.UUID, append(uuid.UUIDs{}, uuid.Nil))
+		err = r.PruneQuizzesFromTest(t.Context(), testM.UUID, append(uuid.UUIDs{}, uuid.Nil))
 		require.Error(t, err)
-		if notIn, ok := errors.AsType[*carefulness.NotInTestError](err); ok {
-			t.Log(notIn.JSONError())
-			return
-		}
-		t.Log(err)
-		t.FailNow()
+		require.ErrorIs(t, err, sql.ErrNoRows)
 	})
 }
-
-/* func BenchmarkGroup_Prune_quizzes(b *testing.B) {
-	log.SetOutput(io.Discard)
-	b.Run("Benchmark 5 prunants", func(b *testing.B) {
-		i := NewInjectorWithTestRepo(b)
-
-		r := do.MustInvoke[test.TestRepository](i)
-		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
-
-		name := rand.Text()
-		testUUID := uuid.UUID{}
-		err := db.NewInsert().Model(&models.Test{Name: name}).Returning("uuid").Scan(b.Context(), &testUUID)
-		require.NoError(b, err)
-
-		var quizzes []models.Quiz = make([]models.Quiz, 0, 5)
-		var testQuizzes []models.TestsQuizzes = make([]models.TestsQuizzes, 0, 5)
-		for range 5 {
-			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
-
-			require.NoError(b, err)
-			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: [8]byte{}})
-		}
-
-		_, err = db.NewInsert().Model(&quizzes).
-			Exec(b.Context())
-
-
-		b.ResetTimer()
-
-		for b.Loop() {
-			b.StopTimer()
-			_, err := db.NewInsert().Model(&testQuizzes).Exec(b.Context())
-			require.NoError(b, err)
-
-			b.StartTimer()
-
-			err = r.PruneQuizzesFromTest(b.Context(), testUUID, pathes)
-			require.NoError(b, err)
-		}
-	})
-
-	b.Run("Benchmark 50 prunants", func(b *testing.B) {
-		i := NewInjectorWithTestRepo(b)
-
-		r := do.MustInvoke[test.TestRepository](i)
-		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
-
-		name := rand.Text()
-		testUUID := uuid.UUID{}
-		err := db.NewInsert().Model(&models.Test{Name: name}).Returning("uuid").Scan(b.Context(), &testUUID)
-		require.NoError(b, err)
-
-		var pathes []string
-		var quizzes []models.Quiz
-		var testQuizzes []models.TestsQuizzes
-		for range 50 {
-			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
-
-			require.NoError(b, err)
-			pathes = append(pathes, quizPath)
-			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: [8]byte{}})
-			testQuizzes = append(testQuizzes, models.TestsQuizzes{TestUUID: testUUID, QuizPath: quizPath, Position: mrand.Int()})
-		}
-
-		_, err = db.NewInsert().Model(&quizzes).
-			Exec(b.Context())
-
-		b.ResetTimer()
-
-		for b.Loop() {
-			b.StopTimer()
-			_, err := db.NewInsert().Model(&testQuizzes).Exec(b.Context())
-			require.NoError(b, err)
-			b.StartTimer()
-
-			err = r.PruneQuizzesFromTest(b.Context(), testUUID, pathes)
-			require.NoError(b, err)
-		}
-	})
-
-	b.Run("Benchmark 500 prunants", func(b *testing.B) {
-		i := NewInjectorWithTestRepo(b)
-
-		r := do.MustInvoke[test.TestRepository](i)
-		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
-
-		name := rand.Text()
-		testUUID := uuid.UUID{}
-		err := db.NewInsert().Model(&models.Test{Name: name}).Returning("uuid").Scan(b.Context(), &testUUID)
-		require.NoError(b, err)
-
-		var pathes []string
-		var quizzes []models.Quiz
-		var testQuizzes []models.TestsQuizzes
-		for range 500 {
-			quizPath := fmt.Sprintf("/path/to/%v.md", rand.Text())
-
-			require.NoError(b, err)
-			pathes = append(pathes, quizPath)
-			quizzes = append(quizzes, models.Quiz{Path: quizPath, Checksum: [8]byte{}})
-			testQuizzes = append(testQuizzes, models.TestsQuizzes{TestUUID: testUUID, QuizPath: quizPath, Position: mrand.Int()})
-		}
-
-		_, err = db.NewInsert().Model(&quizzes).
-			Exec(b.Context())
-
-		b.ResetTimer()
-
-		for b.Loop() {
-			b.StopTimer()
-			_, err := db.NewInsert().Model(&testQuizzes).Exec(b.Context())
-			require.NoError(b, err)
-			b.StartTimer()
-
-			err = r.PruneQuizzesFromTest(b.Context(), testUUID, pathes)
-			require.NoError(b, err)
-		}
-	})
-}
-*/
