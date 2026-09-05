@@ -15,7 +15,6 @@ import (
 	"time"
 
 	charmlog "github.com/charmbracelet/log"
-	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/database/repositories"
 	"github.com/egot3/fathom/internal/handler"
@@ -37,9 +36,6 @@ func RegisterM2M(db *bun.DB) {
 
 func TestTestHandler_AddQuizzes(t *testing.T) {
 	t.Parallel()
-
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
@@ -91,15 +87,7 @@ func TestTestHandler_AddQuizzes(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -163,15 +151,7 @@ quiz sample(different): %v`,
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -245,15 +225,7 @@ quiz sample(different): %v`,
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -293,9 +265,6 @@ quiz sample(different): %v`,
 func TestTestHandler_Delete(t *testing.T) {
 	t.Parallel()
 
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
-
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
 
@@ -324,15 +293,7 @@ func TestTestHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -373,15 +334,7 @@ func TestTestHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -397,9 +350,6 @@ func TestTestHandler_Delete(t *testing.T) {
 
 func TestTestHandler_Get(t *testing.T) {
 	t.Parallel()
-
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
@@ -429,15 +379,7 @@ func TestTestHandler_Get(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -480,15 +422,7 @@ func TestTestHandler_Get(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -499,9 +433,6 @@ func TestTestHandler_Get(t *testing.T) {
 
 func TestTestHandler_Patch(t *testing.T) {
 	t.Parallel()
-
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
@@ -537,15 +468,7 @@ func TestTestHandler_Patch(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -594,15 +517,7 @@ func TestTestHandler_Patch(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -649,15 +564,7 @@ func TestTestHandler_Patch(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -707,15 +614,7 @@ func TestTestHandler_Patch(t *testing.T) {
 				bytes.NewReader(reqJSON),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -764,15 +663,7 @@ func TestTestHandler_Patch(t *testing.T) {
 				bytes.NewReader(reqJSON),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -791,9 +682,6 @@ func TestTestHandler_Patch(t *testing.T) {
 
 func TestTestHandler_Post(t *testing.T) {
 	t.Parallel()
-
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Run("No children", func(t *testing.T) {
@@ -822,15 +710,7 @@ func TestTestHandler_Post(t *testing.T) {
 				bytes.NewReader(reqJSON),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -887,15 +767,7 @@ func TestTestHandler_Post(t *testing.T) {
 				bytes.NewReader(reqJSON),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -956,15 +828,7 @@ func TestTestHandler_Post(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1007,15 +871,7 @@ func TestTestHandler_Post(t *testing.T) {
 				bytes.NewReader(reqJSON),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -1056,15 +912,7 @@ func TestTestHandler_Post(t *testing.T) {
 				bytes.NewReader(reqJSON),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -1082,9 +930,6 @@ func TestTestHandler_Post(t *testing.T) {
 
 func TestTestHandler_RemoveQuizzes(t *testing.T) {
 	t.Parallel()
-
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
@@ -1146,15 +991,7 @@ func TestTestHandler_RemoveQuizzes(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1213,15 +1050,7 @@ quiz sample(different): %v`,
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1302,15 +1131,7 @@ quiz sample(different): %v`,
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1331,9 +1152,6 @@ quiz sample(different): %v`,
 
 func TestTestHandler_List(t *testing.T) {
 	t.Parallel()
-
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
@@ -1363,15 +1181,7 @@ func TestTestHandler_List(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1417,15 +1227,7 @@ func TestTestHandler_List(t *testing.T) {
 				nil,
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -1461,15 +1263,7 @@ func TestTestHandler_List(t *testing.T) {
 				nil,
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -1505,15 +1299,7 @@ func TestTestHandler_List(t *testing.T) {
 				nil,
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -1526,25 +1312,22 @@ func TestTestHandler_List(t *testing.T) {
 func TestTestHandler_Start(t *testing.T) {
 	t.Parallel()
 
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
-	require.NoError(t, err)
-
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
 
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
-			testrunner.TestRunnerPackage,
 		)
 		do.ProvideValue(i, slog.New(charmlog.NewWithOptions(os.Stderr, charmlog.Options{
 			Level: charmlog.DebugLevel,
 		})))
 
+		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
 
-		tr := do.MustInvoke[testrunner.TestRunner](i)
+		m := do.MustInvoke[*testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterM2M(db)
@@ -1563,9 +1346,13 @@ func TestTestHandler_Start(t *testing.T) {
 
 		d := mrand.N(5 * time.Hour)
 
+		durStr := d.String()
+
+		t.Log(durStr)
+
 		reqJSON, err := json.Marshal(contracts.StartRequest{
 			TestUUID:    test.UUID,
-			Duration:    d.String(),
+			Duration:    durStr,
 			GroupsUUIDs: uuid.UUIDs{group.UUID},
 		})
 		require.NoError(t, err)
@@ -1576,20 +1363,17 @@ func TestTestHandler_Start(t *testing.T) {
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
 
 		require.Equal(t, http.StatusNoContent, rec.Code)
+
+		all := m.GetAll()
+		require.Len(t, all, 1)
+		tr, ok := m.Get(all[0])
+		require.True(t, ok)
 
 		require.NoError(t, err)
 		require.Equal(t, tr.Test(), test.UUID)
