@@ -53,7 +53,7 @@ func main() {
 		}
 	}
 
-	do.Provide(i, testrunner.NewTestRunner)
+	do.Provide(i, testrunner.NewManager)
 
 	do.Provide(i, handler.NewTestService)
 	do.Provide(i, server.ChiServer)

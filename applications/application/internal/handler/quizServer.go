@@ -272,6 +272,28 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	abs, err := config.TurnToAbs(req.Name)
+	if err != nil {
+		logger.Error("couldn't turn filepath to abs", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get absolute path of quiz"})
+		return
+	}
+
+	does, err := c.quizRepo.CheckRegistered(ctx, abs)
+	if err != nil {
+		logger.Error("couldn't check if quiz is registered", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't check if quiz is registered"})
+		return
+	}
+	if does {
+		logger.Warn("quiz already exists")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(carefulness.Conflict{Conflictor: "Path"})
+		return
+	}
+
 	logger = logger.With(slog.String("name", req.Name))
 	ctx = logging.WithLogger(ctx, logger)
 
@@ -287,7 +309,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	var sb strings.Builder
 	sb.WriteString("---\n")
 	sb.Write(frontmatter)
-	sb.WriteString("---\n\n")
+	sb.WriteString("---\n")
 	sb.WriteString(req.Body)
 
 	quiz, err := quizparser.ParseQuiz(strings.NewReader(sb.String()))
@@ -295,14 +317,6 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		logger.Error("couldn't parse quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
-		return
-	}
-
-	abs, err := config.TurnToAbs(req.Name)
-	if err != nil {
-		logger.Error("couldn't turn filepath to abs", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get absolute path of quiz"})
 		return
 	}
 
@@ -320,6 +334,9 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 
 	err = os.WriteFile(abs, []byte(sb.String()), 0644)
 	if err != nil {
+		logger.Error("couldn't write file",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusMultiStatus)
 
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to write file"})
@@ -392,6 +409,10 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	if req.Name != nil && *req.Name == "" {
+		req.Name = nil
 	}
 
 	abs, err := c.quizRepo.QuizPath(ctx, quizUUID)

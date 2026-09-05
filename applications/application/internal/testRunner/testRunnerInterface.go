@@ -27,5 +27,5 @@ type TestRunner interface {
 }
 
 var TestRunnerPackage = do.Package(
-	do.Lazy(NewTestRunner),
+	do.Lazy(NewManager),
 )

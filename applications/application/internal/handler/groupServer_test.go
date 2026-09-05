@@ -38,7 +38,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -88,7 +88,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -146,7 +146,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -201,7 +201,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -249,7 +249,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -302,7 +302,7 @@ func TestGroupHandler_Delete(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -360,7 +360,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -414,7 +414,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -468,7 +468,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -524,7 +524,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.Default())
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			db := do.MustInvoke[*bun.DB](i)
 			RegisterModels(db)
@@ -578,7 +578,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 				repositories.RepositoryPackage,
 			)
 			do.ProvideValue(i, slog.Default())
-			do.Provide(i, testrunner.NewTestRunner)
+			do.Provide(i, testrunner.NewManager)
 
 			db := do.MustInvoke[*bun.DB](i)
 			RegisterModels(db)
@@ -638,7 +638,7 @@ func TestGroupHandler_Get(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -694,7 +694,7 @@ func TestGroupHandler_Get(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -752,7 +752,7 @@ func TestGroupHandler_List(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
@@ -782,7 +782,7 @@ func TestGroupHandler_List(t *testing.T) {
 			repositories.RepositoryPackage,
 		)
 		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewTestRunner)
+		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
 		RegisterModels(db)
