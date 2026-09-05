@@ -124,7 +124,6 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				//protected
 				r.Group(func(r chi.Router) {
 					r.Use(middlewares.IsTeacherRights)
-					r.Post("/start", svc.StartTest)
 					r.Post("/stop", svc.StopTest)
 					r.Post("/pause", svc.PauseTest)
 					r.Post("/resume", svc.ResumeTest)
@@ -132,6 +131,8 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				})
 
 			})
+
+			r.With(middlewares.IsTeacherRights).Post("/running/start", svc.StartTest)
 
 			r.Route("/{uuid}", func(r chi.Router) {
 				r.Use(middlewares.ParseUUID)
