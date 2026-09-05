@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/egot3/fathom/internal/config"
@@ -42,8 +43,7 @@ func TestQuizHandler_Post(t *testing.T) {
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
-	cfg := config.Load()
-	do.ProvideValue(i, cfg)
+	cfg := do.MustInvoke[*config.Config](i)
 
 	t.Run("Valid", func(t *testing.T) {
 
@@ -81,7 +81,7 @@ func TestQuizHandler_Post(t *testing.T) {
 		bodyString := rec.Body.String()
 		require.Equal(t, http.StatusNoContent, rec.Code, bodyString)
 
-		path, err := config.TurnToAbs(name)
+		path, err := cfg.TurnToAbs(name)
 		require.NoError(t, err)
 		t.Logf("Filepath: %v", path)
 		require.FileExists(t, path)
@@ -175,8 +175,9 @@ func TestQuizHandler_Post(t *testing.T) {
 
 		name := rand.Text()
 		db := do.MustInvoke[*bun.DB](i)
+		cfg := do.MustInvoke[*config.Config](i)
 
-		path, err := config.TurnToAbs(name)
+		path, err := cfg.TurnToAbs(name)
 		require.NoError(t, err)
 		_, err = db.NewInsert().Model(&models.Quiz{
 			Path:          path,
@@ -427,6 +428,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 		)
 		do.ProvideValue(i, slog.Default())
 		do.Provide(i, testrunner.NewManager)
+		cfg := do.MustInvoke[*config.Config](i)
 
 		file := testutils.TestQuiz(t)
 		defer file.Close()
@@ -451,7 +453,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 		require.NoError(t, err)
 		defer tmp.Close()
 
-		newName := tmp.Name()
+		newName := strings.TrimSuffix(tmp.Name(), ".md")
 		newScore := mrand.IntN(25) + 1
 
 		reqJSON, _ := json.Marshal(contracts.PatchQuizRequest{
@@ -474,7 +476,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 
 		require.Equal(t, http.StatusNoContent, rec.Code)
 
-		newPath, err := config.TurnToAbs(newName)
+		newPath, err := cfg.TurnToAbs(newName)
 		require.NoError(t, err)
 		require.FileExists(t, newPath)
 		defer os.Remove(newPath)
@@ -489,7 +491,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 		q, err := quizparser.ParseQuiz(file)
 		require.NoError(t, err)
 
-		_, err = file.Seek(0, io.SeekEnd)
+		_, err = file.Seek(0, io.SeekStart)
 		require.NoError(t, err)
 
 		buf := []byte{}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/egot3/fathom/internal/config"
 	"github.com/egot3/fathom/internal/database/repositories/group"
 	"github.com/egot3/fathom/internal/database/repositories/quiz"
 	"github.com/egot3/fathom/internal/database/repositories/test"
@@ -22,6 +23,7 @@ type chiService struct {
 	testRepo   test.TestRepository
 	answerRepo total.TotalRepository
 
+	cfg     *config.Config
 	manager *testrunner.Manager
 }
 
@@ -109,6 +111,7 @@ func NewTestService(i do.Injector) (Service, error) {
 	aR := do.MustInvoke[total.TotalRepository](i)
 
 	ma := do.MustInvoke[*testrunner.Manager](i)
+	cf := do.MustInvoke[*config.Config](i)
 
 	return &chiService{
 		userRepo:   uR,
@@ -117,5 +120,6 @@ func NewTestService(i do.Injector) (Service, error) {
 		testRepo:   tR,
 		answerRepo: aR,
 		manager:    ma,
+		cfg:        cf,
 	}, nil
 }
