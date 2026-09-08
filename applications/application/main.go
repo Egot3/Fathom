@@ -24,11 +24,12 @@ func main() {
 	cfg := config.Load()
 
 	i := do.New(
-		do.Eager(cfg),
 		do.Lazy(logging.NewLogger),
 		database.DBPackage,
 		repositories.RepositoryPackage,
 	)
+
+	do.ProvideValue(i, cfg)
 
 	db := do.MustInvoke[*bun.DB](i)
 	if err := database.RunMigrations(context.Background(), db); err != nil {
