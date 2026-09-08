@@ -24,6 +24,10 @@ type Config struct {
 	QuizPath string
 }
 
+var ConfigPackage = do.Package(
+	do.Eager(Load),
+)
+
 func getEnv(key, fallback string, allowed []string) string {
 	if v, ok := os.LookupEnv(key); ok && (allowed == nil || slices.Contains(allowed, v)) {
 		return v
