@@ -15,7 +15,7 @@ import (
 
 func NewLogger(i do.Injector) (*slog.Logger, error) {
 	handlers := []slog.Handler{}
-	cfg := do.MustInvoke[config.Config](i)
+	cfg := do.MustInvoke[*config.Config](i)
 
 	var level slog.Level
 	switch cfg.LogLevel {

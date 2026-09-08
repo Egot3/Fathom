@@ -22,11 +22,12 @@ import (
 
 func main() {
 	i := do.New(
-		do.Eager(config.Load),
 		do.Lazy(logging.NewLogger),
 		database.DBPackage,
 		repositories.RepositoryPackage,
 	)
+
+	do.Provide(i, config.Load)
 
 	cfg := do.MustInvoke[*config.Config](i)
 

@@ -16,7 +16,7 @@ import (
 )
 
 func InitDB(i do.Injector) (*bun.DB, error) {
-	cfg := do.MustInvoke[config.Config](i)
+	cfg := do.MustInvoke[*config.Config](i)
 
 	var sqldb *sql.DB = nil
 	var err error
