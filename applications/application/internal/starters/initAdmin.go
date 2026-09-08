@@ -3,6 +3,7 @@ package starters
 import (
 	"context"
 	"log/slog"
+	"os"
 
 	"github.com/egot3/fathom/internal/config"
 	"github.com/egot3/fathom/internal/models"
@@ -20,7 +21,7 @@ func initAdmin(i do.Injector) {
 		passwordHash, err := bcrypt.GenerateFromPassword([]byte(cfg.InitAdminPassword), bcrypt.DefaultCost)
 		if err != nil {
 			logger.Error("Couldn't create init teacher", slog.String("Error", err.Error()))
-			panic(err)
+			os.Exit(1)
 		}
 		_, err = db.NewInsert().On("CONFLICT DO UPDATE").Model(&models.User{
 			Nickname:     cfg.InitAdminUsername,
@@ -29,7 +30,7 @@ func initAdmin(i do.Injector) {
 		}).Exec(context.Background())
 		if err != nil {
 			logger.Error("Couldn't create init teacher: %v", slog.String("Error", err.Error()))
-			panic(err)
+			os.Exit(1)
 		}
 	}
 }

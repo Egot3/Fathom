@@ -13,14 +13,15 @@ import (
 
 func GenerateInjector() do.Injector {
 	i := do.New(
-		do.Lazy(logging.NewLogger),
+		config.ConfigPackage,
+		logging.LogPackage,
 		database.DBPackage,
 		repositories.RepositoryPackage,
 	)
 
 	do.Provide(i, config.Load)
 
-	runMigrations(i)
+	database.RunMigrations(i)
 	registerAll(i)
 	initAdmin(i)
 

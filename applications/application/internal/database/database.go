@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/egot3/fathom/internal/config"
@@ -17,6 +17,7 @@ import (
 
 func InitDB(i do.Injector) (*bun.DB, error) {
 	cfg := do.MustInvoke[*config.Config](i)
+	logger := do.MustInvoke[*slog.Logger](i)
 
 	var sqldb *sql.DB = nil
 	var err error
@@ -40,7 +41,7 @@ func InitDB(i do.Injector) (*bun.DB, error) {
 
 	for i := range 5 {
 		if err := DB.Ping(); err != nil {
-			log.Printf("Try %d: Pings didn't pong: %v", i+1, err)
+			logger.Info("Ping did't pong", slog.Int("count", i+1), slog.String("Error", err.Error()))
 			time.Sleep(2 * time.Second)
 			continue
 		}
@@ -48,13 +49,12 @@ func InitDB(i do.Injector) (*bun.DB, error) {
 	}
 
 	if err := DB.Ping(); err != nil {
-		log.Printf("\nNo db?\n")
+		logger.Info("DB's health couldn't be checked. Our condolences")
 		return nil, err
 	}
 
 	sqldb.SetMaxOpenConns(50)
 	sqldb.SetMaxIdleConns(20)
 
-	log.Printf("DB UP")
 	return DB, nil
 }
