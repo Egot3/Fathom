@@ -27,17 +27,12 @@ func NewInjectorWithGroupRepo(t testing.TB) do.Injector {
 	return i
 }
 
-func RegisterModels(db *bun.DB) {
-	db.RegisterModel((*models.GroupsUsers)(nil))
-}
-
 func TestGroup_Creation(t *testing.T) {
 
 	i := NewInjectorWithGroupRepo(t)
 
 	r := do.MustInvoke[group.GroupRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-	RegisterModels(db)
 
 	t.Run("New group", func(t *testing.T) {
 
@@ -74,7 +69,6 @@ func TestGroup_Deletion(t *testing.T) {
 
 	r := do.MustInvoke[group.GroupRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-	RegisterModels(db)
 
 	name := rand.Text()
 	_, err := db.NewInsert().Model(&models.Group{Name: name}).Exec(t.Context())
@@ -108,7 +102,6 @@ func TestGroup_Get(t *testing.T) {
 
 	r := do.MustInvoke[group.GroupRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-	RegisterModels(db)
 
 	name := rand.Text()
 	_, err := db.NewInsert().Model(&models.Group{Name: name}).Exec(t.Context())
@@ -141,7 +134,6 @@ func TestGroup_Update(t *testing.T) {
 
 	r := do.MustInvoke[group.GroupRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-	RegisterModels(db)
 
 	name := rand.Text()
 	groupUUID := uuid.UUID{}
@@ -174,7 +166,6 @@ func TestGroup_Append_users(t *testing.T) {
 
 	r := do.MustInvoke[group.GroupRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-	RegisterModels(db)
 
 	name := rand.Text()
 	groupUUID := uuid.UUID{}
@@ -216,7 +207,6 @@ func BenchmarkGroup_Append_users(b *testing.B) {
 
 		r := do.MustInvoke[group.GroupRepository](i)
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		name := rand.Text()
 		groupUUID := uuid.UUID{}
@@ -251,7 +241,6 @@ func BenchmarkGroup_Append_users(b *testing.B) {
 
 		r := do.MustInvoke[group.GroupRepository](i)
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		name := rand.Text()
 		groupUUID := uuid.UUID{}
@@ -286,7 +275,6 @@ func BenchmarkGroup_Append_users(b *testing.B) {
 
 		r := do.MustInvoke[group.GroupRepository](i)
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		name := rand.Text()
 		groupUUID := uuid.UUID{}
@@ -323,7 +311,6 @@ func TestGroup_Remove_users(t *testing.T) {
 
 	r := do.MustInvoke[group.GroupRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-	RegisterModels(db)
 
 	name := rand.Text()
 	groupUUID := uuid.UUID{}
@@ -374,7 +361,6 @@ func TestGroups_Is_in(t *testing.T) {
 
 	r := do.MustInvoke[group.GroupRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-	RegisterModels(db)
 
 	name := rand.Text()
 	groupUUID := uuid.UUID{}

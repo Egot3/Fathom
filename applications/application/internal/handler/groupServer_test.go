@@ -3,7 +3,6 @@ package handler_test
 import (
 	"crypto/rand"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -24,10 +23,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterModels(db *bun.DB) {
-	db.RegisterModel((*models.GroupsUsers)(nil))
-}
-
 func TestGroupHandler_Post(t *testing.T) {
 
 	t.Run("Create valid group", func(t *testing.T) {
@@ -35,11 +30,10 @@ func TestGroupHandler_Post(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -84,11 +78,10 @@ func TestGroupHandler_Post(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -141,11 +134,10 @@ func TestGroupHandler_Post(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -195,11 +187,10 @@ func TestGroupHandler_Post(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -242,11 +233,10 @@ func TestGroupHandler_Post(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -293,11 +283,10 @@ func TestGroupHandler_Delete(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -349,11 +338,10 @@ func TestGroupHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -402,11 +390,10 @@ func TestGroupHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -455,11 +442,10 @@ func TestGroupHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -510,11 +496,10 @@ func TestGroupHandler_Patch(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.Default())
+
 			do.Provide(i, testrunner.NewManager)
 
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterModels(db)
 
 			pswd := rand.Text()
 			pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -563,11 +548,10 @@ func TestGroupHandler_Patch(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.Default())
+
 			do.Provide(i, testrunner.NewManager)
 
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterModels(db)
 
 			pswd := rand.Text()
 			pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -621,11 +605,10 @@ func TestGroupHandler_Get(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -676,11 +659,10 @@ func TestGroupHandler_Get(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
@@ -732,11 +714,8 @@ func TestGroupHandler_List(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
-		do.Provide(i, testrunner.NewManager)
 
-		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
+		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
@@ -761,11 +740,10 @@ func TestGroupHandler_List(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		pswd := rand.Text()
 		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)

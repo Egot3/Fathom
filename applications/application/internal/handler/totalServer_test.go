@@ -5,16 +5,13 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	mrand "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	charmlog "github.com/charmbracelet/log"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/database/repositories"
@@ -110,7 +107,7 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -179,7 +176,7 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -305,7 +302,7 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -380,7 +377,7 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -483,7 +480,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -557,7 +554,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -647,7 +644,7 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -723,7 +720,7 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -843,7 +840,7 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -919,7 +916,7 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -1007,7 +1004,6 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -1084,7 +1080,6 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 	t.Run("Not running", func(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -1141,7 +1136,6 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 	t.Run("Not found", func(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -1248,7 +1242,6 @@ func TestTotalHandler_Totalize(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -1326,7 +1319,6 @@ func TestTotalHandler_Totalize(t *testing.T) {
 	t.Run("Not running", func(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -1373,7 +1365,6 @@ func TestTotalHandler_Totalize(t *testing.T) {
 	t.Run("Not found", func(t *testing.T) {
 		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
