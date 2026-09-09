@@ -1,0 +1,9 @@
+{
+  "prettier": {
+    "allowed": false
+  },
+  "completions": {
+    
+  },
+  "semantic_tokens": "combined"
+}

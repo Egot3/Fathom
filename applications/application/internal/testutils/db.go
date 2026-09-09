@@ -31,7 +31,7 @@ func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 	err = RunMigrations(tb.Context(), db)
 	require.NoError(tb, err)
 
-	RegisterModels(db)
+	models.RegisterAll(db)
 
 	tb.Cleanup(func() {
 		err := db.Close()
@@ -51,10 +51,4 @@ func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 	})
 
 	return i
-}
-
-func RegisterModels(db *bun.DB) {
-	db.RegisterModel((*models.GroupsUsers)(nil))
-	db.RegisterModel((*models.TestsQuizzes)(nil))
-	db.RegisterModel((*models.GroupsUsers)(nil))
 }

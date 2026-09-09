@@ -9,8 +9,5 @@ import (
 func registerAll(i do.Injector) {
 	db := do.MustInvoke[*bun.DB](i)
 
-	db.RegisterModel((*models.GroupsUsers)(nil))
-	db.RegisterModel((*models.UserGroupsTests)(nil))
-	db.RegisterModel((*models.GroupsUsers)(nil))
-	db.RegisterModel((*models.TestsQuizzes)(nil))
+	models.RegisterAll(db)
 }
