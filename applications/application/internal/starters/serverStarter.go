@@ -1,6 +1,8 @@
 package starters
 
 import (
+	"context"
+	"errors"
 	"net/http"
 
 	"github.com/egot3/fathom/internal/config"
@@ -10,15 +12,23 @@ import (
 
 type Starter interface {
 	Serve() error
+	Shutdown(ctx context.Context) error
 }
 
 type httpStarter struct {
-	port    string // really hate like it looks. uint64 is impossible to conv
-	handler http.Handler
+	server *http.Server
 }
 
 func (h httpStarter) Serve() error {
-	return http.ListenAndServe(":"+h.port, h.handler)
+	err := h.server.ListenAndServe()
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+	return err
+}
+
+func (h httpStarter) Shutdown(ctx context.Context) error {
+	return h.server.Shutdown(ctx)
 }
 
 func newHTTPStarter(i do.Injector) (Starter, error) {
@@ -26,7 +36,9 @@ func newHTTPStarter(i do.Injector) (Starter, error) {
 	handler := do.MustInvoke[chi.Router](i)
 
 	return httpStarter{
-		port:    cfg.ServerPort,
-		handler: handler,
+		server: &http.Server{
+			Addr:    ":" + cfg.ServerPort,
+			Handler: handler,
+		},
 	}, nil
 }
