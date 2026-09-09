@@ -2,9 +2,12 @@ package testutils
 
 import (
 	"database/sql"
+	"log/slog"
+	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/charmbracelet/log"
 	"github.com/egot3/fathom/internal/config"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/samber/do/v2"
@@ -44,7 +47,11 @@ func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 		packages...,
 	)
 
+	logger := log.New(os.Stderr)
+	logger.SetLevel(log.DebugLevel)
+
 	do.ProvideValue(i, cfg)
+	do.ProvideValue(i, slog.New(logger))
 
 	do.Provide(i, func(i do.Injector) (*bun.DB, error) {
 		return db, nil

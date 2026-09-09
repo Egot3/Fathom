@@ -30,18 +30,11 @@ func NewInjectorWithTestRepo(t testing.TB) do.Injector {
 	return i
 }
 
-func RegisterModels(db *bun.DB) {
-	db.RegisterModel((*models.TestsQuizzes)(nil))
-	db.RegisterModel((*models.GroupsUsers)(nil))
-}
-
 func TestTest_Creation(t *testing.T) {
 
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-
-	RegisterModels(db)
 
 	t.Run("New test", func(t *testing.T) {
 
@@ -79,8 +72,6 @@ func TestTest_Deletion(t *testing.T) {
 	r := do.MustInvoke[test.TestRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
-	RegisterModels(db)
-
 	test := models.Test{Name: rand.Text()}
 	err := db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
@@ -108,8 +99,6 @@ func TestTest_Update(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-
-	RegisterModels(db)
 
 	test := models.Test{Name: rand.Text()}
 	err := db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
@@ -139,8 +128,6 @@ func TestTest_Read(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-
-	RegisterModels(db)
 
 	test := models.Test{Name: rand.Text()}
 	err := db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
@@ -172,8 +159,6 @@ func TestTest_Bundle(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-
-	RegisterModels(db)
 
 	t.Run("Valid bundle", func(t *testing.T) {
 		test := models.Test{Name: rand.Text()}
@@ -252,7 +237,6 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 
 		r := do.MustInvoke[test.TestRepository](i)
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		name := rand.Text()
 		testUUID := uuid.UUID{}
@@ -293,7 +277,6 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 
 		r := do.MustInvoke[test.TestRepository](i)
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		name := rand.Text()
 		testUUID := uuid.UUID{}
@@ -333,7 +316,6 @@ func BenchmarkGroup_Bundle_quizzes(b *testing.B) {
 
 		r := do.MustInvoke[test.TestRepository](i)
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterModels(db)
 
 		name := rand.Text()
 		testUUID := uuid.UUID{}
@@ -374,8 +356,6 @@ func TestTest_Prune(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[test.TestRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-
-	RegisterModels(db)
 
 	t.Run("Valid prune", func(t *testing.T) {
 		test := models.Test{Name: rand.Text()}
