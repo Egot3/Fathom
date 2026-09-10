@@ -147,4 +147,15 @@ func TestInitAdmin(t *testing.T) {
 			require.Equal(t, pswd, admin.PasswordHash)
 		})
 	})
+
+	t.Run("Bad DB", func(t *testing.T) {
+		i := do.New()
+		do.OverrideValue(i, &config.Config{LogLevel: "debug"})
+		do.Override(i, func(i do.Injector) (*bun.DB, error) {
+			return (*bun.DB)(nil), nil
+		})
+
+		starters.InitAdmin(i)
+
+	})
 }
