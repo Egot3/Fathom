@@ -3,7 +3,6 @@ package total
 import (
 	"context"
 	"database/sql"
-	"log"
 
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/models"
@@ -29,7 +28,6 @@ func (r *bunTotalRepository) SetAnswer(ctx context.Context, testUUID, groupUUID,
 		return err
 	}
 	if !e {
-		log.Printf("user not found")
 		return sql.ErrNoRows
 	}
 
@@ -40,7 +38,6 @@ func (r *bunTotalRepository) SetAnswer(ctx context.Context, testUUID, groupUUID,
 		return err
 	}
 	if !e {
-		log.Printf("group not found")
 		return sql.ErrNoRows
 	}
 

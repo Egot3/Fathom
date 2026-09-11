@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	mrand "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
@@ -49,7 +48,6 @@ func TestQuizHandler_Post(t *testing.T) {
 
 		i := i.Scope("valid")
 
-		do.ProvideValue(i, slog.Default())
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -136,7 +134,7 @@ func TestQuizHandler_Post(t *testing.T) {
 				i := testutils.NewTestInjector(t,
 					repositories.RepositoryPackage,
 				)
-				do.ProvideValue(i, slog.Default())
+
 				do.Provide(i, testrunner.NewManager)
 
 				do.Provide(i, handler.NewTestService)
@@ -170,7 +168,7 @@ func TestQuizHandler_Post(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		name := rand.Text()
@@ -225,7 +223,7 @@ func TestQuizHandler_Get(t *testing.T) {
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
-	do.ProvideValue(i, slog.Default())
+
 	do.Provide(i, testrunner.NewManager)
 
 	f := testutils.TestQuiz(t)
@@ -302,7 +300,7 @@ func TestQuizHandler_List(t *testing.T) {
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
-	do.ProvideValue(i, slog.Default())
+
 	do.Provide(i, testrunner.NewManager)
 
 	f := testutils.TestQuiz(t)
@@ -354,7 +352,7 @@ func TestQuizHandler_Delete(t *testing.T) {
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
-	do.ProvideValue(i, slog.Default())
+
 	do.Provide(i, testrunner.NewManager)
 
 	f := testutils.TestQuiz(t)
@@ -426,7 +424,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 		cfg := do.MustInvoke[*config.Config](i)
 
@@ -507,7 +505,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.Default())
+
 			do.Provide(i, testrunner.NewManager)
 
 			file := testutils.TestQuiz(t)
@@ -560,7 +558,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.Default())
+
 			do.Provide(i, testrunner.NewManager)
 
 			file := testutils.TestQuiz(t)
@@ -614,7 +612,7 @@ func TestQuizHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		file := testutils.TestQuiz(t)
@@ -668,7 +666,7 @@ func TestQuizHandler_GetParsed(t *testing.T) {
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
-	do.ProvideValue(i, slog.Default())
+
 	do.Provide(i, testrunner.NewManager)
 
 	t.Run("Valid", func(t *testing.T) {

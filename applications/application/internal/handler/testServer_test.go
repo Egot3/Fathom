@@ -6,15 +6,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	mrand "math/rand/v2"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
-	charmlog "github.com/charmbracelet/log"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/database/repositories"
 	"github.com/egot3/fathom/internal/handler"
@@ -29,11 +26,6 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func RegisterM2M(db *bun.DB) {
-	db.RegisterModel((*models.TestsQuizzes)(nil))
-	db.RegisterModel((*models.GroupsUsers)(nil))
-}
-
 func TestTestHandler_AddQuizzes(t *testing.T) {
 
 	t.Run("Valid", func(t *testing.T) {
@@ -41,7 +33,7 @@ func TestTestHandler_AddQuizzes(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -52,7 +44,6 @@ func TestTestHandler_AddQuizzes(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -121,7 +112,7 @@ quiz sample(different): %v`,
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -132,7 +123,6 @@ quiz sample(different): %v`,
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -171,7 +161,7 @@ quiz sample(different): %v`,
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -182,7 +172,6 @@ quiz sample(different): %v`,
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -265,7 +254,7 @@ func TestTestHandler_Delete(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -276,7 +265,6 @@ func TestTestHandler_Delete(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -305,7 +293,7 @@ func TestTestHandler_Delete(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -316,7 +304,6 @@ func TestTestHandler_Delete(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -348,7 +335,7 @@ func TestTestHandler_Get(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -359,7 +346,6 @@ func TestTestHandler_Get(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -390,7 +376,7 @@ func TestTestHandler_Get(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -401,7 +387,6 @@ func TestTestHandler_Get(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -428,7 +413,7 @@ func TestTestHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -439,7 +424,6 @@ func TestTestHandler_Patch(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -476,7 +460,7 @@ func TestTestHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -487,7 +471,6 @@ func TestTestHandler_Patch(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -525,7 +508,7 @@ func TestTestHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -536,7 +519,6 @@ func TestTestHandler_Patch(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -571,7 +553,7 @@ func TestTestHandler_Patch(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
@@ -582,7 +564,6 @@ func TestTestHandler_Patch(t *testing.T) {
 				Name: rand.Text(),
 			}
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterM2M(db)
 
 			err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 			require.NoError(t, err)
@@ -619,7 +600,7 @@ func TestTestHandler_Patch(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
@@ -630,7 +611,6 @@ func TestTestHandler_Patch(t *testing.T) {
 				Name: rand.Text(),
 			}
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterM2M(db)
 
 			err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 			require.NoError(t, err)
@@ -672,7 +652,7 @@ func TestTestHandler_Post(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
@@ -680,7 +660,6 @@ func TestTestHandler_Post(t *testing.T) {
 			require.NoError(t, err)
 
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterM2M(db)
 
 			reqJSON, err := json.Marshal(contracts.PostTestRequest{
 				Name: rand.Text(),
@@ -710,7 +689,7 @@ func TestTestHandler_Post(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
@@ -718,7 +697,6 @@ func TestTestHandler_Post(t *testing.T) {
 			require.NoError(t, err)
 
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterM2M(db)
 
 			quizzes := make([]models.Quiz, 10)
 			lo.ForEach(quizzes, func(quiz models.Quiz, i int) {
@@ -781,7 +759,7 @@ func TestTestHandler_Post(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -792,7 +770,6 @@ func TestTestHandler_Post(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -822,7 +799,7 @@ func TestTestHandler_Post(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
@@ -833,7 +810,6 @@ func TestTestHandler_Post(t *testing.T) {
 				Name: rand.Text(),
 			}
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterM2M(db)
 
 			err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 			require.NoError(t, err)
@@ -869,7 +845,7 @@ func TestTestHandler_Post(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
@@ -877,7 +853,6 @@ func TestTestHandler_Post(t *testing.T) {
 			require.NoError(t, err)
 
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterM2M(db)
 
 			reqJSON, err := json.Marshal(contracts.PostTestRequest{
 				Name: "1",
@@ -913,7 +888,7 @@ func TestTestHandler_RemoveQuizzes(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -924,7 +899,6 @@ func TestTestHandler_RemoveQuizzes(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -998,7 +972,7 @@ quiz sample(different): %v`,
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -1009,7 +983,6 @@ quiz sample(different): %v`,
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -1048,7 +1021,7 @@ quiz sample(different): %v`,
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -1059,7 +1032,6 @@ quiz sample(different): %v`,
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -1131,7 +1103,7 @@ func TestTestHandler_List(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -1142,7 +1114,6 @@ func TestTestHandler_List(t *testing.T) {
 			Name: rand.Text(),
 		}
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
@@ -1176,7 +1147,7 @@ func TestTestHandler_List(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
@@ -1187,7 +1158,6 @@ func TestTestHandler_List(t *testing.T) {
 				Name: rand.Text(),
 			}
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterM2M(db)
 
 			err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 			require.NoError(t, err)
@@ -1211,7 +1181,7 @@ func TestTestHandler_List(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
@@ -1222,7 +1192,6 @@ func TestTestHandler_List(t *testing.T) {
 				Name: rand.Text(),
 			}
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterM2M(db)
 
 			err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 			require.NoError(t, err)
@@ -1246,7 +1215,7 @@ func TestTestHandler_List(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.New(charmlog.New(os.Stderr)))
+
 			do.Provide(i, testrunner.NewManager)
 
 			do.Provide(i, handler.NewTestService)
@@ -1257,7 +1226,6 @@ func TestTestHandler_List(t *testing.T) {
 				Name: rand.Text(),
 			}
 			db := do.MustInvoke[*bun.DB](i)
-			RegisterM2M(db)
 
 			err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
 			require.NoError(t, err)
@@ -1285,9 +1253,6 @@ func TestTestHandler_Start(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.New(charmlog.NewWithOptions(os.Stderr, charmlog.Options{
-			Level: charmlog.DebugLevel,
-		})))
 
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
@@ -1297,7 +1262,6 @@ func TestTestHandler_Start(t *testing.T) {
 		m := do.MustInvoke[*testrunner.Manager](i)
 
 		db := do.MustInvoke[*bun.DB](i)
-		RegisterM2M(db)
 
 		test := models.Test{
 			Name: rand.Text(),

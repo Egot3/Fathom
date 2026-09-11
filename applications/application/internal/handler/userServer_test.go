@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -63,7 +62,7 @@ func TestUserHandler_Register(t *testing.T) {
 				i := testutils.NewTestInjector(t,
 					repositories.RepositoryPackage,
 				)
-				do.ProvideValue(i, slog.Default())
+
 				do.Provide(i, testrunner.NewManager)
 
 				do.Provide(i, handler.NewTestService)
@@ -148,7 +147,6 @@ func TestUserHandler_Register(t *testing.T) {
 				i := testutils.NewTestInjector(t,
 					repositories.RepositoryPackage,
 				)
-				do.ProvideValue(i, slog.Default())
 
 				do.Provide(i, testrunner.NewManager)
 
@@ -181,7 +179,7 @@ func TestUserHandler_Register(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 
 		do.Provide(i, handler.NewTestService)
@@ -221,7 +219,7 @@ func TestUserHandler_Login(t *testing.T) {
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
-	do.ProvideValue(i, slog.Default())
+
 	do.Provide(i, testrunner.NewManager)
 
 	db := do.MustInvoke[*bun.DB](i)
@@ -302,7 +300,7 @@ func TestUserHandler_Get(t *testing.T) {
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
-	do.ProvideValue(i, slog.Default())
+
 	do.Provide(i, testrunner.NewManager)
 
 	db := do.MustInvoke[*bun.DB](i)
@@ -369,7 +367,7 @@ func TestUserHandler_List(t *testing.T) {
 	i := testutils.NewTestInjector(t,
 		repositories.RepositoryPackage,
 	)
-	do.ProvideValue(i, slog.Default())
+
 	do.Provide(i, testrunner.NewManager)
 
 	db := do.MustInvoke[*bun.DB](i)
@@ -423,7 +421,7 @@ func TestUserHandler_Delete(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -471,7 +469,7 @@ func TestUserHandler_Delete(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -518,7 +516,7 @@ func TestUserHandler_Delete(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -565,7 +563,7 @@ func TestUserHandler_Delete(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -643,7 +641,7 @@ func TestUserHandler_Patch(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.Default())
+
 			do.Provide(i, testrunner.NewManager)
 			do.Provide(i, handler.NewTestService)
 
@@ -724,7 +722,7 @@ func TestUserHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -777,7 +775,7 @@ func TestUserHandler_Patch(t *testing.T) {
 		i := testutils.NewTestInjector(t,
 			repositories.RepositoryPackage,
 		)
-		do.ProvideValue(i, slog.Default())
+
 		do.Provide(i, testrunner.NewManager)
 		do.Provide(i, handler.NewTestService)
 
@@ -834,7 +832,7 @@ func TestUserHandler_Patch(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.Default())
+
 			do.Provide(i, testrunner.NewManager)
 			do.Provide(i, handler.NewTestService)
 
@@ -890,7 +888,7 @@ func TestUserHandler_Patch(t *testing.T) {
 			i := testutils.NewTestInjector(t,
 				repositories.RepositoryPackage,
 			)
-			do.ProvideValue(i, slog.Default())
+
 			do.Provide(i, testrunner.NewManager)
 			do.Provide(i, handler.NewTestService)
 
