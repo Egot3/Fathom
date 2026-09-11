@@ -28,19 +28,10 @@ func NewInjectorWithTestRepo(t testing.TB) do.Injector {
 	return i
 }
 
-func RegisterModels(db *bun.DB) {
-	db.RegisterModel((*models.TestsQuizzes)(nil))
-	db.RegisterModel((*models.GroupsUsers)(nil))
-	db.RegisterModel((*models.UserGroupsTests)(nil))
-	db.RegisterModel((*models.Answer)(nil))
-}
-
 func TestAnswer_Set(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-
-	RegisterModels(db)
 
 	testM := models.Test{Name: rand.Text()}
 	err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
@@ -173,8 +164,6 @@ func TestAnswer_Get(t *testing.T) {
 	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
-	RegisterModels(db)
-
 	testM := models.Test{Name: rand.Text()}
 	err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 	require.NoError(t, err)
@@ -243,8 +232,6 @@ func TestAnswer_Totalization(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-
-	RegisterModels(db)
 
 	testM := models.Test{Name: rand.Text()}
 	err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
@@ -379,8 +366,6 @@ func TestAnswer_Totals(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
 	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
-
-	RegisterModels(db)
 
 	testM := models.Test{Name: rand.Text()}
 	err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
@@ -582,9 +567,7 @@ func TestAnswer_Totals(t *testing.T) {
 func BenchmarkTotals_Errors(b *testing.B) {
 	i := NewInjectorWithTestRepo(b)
 	r := do.MustInvoke[total.TotalRepository](i)
-	db := do.MustInvoke[*bun.DB](i)
 
-	RegisterModels(db)
 	b.Run("Not found", func(b *testing.B) {
 		for b.Loop() {
 			r.UserTotals(b.Context(), uuid.Nil, 0, 1)

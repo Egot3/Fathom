@@ -24,6 +24,18 @@ type Config struct {
 	QuizPath string
 }
 
+var ConfigPackage = do.Package(
+	do.Lazy(Load),
+)
+
+func parseLogSinks(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return []string{"slog"}
+	}
+	return strings.Split(raw, ",")
+}
+
 func getEnv(key, fallback string, allowed []string) string {
 	if v, ok := os.LookupEnv(key); ok && (allowed == nil || slices.Contains(allowed, v)) {
 		return v
@@ -47,7 +59,7 @@ func Load(i do.Injector) (*Config, error) {
 
 		ServerPort: getEnv("SERVER_PORT", "8080", nil),
 		LogLevel:   getEnv("LOG_LEVEL", "info", nil),
-		LogSinks:   strings.Split(os.Getenv("LOG_SINKS"), ","),
+		LogSinks:   parseLogSinks(os.Getenv("LOG_SINKS")),
 
 		InitAdminUsername: os.Getenv("INIT_ADMIN_USERNAME"),
 		InitAdminPassword: os.Getenv("INIT_ADMIN_PASSWORD"),
