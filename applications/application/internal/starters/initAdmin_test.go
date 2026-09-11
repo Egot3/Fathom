@@ -21,7 +21,8 @@ func TestInitAdmin(t *testing.T) {
 
 		db := do.MustInvoke[*bun.DB](i)
 
-		starters.InitAdmin(i)
+		err := starters.InitAdmin(i)
+		require.NoError(t, err)
 
 		count, err := db.NewSelect().Model((*models.User)(nil)).Count(t.Context())
 		require.NoError(t, err)
@@ -42,7 +43,8 @@ func TestInitAdmin(t *testing.T) {
 
 		db := do.MustInvoke[*bun.DB](i)
 
-		starters.InitAdmin(i)
+		err := starters.InitAdmin(i)
+		require.NoError(t, err)
 
 		var admin models.User
 		count, err := db.NewSelect().Model(&admin).ScanAndCount(t.Context())
@@ -75,7 +77,8 @@ func TestInitAdmin(t *testing.T) {
 				_, err = db.NewInsert().Model(&models.User{Nickname: name, PasswordHash: pswd}).Exec(t.Context())
 				require.NoError(t, err)
 
-				starters.InitAdmin(i)
+				err = starters.InitAdmin(i)
+				require.NoError(t, err)
 
 				var admin models.User
 				count, err := db.NewSelect().Model(&admin).ScanAndCount(t.Context())
@@ -105,7 +108,8 @@ func TestInitAdmin(t *testing.T) {
 				_, err = db.NewInsert().Model(&models.User{Nickname: name, PasswordHash: pswd, IsTeacher: true}).Exec(t.Context())
 				require.NoError(t, err)
 
-				starters.InitAdmin(i)
+				err = starters.InitAdmin(i)
+				require.NoError(t, err)
 
 				var admin models.User
 				count, err := db.NewSelect().Model(&admin).ScanAndCount(t.Context())
@@ -135,7 +139,8 @@ func TestInitAdmin(t *testing.T) {
 			_, err = db.NewInsert().Model(&models.User{Nickname: name, PasswordHash: pswd, IsTeacher: true}).Exec(t.Context())
 			require.NoError(t, err)
 
-			starters.InitAdmin(i)
+			err = starters.InitAdmin(i)
+			require.NoError(t, err)
 
 			var admin models.User
 			count, err := db.NewSelect().Model(&admin).ScanAndCount(t.Context())
@@ -149,13 +154,22 @@ func TestInitAdmin(t *testing.T) {
 	})
 
 	t.Run("Bad DB", func(t *testing.T) {
+		i := testutils.NewTestInjector(t)
+		do.OverrideValue(i, &config.Config{LogLevel: "debug", InitAdminPassword: rand.Text(), InitAdminUsername: rand.Text()})
+		db := do.MustInvoke[*bun.DB](i)
+		require.NoError(t, db.Close())
+
+		err := starters.InitAdmin(i)
+		require.Error(t, err)
+	})
+
+	t.Run("Bad BCRypt pswd", func(t *testing.T) {
 		i := do.New()
-		do.OverrideValue(i, &config.Config{LogLevel: "debug"})
-		do.Override(i, func(i do.Injector) (*bun.DB, error) {
-			return (*bun.DB)(nil), nil
-		})
+		do.ProvideValue(i, &config.Config{LogLevel: "debug", InitAdminUsername: rand.Text(),
+			InitAdminPassword: testutils.GenerateRandomString(80)})
+		do.ProvideValue(i, (*bun.DB)(nil))
 
-		starters.InitAdmin(i)
-
+		err := starters.InitAdmin(i)
+		require.Error(t, err)
 	})
 }

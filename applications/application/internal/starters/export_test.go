@@ -1,4 +1,4 @@
 package starters
 
-var InitAdmin = initAdmin
+var InitAdmin = initAdminErrorable
 var RegisterAll = registerAll
