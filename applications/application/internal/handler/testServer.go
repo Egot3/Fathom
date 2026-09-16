@@ -1075,8 +1075,11 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := logging.WithLogger(r.Context(), logger)
 
-	testUUIDs := c.manager.AllTests()
-	keys := c.manager.GetAll()
+	runners := c.manager.AllRunners()
+	testUUIDs := make(uuid.UUIDs, 0, len(runners))
+	for _, testUUID := range runners {
+		testUUIDs = append(testUUIDs, testUUID)
+	}
 
 	tests, err := c.testRepo.Tests(ctx, testUUIDs)
 	if err != nil {
@@ -1085,19 +1088,28 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	testInfos := make([]contracts.RunningInfo, len(tests))
-	for i, test := range tests {
-		tr, ok := c.manager.Get(keys[i])
+	testsByUUID := make(map[uuid.UUID]models.Test, len(tests))
+	for _, test := range tests {
+		testsByUUID[test.UUID] = test
+	}
+
+	testInfos := make([]contracts.RunningInfo, 0, len(runners))
+	for key, testUUID := range runners {
+		tr, ok := c.manager.Get(key)
 		if !ok {
 			continue
 		}
+		test, ok := testsByUUID[testUUID]
+		if !ok {
+			continue // me when I delete test from db mid-run
+		}
 
-		testInfos[i] = contracts.RunningInfo{
-			Key:      keys[i],
+		testInfos = append(testInfos, contracts.RunningInfo{
+			Key:      key,
 			Deadline: tr.Deadline(),
 			IsPaused: tr.IsPaused(),
 			Test:     test,
-		}
+		})
 	}
 
 	w.WriteHeader(http.StatusOK)

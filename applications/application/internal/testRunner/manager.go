@@ -90,16 +90,16 @@ func (m *Manager) IsQuizRunning(searchedUUID uuid.UUID) bool {
 	return false
 }
 
-func (m *Manager) AllTests() uuid.UUIDs {
+func (m *Manager) AllRunners() map[uint64]uuid.UUID {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	testUUIDs := make(uuid.UUIDs, 0, len(m.runners))
-	for _, r := range m.runners {
-		testUUIDs = append(testUUIDs, r.Test())
+	tests := make(map[uint64]uuid.UUID, len(m.runners))
+	for key, r := range m.runners {
+		tests[key] = r.Test()
 	}
 
-	return testUUIDs
+	return tests
 }
 
 func NewManager(i do.Injector) (*Manager, error) {
