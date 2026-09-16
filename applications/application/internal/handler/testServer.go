@@ -667,8 +667,8 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 	_, err = c.manager.Start(ctx, duration, quizPathes, quizUUIDs, req.GroupsUUIDs, test.UUID)
 	if err != nil {
 		logger.Error("unable to start test", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)                                            // all returned errors are user dependant anyways
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to start test"}) // all errors are user readable anyway
+		w.WriteHeader(http.StatusBadRequest) // all returned errors are user dependant anyways
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
 		return
 	}
 
