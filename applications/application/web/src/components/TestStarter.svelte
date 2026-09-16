@@ -24,6 +24,8 @@
   let pageSize = $state(5);
 
   let statusMessage = $state("");
+  let startStatusMessage = $state("");
+
   let loading = $state(true);
   let listTests: Tests = $state(null as never);
 
@@ -39,10 +41,9 @@
     clearTimeout(time);
 
     time = setTimeout(async () => {
-      statusMessage = await FetchAllTests(p - 1, ps)
+      startStatusMessage = await FetchAllTests(p - 1, ps)
         .map((r) => {
           listTests = r;
-          console.log(listTests);
           loading = false;
           return r;
         })
@@ -84,15 +85,15 @@
     return;
   }
 
-  $inspect(duration);
+  $inspect(statusMessage);
 </script>
 
 {#if loading}
   <div class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"></div>
 {:else}
-  {#if statusMessage}
+  {#if startStatusMessage}
     <div class="h-full w-full rounded-xl">
-      <p>{statusMessage}</p>
+      <p>{startStatusMessage}</p>
     </div>
   {:else}
     {#if listTests.total !== 0}
@@ -174,15 +175,23 @@
         </fieldset>
       </form>
     {/if}
-    <button
-      disabled={chosenTest === "" ||
-        chosenGroups.size === 0 ||
-        duration === "0h0m0s"}
-      class="btn preset-filled-brand"
-      onclick={startTest}
-    >
-      Run
-    </button>
-    <!-- hollup, I might rename it. Imagine using screan reader and hearing that -->
+    <div class="flex">
+      <button
+        disabled={chosenTest === "" ||
+          chosenGroups.size === 0 ||
+          duration === "0h0m0s"}
+        class="btn preset-filled-brand"
+        onclick={startTest}
+      >
+        Run
+      </button>
+      <!-- hollup, I might rename it. Imagine using screan reader and hearing that -->
+
+      {#if statusMessage !== ""}
+        <div class="ml-auto badge preset-filled-error-100-900 text-xs">
+          {statusMessage}
+        </div>
+      {/if}
+    </div>
   {/if}
 {/if}
