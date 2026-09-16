@@ -67,7 +67,7 @@ export function FetchCurrentlyRunningTestInfos(): ResultAsync<
 > {
   return ResultAsync.fromPromise(
     TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running`,
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/all`,
     ),
     (err): JSONError => {
       console.log(

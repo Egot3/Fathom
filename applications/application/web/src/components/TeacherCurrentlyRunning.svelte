@@ -29,7 +29,7 @@
       currentlyRunning = (
         await FetchCurrentlyRunningTestInfos().andTee((r) => {
           loading = false;
-          isCurrentlyRunning = r.length === 0;
+          isCurrentlyRunning = r.length !== 0;
         })
       ).match(
         (r) => r,
