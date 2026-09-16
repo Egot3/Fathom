@@ -5,15 +5,21 @@
   import PeekDialogue from "./PeekDialogue.svelte";
   import TestStarter from "./TestStarter.svelte";
   import {
-    FetchCurrentlyRunningTestInfo,
+    FetchCurrentlyRunningTestInfos,
     type Test,
     type TestInfo,
   } from "../lib/contracts/test";
 
-  let currentlyRunning: TestInfo | null = $state(null);
+  let isCurrentlyRunning: boolean = $state(false);
+  let currentlyRunning: TestInfo[] = $state(null as never)
+
   let trig = $state(0);
   let loading = $state(true);
   let statusMessage = $state("");
+
+
+  let chosenId = $state(0)
+  let chosen = $derived(currentlyRunning[chosenId])
 
   $effect(() => {
     trig;
@@ -21,15 +27,16 @@
     loading = true;
 
     (async () => {
-      currentlyRunning = await FetchCurrentlyRunningTestInfo()
+      currentlyRunning = (await FetchCurrentlyRunningTestInfos()
         .andTee((r) => {
           loading = false;
-        })
+          isCurrentlyRunning = r.length === 0
+        }))
         .match(
           (r) => r,
           (err) => {
             statusMessage = err.error;
-            return null;
+            return [];
           },
         );
     })();
@@ -51,17 +58,20 @@
         }}>Reload?</button
       >
     {:else}
-      {#if currentlyRunning === null}
+      {#if isCurrentlyRunning}
         <div>NOTHING</div>
       {:else}
-        <p>Test {currentlyRunning.test.name}</p>
+        <span>
+            <ChipSelector options={currentlyRunning.map((e)=>e.test.name)} bind:selected={chosenId} />
+        </span>
+        <p>Test {chosen.test.name}</p>
         <div class="flex space-x-1">
-          Deadline: {currentlyRunning.deadline}
+          Deadline: {chosen.deadline}
           <button class="chip preset-outlined-primary-500">Extend</button>
         </div>
         <ChipSelector
           options={["running", "paused"]}
-          selected={currentlyRunning.isPaused ? 1 : 0}
+          selected={chosen.isPaused ? 1 : 0}
         ></ChipSelector>
 
         <div class="flex space-x-1">

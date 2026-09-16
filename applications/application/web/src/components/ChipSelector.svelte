@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { CheckIcon } from "@lucide/svelte";
 
-	const { options = [] as string[], selected = 0 } = $props();
+	const { options = [] as string[], selected = $bindable(0) } = $props();
 
 	let color = $derived(options[selected]);
 
