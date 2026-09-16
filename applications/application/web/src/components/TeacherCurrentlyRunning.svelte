@@ -10,15 +10,15 @@
     type TestInfo,
   } from "../lib/contracts/test";
 
-  let isCurrentlyRunning: boolean = $state(false);
-  let currentlyRunning: TestInfo[] = $state(null as never);
+  let isCurrentlyRunning: boolean = $state(true);
+  let currentlyRunning: TestInfo[] = $state([]);
 
   let trig = $state(0);
   let loading = $state(true);
   let statusMessage = $state("");
 
   let chosenId = $state(0);
-  let chosen = $derived(currentlyRunning[chosenId]);
+  let chosen = $derived(currentlyRunning?.[chosenId]);
 
   $effect(() => {
     trig;
@@ -40,6 +40,8 @@
       );
     })();
   });
+
+  $inspect(currentlyRunning.length);
 </script>
 
 <article class="flex flex-col h-full space-y-5">
@@ -57,23 +59,23 @@
         }}>Reload?</button
       >
     {:else}
-      {#if !isCurrentlyRunning}
+      {#if !isCurrentlyRunning || currentlyRunning.length === 0}
         <div>NOTHING</div>
       {:else}
         <span>
           <ChipSelector
-            options={currentlyRunning.map((e) => e.test.name)}
+            options={currentlyRunning.map((e) => e.name)}
             bind:selected={chosenId}
           />
         </span>
-        <p>Test {chosen.test.name}</p>
+        <p>Test {chosen.name}</p>
         <div class="flex space-x-1">
           Deadline: {chosen.deadline}
           <button class="chip preset-outlined-primary-500">Extend</button>
         </div>
         <ChipSelector
           options={["running", "paused"]}
-          selected={chosen.isPaused ? 1 : 0}
+          selected={chosen?.isPaused ? 1 : 0}
         ></ChipSelector>
 
         <div class="flex space-x-1">

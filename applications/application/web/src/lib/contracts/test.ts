@@ -51,8 +51,7 @@ export async function FetchTest(testUUID: string): Promise<Test | JSONError> {
   }
 }
 
-export type TestInfo = {
-  test: Test;
+export type TestInfo = Test & {
   deadline: Date;
   isPaused: boolean;
 };
