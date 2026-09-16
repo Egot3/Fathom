@@ -11,15 +11,14 @@
   } from "../lib/contracts/test";
 
   let isCurrentlyRunning: boolean = $state(false);
-  let currentlyRunning: TestInfo[] = $state(null as never)
+  let currentlyRunning: TestInfo[] = $state(null as never);
 
   let trig = $state(0);
   let loading = $state(true);
   let statusMessage = $state("");
 
-
-  let chosenId = $state(0)
-  let chosen = $derived(currentlyRunning[chosenId])
+  let chosenId = $state(0);
+  let chosen = $derived(currentlyRunning[chosenId]);
 
   $effect(() => {
     trig;
@@ -27,18 +26,18 @@
     loading = true;
 
     (async () => {
-      currentlyRunning = (await FetchCurrentlyRunningTestInfos()
-        .andTee((r) => {
+      currentlyRunning = (
+        await FetchCurrentlyRunningTestInfos().andTee((r) => {
           loading = false;
-          isCurrentlyRunning = r.length === 0
-        }))
-        .match(
-          (r) => r,
-          (err) => {
-            statusMessage = err.error;
-            return [];
-          },
-        );
+          isCurrentlyRunning = r.length === 0;
+        })
+      ).match(
+        (r) => r,
+        (err) => {
+          statusMessage = err.error;
+          return [];
+        },
+      );
     })();
   });
 </script>
@@ -58,11 +57,14 @@
         }}>Reload?</button
       >
     {:else}
-      {#if isCurrentlyRunning}
+      {#if !isCurrentlyRunning}
         <div>NOTHING</div>
       {:else}
         <span>
-            <ChipSelector options={currentlyRunning.map((e)=>e.test.name)} bind:selected={chosenId} />
+          <ChipSelector
+            options={currentlyRunning.map((e) => e.test.name)}
+            bind:selected={chosenId}
+          />
         </span>
         <p>Test {chosen.test.name}</p>
         <div class="flex space-x-1">

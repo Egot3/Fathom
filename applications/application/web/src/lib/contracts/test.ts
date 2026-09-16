@@ -59,7 +59,7 @@ export type TestInfo = {
 
 type CurrentlyRunningResponse = {
   tests: TestInfo[];
-}
+};
 
 export function FetchCurrentlyRunningTestInfos(): ResultAsync<
   TestInfo[],
@@ -90,7 +90,7 @@ export function FetchCurrentlyRunningTestInfos(): ResultAsync<
           return { error: "couldn't parse error body" };
         },
       ).andThen((body) => {
-        return errAsync<TestInfo[] , JSONError>(body as JSONError);
+        return errAsync<TestInfo[], JSONError>(body as JSONError);
       });
     }
     return ResultAsync.fromPromise(
@@ -99,9 +99,7 @@ export function FetchCurrentlyRunningTestInfos(): ResultAsync<
         console.log("couldn't parse response body: ", err);
         return { error: "couldn't parse response body" };
       },
-    ).andThen((r) =>
-      okAsync(r.tests),
-    );
+    ).andThen((r) => okAsync(r.tests));
   });
 }
 
