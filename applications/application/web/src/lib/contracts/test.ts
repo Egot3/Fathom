@@ -19,8 +19,6 @@ export type Test = {
 
 type GetTestResponse = {
   test: Test;
-  deadline: string;
-  is_paused: boolean;
 };
 
 type GetQuizUUIDsResponse = {
@@ -59,8 +57,12 @@ export type TestInfo = {
   isPaused: boolean;
 };
 
-export function FetchCurrentlyRunningTestInfo(): ResultAsync<
-  TestInfo | null,
+type CurrentlyRunningResponse = {
+  tests: TestInfo[];
+}
+
+export function FetchCurrentlyRunningTestInfos(): ResultAsync<
+  TestInfo[],
   JSONError
 > {
   return ResultAsync.fromPromise(
@@ -79,7 +81,7 @@ export function FetchCurrentlyRunningTestInfo(): ResultAsync<
   ).andThen((r) => {
     if (!r.ok) {
       if (r.status === 423) {
-        return okAsync(null);
+        return okAsync([]);
       }
       return ResultAsync.fromPromise(
         r.json() as Promise<JSONError>,
@@ -88,21 +90,17 @@ export function FetchCurrentlyRunningTestInfo(): ResultAsync<
           return { error: "couldn't parse error body" };
         },
       ).andThen((body) => {
-        return errAsync<TestInfo | null, JSONError>(body as JSONError);
+        return errAsync<TestInfo[] , JSONError>(body as JSONError);
       });
     }
     return ResultAsync.fromPromise(
-      r.json() as Promise<GetTestResponse>,
+      r.json() as Promise<CurrentlyRunningResponse>,
       (err): JSONError => {
         console.log("couldn't parse response body: ", err);
         return { error: "couldn't parse response body" };
       },
     ).andThen((r) =>
-      okAsync({
-        test: r.test,
-        deadline: new Date(r.deadline),
-        isPaused: r.is_paused,
-      } as TestInfo),
+      okAsync(r.tests),
     );
   });
 }
