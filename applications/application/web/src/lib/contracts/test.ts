@@ -1,4 +1,4 @@
-import { errAsync, okAsync, ResultAsync } from "neverthrow";
+import { errAsync, fromPromise, okAsync, ResultAsync } from "neverthrow";
 import {
   GetCurrentlyRunning,
   GetCurrentlyRunningCaching,
@@ -54,6 +54,7 @@ export async function FetchTest(testUUID: string): Promise<Test | JSONError> {
 export type TestInfo = Test & {
   deadline: Date;
   isPaused: boolean;
+  key: number;
 };
 
 type CurrentlyRunningResponse = {
@@ -165,97 +166,6 @@ export function FetchCurrentlyRunningQuizUUIDs(): ResultAsync<
     });
   });
 }
-
-// export async function FetchCurrentlyRunningQuizUUIDs(
-//   ETag?: string,
-// ): Promise<{ Caching: ETagInfo; UUIDs: string[] } | JSONError | null> {
-//   if (ETag === undefined) {
-//     try {
-//       const res = await TokenizedFetch(
-//         "https://" +
-//           import.meta.env.VITE_DOMAIN +
-//           "/api/v1/test/running/quizzes",
-//       );
-//       if (!res.ok) {
-//         if (res.status === 423) {
-//           return null;
-//         }
-//         return (await res.json()) as JSONError;
-//       }
-
-//       const etag = res.headers.get("ETag");
-//       if (etag == null) {
-//         return {
-//           UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-//           Caching: { ETag: "", ExpiresAt: new Date() },
-//         };
-//       }
-
-//       const reg = maxAgeRegex.exec(res.headers.get("Cache-Control") ?? "");
-//       if (reg == null || reg.length < 2) {
-//         return {
-//           UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-//           Caching: { ETag: "", ExpiresAt: new Date() },
-//         };
-//       }
-//       const maxAge = parseInt(reg[1], 10);
-//       return {
-//         UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-//         Caching: {
-//           ETag: etag,
-//           ExpiresAt: new Date(Date.now() + maxAge * 1000),
-//         },
-//       };
-//     } catch (e) {
-//       console.log("couldn't fetch current test info due to unknown error: ", e);
-//       return {
-//         error: "got network error while fetching current test",
-//       } as JSONError;
-//     }
-//   }
-
-//   try {
-//     const res = await TokenizedFetch(
-//       "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/running/quizzes",
-//       { headers: {} },
-//     );
-//     if (!res.ok) {
-//       if (res.status === 304) {
-//         return null;
-//       }
-//       return (await res.json()) as JSONError;
-//     }
-
-//     const etag = res.headers.get("ETag");
-//     if (etag == null) {
-//       return {
-//         UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-//         Caching: { ETag: "", ExpiresAt: new Date() },
-//       };
-//     }
-
-//     const reg = maxAgeRegex.exec(res.headers.get("Cache-Control") ?? "");
-//     if (reg == null || reg.length < 2) {
-//       return {
-//         UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-//         Caching: { ETag: "", ExpiresAt: new Date() },
-//       };
-//     }
-//     const maxAge = parseInt(reg[1], 10);
-//     return {
-//       UUIDs: ((await res.json()) as GetQuizUUIDsResponse).quiz_uuids,
-//       Caching: {
-//         ETag: etag,
-//         ExpiresAt: new Date(Date.now() + maxAge * 1000),
-//       },
-//     };
-//   } catch (e) {
-//     console.log("couldn't fetch current test info due to unknown error: ", e);
-//     return {
-//       error: "got network error while fetching current test",
-//     } as JSONError;
-//   }
-// }
 
 export type Tests = { tests: Test[]; total: number };
 
@@ -529,6 +439,72 @@ export function FetchTestStart(
         body: body,
         headers: {
           "Content-Type": "application/json",
+          Accept: "*/*;q=0", //those who nose
+        },
+      },
+    ),
+    (err): JSONError => {
+      console.log("Couldn't fetch test start: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send test start because of in-browser error",
+        };
+      }
+
+      return { error: "couldn't send test start because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
+        console.log("couldn't parse error's body: ", err);
+        return { error: "couldn't parse error's body" };
+      }).andThen((e: JSONError) => errAsync(e));
+    }
+
+    return okAsync(null);
+  });
+}
+
+export function FetchTestPause(key: number): ResultAsync<null, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/pause`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "*/*;q=0", //those who nose
+        },
+      },
+    ),
+    (err): JSONError => {
+      console.log("Couldn't fetch quiz patch for quiz: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send quiz patch because of in-browser error",
+        };
+      }
+
+      return { error: "couldn't send quiz patch because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
+        console.log("couldn't parse error's body: ", err);
+        return { error: "couldn't parse error's body" };
+      }).andThen((e: JSONError) => errAsync(e));
+    }
+
+    return okAsync(null);
+  });
+}
+
+export function FetchTestResume(key: number): ResultAsync<null, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/resume`,
+      {
+        method: "POST",
+        headers: {
           Accept: "*/*;q=0", //those who nose
         },
       },

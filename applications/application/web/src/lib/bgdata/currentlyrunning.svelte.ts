@@ -29,7 +29,8 @@ export function GetCurrentlyRunning(): currentlyRunningData | null {
       return currentlyRunning;
     }
 
-    return JSON.parse(cached);
+    const parsed = JSON.parse(cached);
+    return { ...parsed, Deadline: new Date(parsed.Deadline) };
   }
 
   return currentlyRunning;

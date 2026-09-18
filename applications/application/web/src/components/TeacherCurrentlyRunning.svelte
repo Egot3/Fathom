@@ -6,7 +6,7 @@
   import TestStarter from "./TestStarter.svelte";
   import {
     FetchCurrentlyRunningTestInfos,
-    type Test,
+    FetchTestPause,
     type TestInfo,
   } from "../lib/contracts/test";
 
@@ -19,6 +19,9 @@
 
   let chosenId = $state(0);
   let chosen = $derived(currentlyRunning?.[chosenId]);
+
+  let pauseresuming = $state(false);
+  let pauseresumeMessage: null | JSONError = $state(null);
 
   $effect(() => {
     trig;
@@ -41,7 +44,15 @@
     })();
   });
 
-  $inspect(currentlyRunning.length);
+  async function pause() {
+    pauseresuming = true;
+    pauseresumeMessage = await FetchTestPause(chosen.key)
+      .andTee((_) => (pauseresuming = false))
+      .match(
+        (r) => r,
+        (e) => e,
+      );
+  }
 </script>
 
 <article class="flex flex-col h-full space-y-5">
@@ -75,6 +86,7 @@
         </div>
         <ChipSelector
           options={["running", "paused"]}
+          working={pauseresuming}
           selected={chosen?.isPaused ? 1 : 0}
         ></ChipSelector>
 
