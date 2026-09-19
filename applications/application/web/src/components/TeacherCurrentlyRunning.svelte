@@ -134,11 +134,6 @@
           bind:selected={selectedId}
           onchange={() => togglePauseResume(selectedId)}
         />
-
-        <div class="flex space-x-1">
-          <button class="chip preset-outlined-primary-500">Add quizzes</button>
-          <button class="chip preset-outlined-error-500">Prune quizzes</button>
-        </div>
       {/if}
     {/if}
     <div
