@@ -10,6 +10,7 @@
     FetchTestResume,
     type TestInfo,
   } from "../lib/contracts/test";
+  import TestEnder from "./TestEnder.svelte";
 
   let isCurrentlyRunning: boolean = $state(true);
   let currentlyRunning: TestInfo[] = $state([]);
@@ -80,6 +81,8 @@
       pauseresuming = false;
     }
   }
+
+  async function stopTest() {}
 </script>
 
 <article class="flex flex-col h-full space-y-5">
@@ -129,9 +132,8 @@
     >
       <PeekDialogue title="Test starter">
         {#snippet trigger()}
-          <Dialog.Trigger
-            class="btn preset-filled-primary-500"
-            onclick={() => {}}>Start new</Dialog.Trigger
+          <Dialog.Trigger class="btn preset-filled-primary-500"
+            >Start new</Dialog.Trigger
           >
         {/snippet}
         <TestStarter
@@ -141,9 +143,21 @@
         />
       </PeekDialogue>
 
-      <button class="btn preset-outlined-error-500" disabled={!loading}
-        >End test</button
-      >
+      <PeekDialogue title="Test ender">
+        {#snippet trigger()}
+          <Dialog.Trigger
+            class="btn preset-outlined-error-500"
+            disabled={loading || !chosenTest}>End now</Dialog.Trigger
+          >
+        {/snippet}
+        <TestEnder
+          key={chosenTest?.key}
+          name={chosenTest?.name}
+          callback={() => {
+            trig++;
+          }}
+        />
+      </PeekDialogue>
       <!-- not stop as it could be confused for pause -->
     </div>
   {/if}

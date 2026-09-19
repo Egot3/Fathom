@@ -3,6 +3,7 @@
   import UXInput from "./UXInput.svelte";
   import { CopyToClipboard } from "../lib/apiutils/copy";
   import type { JSONError } from "../lib/statuses/jsonerror";
+  import type { ResultAsync } from "neverthrow";
 
   const {
     name,
@@ -14,7 +15,7 @@
     name: string;
     UUID: string;
 
-    deletor: (UUID: string) => Promise<null | JSONError>;
+    deletor: (UUID: string) => ResultAsync<null, JSONError>;
     callback: () => void;
   } = $props();
 
@@ -22,7 +23,7 @@
   let statusMessage: string = $state("");
   let nameReady: boolean = $state(false);
 
-  async function DeleteQuiz(e: Event) {
+  async function del(e: Event) {
     e.preventDefault();
 
     if (!nameReady) {
@@ -30,7 +31,10 @@
       return;
     }
 
-    const deleteResponse = await deletor(UUID);
+    const deleteResponse = await deletor(UUID).match(
+      (r) => r,
+      (e) => e,
+    );
     if (deleteResponse !== null) {
       statusMessage = deleteResponse.error;
       return;
@@ -40,7 +44,7 @@
   }
 </script>
 
-<form onsubmit={DeleteQuiz} class=" w-full flex flex-col h-full space-y-2">
+<form onsubmit={del} class=" w-full flex flex-col h-full space-y-2">
   <p class="text-xl">
     Please enter
 

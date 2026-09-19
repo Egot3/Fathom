@@ -1,3 +1,4 @@
+import { err, errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
 import { TokenizedFetch } from "./tokenizedFetch";
 import type { User } from "./user";
@@ -90,33 +91,37 @@ export async function FetchGroupPost(
   }
 }
 
-export async function FetchGroupDelete(
-  UUID: string,
-): Promise<null | JSONError> {
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/group/" + UUID,
+export function FetchGroupDelete(UUID: string): ResultAsync<null, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${UUID}`,
       {
         method: "DELETE",
       },
-    );
+    ),
+    (err) => {
+      console.log("Couldn't fetch group delete: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send group delete because of in-browser error",
+        };
+      }
 
-    if (!response.ok) {
+      return { error: "couldn't send group delete because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
       console.log("response is not ok!");
-      return (await response.json()) as JSONError;
+      return ResultAsync.fromPromise(
+        r.json() as Promise<JSONError>,
+        (err): JSONError => {
+          console.log("couldn't parse error's body: ", err);
+          return { error: "couldn't parse error's body" };
+        },
+      ).andThen((e: JSONError) => errAsync(e));
     }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch group delete for quiz: ", err);
-    if (err instanceof Error) {
-      return {
-        error: "couldn't send group delete because of in-browser error",
-      };
-    }
-
-    return { error: "couldn't send group delete because of unknown error" };
-  }
+    return okAsync(null);
+  });
 }
 
 type PatchGroupRequest = {
