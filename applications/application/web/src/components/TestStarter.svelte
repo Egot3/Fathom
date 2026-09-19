@@ -54,7 +54,9 @@
     });
   });
 
-  async function startTest() {
+  async function startTest(e: SubmitEvent) {
+    e.preventDefault();
+
     if (chosenTest === "") {
       statusMessage = "can't run test with no test selected";
       return;
@@ -84,8 +86,6 @@
 
     return;
   }
-
-  $inspect(statusMessage);
 </script>
 
 {#if loading}
@@ -97,52 +97,52 @@
     </div>
   {:else}
     {#if listTests.total !== 0}
-      {#each listTests.tests as test (test.uuid)}
-        <button
-          type="button"
-          class={`chip preset-outlined-surface-400-600 ${chosenTest === test.uuid ? "preset-tonal-primary" : ""}`}
-          onclick={() => {
-            chosenTest = test.uuid;
-          }}
-        >
-          {#if chosenTest === test.uuid}<CheckIcon size={14} />{/if}
-          <span>{test.name}</span>
-        </button>
-      {/each}
+      <form onsubmit={startTest}>
+        {#each listTests.tests as test (test.uuid)}
+          <button
+            type="button"
+            class={`chip preset-outlined-surface-400-600 ${chosenTest === test.uuid ? "preset-tonal-primary" : ""}`}
+            onclick={() => {
+              chosenTest = test.uuid;
+            }}
+          >
+            {#if chosenTest === test.uuid}<CheckIcon size={14} />{/if}
+            <span>{test.name}</span>
+          </button>
+        {/each}
 
-      <div class="flex justify-between items-center gap-4 w-full self-end">
-        <Pagination
-          count={listTests?.total ?? 0}
-          {pageSize}
-          {page}
-          onPageChange={(event) => (page = event.page)}
-          class="rounded-xl"
-        >
-          <Pagination.PrevTrigger>
-            <ArrowLeftIcon class="size-4" />
-          </Pagination.PrevTrigger>
-          <Pagination.Context>
-            {#snippet children(pagination)}
-              {#each pagination().pages as page, index (page)}
-                {#if page.type === "page"}
-                  <Pagination.Item {...page}>
-                    {page.value}
-                  </Pagination.Item>
-                {:else}
-                  <Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
-                {/if}
-              {/each}
-            {/snippet}
-          </Pagination.Context>
-          <Pagination.NextTrigger>
-            <ArrowRightIcon class="size-4" />
-          </Pagination.NextTrigger>
-        </Pagination>
-      </div>
+        <div class="flex justify-between items-center gap-4 w-full self-end">
+          <Pagination
+            count={listTests?.total ?? 0}
+            {pageSize}
+            {page}
+            onPageChange={(event) => (page = event.page)}
+            class="rounded-xl"
+          >
+            <Pagination.PrevTrigger>
+              <ArrowLeftIcon class="size-4" />
+            </Pagination.PrevTrigger>
+            <Pagination.Context>
+              {#snippet children(pagination)}
+                {#each pagination().pages as page, index (page)}
+                  {#if page.type === "page"}
+                    <Pagination.Item {...page}>
+                      {page.value}
+                    </Pagination.Item>
+                  {:else}
+                    <Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
+                  {/if}
+                {/each}
+              {/snippet}
+            </Pagination.Context>
+            <Pagination.NextTrigger>
+              <ArrowRightIcon class="size-4" />
+            </Pagination.NextTrigger>
+          </Pagination>
+        </div>
 
-      <GroupChips bind:chosen={chosenGroups} />
+        <GroupChips bind:chosen={chosenGroups} />
 
-      <form action="">
         <fieldset>
           <legend></legend>
           <label class="label">
@@ -173,25 +173,24 @@
             />
           </label>
         </fieldset>
+
+        <div class="flex">
+          <button
+            disabled={chosenTest === "" ||
+              chosenGroups.size === 0 ||
+              duration === "0h0m0s"}
+            class="btn preset-filled-brand"
+            type="submit"
+          >
+            Run
+          </button>
+          {#if statusMessage !== ""}
+            <div class="ml-auto badge preset-filled-error-100-900 text-xs">
+              {statusMessage}
+            </div>
+          {/if}
+        </div>
       </form>
     {/if}
-    <div class="flex">
-      <button
-        disabled={chosenTest === "" ||
-          chosenGroups.size === 0 ||
-          duration === "0h0m0s"}
-        class="btn preset-filled-brand"
-        onclick={startTest}
-      >
-        Run
-      </button>
-      <!-- hollup, I might rename it. Imagine using screan reader and hearing that -->
-
-      {#if statusMessage !== ""}
-        <div class="ml-auto badge preset-filled-error-100-900 text-xs">
-          {statusMessage}
-        </div>
-      {/if}
-    </div>
   {/if}
 {/if}
