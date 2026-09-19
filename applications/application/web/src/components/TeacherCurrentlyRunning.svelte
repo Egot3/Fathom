@@ -7,6 +7,7 @@
   import {
     FetchCurrentlyRunningTestInfos,
     FetchTestPause,
+    FetchTestResume,
     type TestInfo,
   } from "../lib/contracts/test";
 
@@ -17,41 +18,67 @@
   let loading = $state(true);
   let statusMessage = $state("");
 
-  let chosenId = $state(0);
-  let chosen = $derived(currentlyRunning?.[chosenId]);
+  let chosenTestId = $state(0);
+  let chosenTest = $derived(currentlyRunning?.[chosenTestId]);
 
+  let selectedId = $state(0);
   let pauseresuming = $state(false);
   let pauseresumeMessage: null | JSONError = $state(null);
 
+  async function refresh() {
+    loading = true;
+    (
+      await FetchCurrentlyRunningTestInfos().andTee((r) => {
+        isCurrentlyRunning = r.length !== 0;
+      })
+    ).match(
+      (r) => (currentlyRunning = r),
+      (err) => {
+        statusMessage = err.error;
+        currentlyRunning = [];
+      },
+    );
+    loading = false;
+  }
+
   $effect(() => {
     trig;
-
-    loading = true;
-
-    (async () => {
-      currentlyRunning = (
-        await FetchCurrentlyRunningTestInfos().andTee((r) => {
-          loading = false;
-          isCurrentlyRunning = r.length !== 0;
-        })
-      ).match(
-        (r) => r,
-        (err) => {
-          statusMessage = err.error;
-          return [];
-        },
-      );
-    })();
+    refresh();
   });
 
-  async function pause() {
+  $effect(() => {
+    console.log("running changing of is paused", chosenTest, pauseresuming);
+    if (!pauseresuming && chosenTest !== undefined) {
+      selectedId = chosenTest.is_paused ? 1 : 0;
+    }
+  });
+
+  async function pause(key: string) {
+    pauseresumeMessage = await FetchTestPause(key).match(
+      (r) => r,
+      (e) => e,
+    );
+  }
+  async function resume(key: string) {
+    pauseresumeMessage = await FetchTestResume(key).match(
+      (r) => r,
+      (e) => e,
+    );
+  }
+
+  async function togglePauseResume(nextSelected: number) {
+    if (pauseresuming) return;
     pauseresuming = true;
-    pauseresumeMessage = await FetchTestPause(chosen.key)
-      .andTee((_) => (pauseresuming = false))
-      .match(
-        (r) => r,
-        (e) => e,
-      );
+    try {
+      if (nextSelected === 1) {
+        await pause(chosenTest.key);
+      } else {
+        await resume(chosenTest.key);
+      }
+      await refresh();
+    } finally {
+      pauseresuming = false;
+    }
   }
 </script>
 
@@ -76,19 +103,20 @@
         <span>
           <ChipSelector
             options={currentlyRunning.map((e) => e.name)}
-            bind:selected={chosenId}
+            bind:selected={chosenTestId}
           />
         </span>
-        <p>Test {chosen.name}</p>
+        <p>Test {chosenTest.name}</p>
         <div class="flex space-x-1">
-          Deadline: {chosen.deadline}
+          Deadline: {chosenTest.deadline}
           <button class="chip preset-outlined-primary-500">Extend</button>
         </div>
         <ChipSelector
           options={["running", "paused"]}
           working={pauseresuming}
-          selected={chosen?.isPaused ? 1 : 0}
-        ></ChipSelector>
+          bind:selected={selectedId}
+          onchange={() => togglePauseResume(selectedId)}
+        />
 
         <div class="flex space-x-1">
           <button class="chip preset-outlined-primary-500">Add quizzes</button>
