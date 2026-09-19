@@ -53,8 +53,8 @@ export async function FetchTest(testUUID: string): Promise<Test | JSONError> {
 
 export type TestInfo = Test & {
   deadline: Date;
-  isPaused: boolean;
-  key: number;
+  is_paused: boolean;
+  key: string;
 };
 
 type CurrentlyRunningResponse = {
@@ -465,7 +465,7 @@ export function FetchTestStart(
   });
 }
 
-export function FetchTestPause(key: number): ResultAsync<null, JSONError> {
+export function FetchTestPause(key: string): ResultAsync<null, JSONError> {
   return ResultAsync.fromPromise(
     TokenizedFetch(
       `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/pause`,
@@ -498,7 +498,7 @@ export function FetchTestPause(key: number): ResultAsync<null, JSONError> {
   });
 }
 
-export function FetchTestResume(key: number): ResultAsync<null, JSONError> {
+export function FetchTestResume(key: string): ResultAsync<null, JSONError> {
   return ResultAsync.fromPromise(
     TokenizedFetch(
       `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/resume`,
