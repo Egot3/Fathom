@@ -257,29 +257,37 @@ export async function FetchTestPost(
   }
 }
 
-export async function FetchTestDelete(UUID: string): Promise<null | JSONError> {
-  try {
-    const rawRes = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + UUID,
+export function FetchTestDelete(UUID: string): ResultAsync<null, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${UUID}`,
       {
         method: "DELETE",
-        headers: {
-          Accept: "application/json",
-        },
       },
-    );
+    ),
+    (err) => {
+      console.log("Couldn't fetch test delete: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send test delete because of in-browser error",
+        };
+      }
 
-    if (!rawRes.ok) {
-      return (await rawRes.json()) as JSONError;
+      return { error: "couldn't send test delete because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      console.log("response is not ok!");
+      return ResultAsync.fromPromise(
+        r.json() as Promise<JSONError>,
+        (err): JSONError => {
+          console.log("couldn't parse error's body: ", err);
+          return { error: "couldn't parse error's body" };
+        },
+      ).andThen((e: JSONError) => errAsync(e));
     }
-
-    return null;
-  } catch (err) {
-    console.log("couldn't fetch current test info due to unknown error: ", err);
-    return {
-      error: "got network error while fetching current test",
-    } as JSONError;
-  }
+    return okAsync(null);
+  });
 }
 
 type PatchTestRequest = {
@@ -404,12 +412,12 @@ export async function FetchTestPrune(
 
     return null;
   } catch (err) {
-    console.log("Couldn't fetch quiz patch for quiz: ", err);
+    console.log("Couldn't fetch test prune for test: ", err);
     if (err instanceof Error) {
-      return { error: "couldn't send quiz patch because of in-browser error" };
+      return { error: "couldn't send test prune because of in-browser error" };
     }
 
-    return { error: "couldn't send quiz patch because of unknown error" };
+    return { error: "couldn't send test prune because of unknown error" };
   }
 }
 
@@ -477,14 +485,14 @@ export function FetchTestPause(key: string): ResultAsync<null, JSONError> {
       },
     ),
     (err): JSONError => {
-      console.log("Couldn't fetch quiz patch for quiz: ", err);
+      console.log("Couldn't fetch test pause: ", err);
       if (err instanceof Error) {
         return {
-          error: "couldn't send quiz patch because of in-browser error",
+          error: "couldn't send test pause because of in-browser error",
         };
       }
 
-      return { error: "couldn't send quiz patch because of unknown error" };
+      return { error: "couldn't send test pause because of unknown error" };
     },
   ).andThen((r) => {
     if (!r.ok) {
@@ -510,14 +518,47 @@ export function FetchTestResume(key: string): ResultAsync<null, JSONError> {
       },
     ),
     (err): JSONError => {
-      console.log("Couldn't fetch quiz patch for quiz: ", err);
+      console.log("Couldn't fetch test resume for quiz: ", err);
       if (err instanceof Error) {
         return {
-          error: "couldn't send quiz patch because of in-browser error",
+          error: "couldn't send test resume because of in-browser error",
         };
       }
 
-      return { error: "couldn't send quiz patch because of unknown error" };
+      return { error: "couldn't send test resume because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
+        console.log("couldn't parse error's body: ", err);
+        return { error: "couldn't parse error's body" };
+      }).andThen((e: JSONError) => errAsync(e));
+    }
+
+    return okAsync(null);
+  });
+}
+
+export function FetchTestStop(key: string): ResultAsync<null, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/stop`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "*/*;q=0",
+        },
+      },
+    ),
+    (err): JSONError => {
+      console.log("Couldn't fetch test stop for quiz: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send test stop because of in-browser error",
+        };
+      }
+
+      return { error: "couldn't send test stop because of unknown error" };
     },
   ).andThen((r) => {
     if (!r.ok) {
