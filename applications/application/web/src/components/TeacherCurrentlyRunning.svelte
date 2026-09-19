@@ -11,6 +11,7 @@
     type TestInfo,
   } from "../lib/contracts/test";
   import TestEnder from "./TestEnder.svelte";
+  import TestExtender from "./TestExtender.svelte";
 
   let isCurrentlyRunning: boolean = $state(true);
   let currentlyRunning: TestInfo[] = $state([]);
@@ -21,6 +22,9 @@
 
   let chosenTestId = $state(0);
   let chosenTest = $derived(currentlyRunning?.[chosenTestId]);
+  let deadline = $derived(
+    chosenTest?.deadline ? new Date(chosenTest.deadline).toLocaleString() : "",
+  );
 
   let selectedId = $state(0);
   let pauseresuming = $state(false);
@@ -48,7 +52,6 @@
   });
 
   $effect(() => {
-    console.log("running changing of is paused", chosenTest, pauseresuming);
     if (!pauseresuming && chosenTest !== undefined) {
       selectedId = chosenTest.is_paused ? 1 : 0;
     }
@@ -81,8 +84,6 @@
       pauseresuming = false;
     }
   }
-
-  async function stopTest() {}
 </script>
 
 <article class="flex flex-col h-full space-y-5">
@@ -111,8 +112,21 @@
         </span>
         <p>Test {chosenTest.name}</p>
         <div class="flex space-x-1">
-          Deadline: {chosenTest.deadline}
-          <button class="chip preset-outlined-primary-500">Extend</button>
+          Deadline: {deadline}
+
+          <PeekDialogue title="Test extender">
+            {#snippet trigger()}
+              <Dialog.Trigger class="chip preset-outlined-primary-500 ml-auto"
+                >Extend</Dialog.Trigger
+              >
+            {/snippet}
+            <TestExtender
+              callback={() => {
+                trig++;
+              }}
+              key={chosenTest.key}
+            />
+          </PeekDialogue>
         </div>
         <ChipSelector
           options={["running", "paused"]}

@@ -571,3 +571,49 @@ export function FetchTestStop(key: string): ResultAsync<null, JSONError> {
     return okAsync(null);
   });
 }
+
+type TestExtendRequest = {
+  extend_by: string;
+};
+
+export function FetchTestExtend(
+  key: string,
+  duration: string,
+): ResultAsync<null, JSONError> {
+  const body: TestExtendRequest = {
+    extend_by: duration,
+  };
+
+  const bodyString = JSON.stringify(body);
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/extend`,
+      {
+        method: "POST",
+        body: bodyString,
+        headers: {
+          Accept: "*/*;q=0",
+        },
+      },
+    ),
+    (err): JSONError => {
+      console.log("Couldn't fetch test extend for quiz: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send test extend because of in-browser error",
+        };
+      }
+
+      return { error: "couldn't send test extend because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
+        console.log("couldn't parse error's body: ", err);
+        return { error: "couldn't parse error's body" };
+      }).andThen((e: JSONError) => errAsync(e));
+    }
+
+    return okAsync(null);
+  });
+}

@@ -13,7 +13,6 @@ export async function TokenizedFetch(
       SetTokenExpiration(new Date(Date.now() - 1));
     default:
       const sessionControl = res.headers.get("Session-Control");
-      console.log("session control: ", sessionControl);
       if (sessionControl !== null) {
         const reg = maxAgeRegex.exec(sessionControl);
         if (reg === null || reg.length < 2) {
@@ -21,7 +20,6 @@ export async function TokenizedFetch(
         }
         const maxAge = parseInt(reg[1], 10);
 
-        console.log("max age", maxAge);
         SetTokenExpiration(new Date(Date.now() + maxAge * 1000));
       }
   }
