@@ -81,7 +81,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			r.Use(middlewares.JWT)
 
 			r.With(middleware.Maybe(middlewares.QuizNotRunning(svc.IsRunning), func(r *http.Request) bool {
-				return (r.Method != http.MethodOptions) || !middlewares.IsTeacherCondition(r)
+				return !middlewares.IsTeacherCondition(r)
 			})).Get("/{quiz_uuid}/parsed", svc.ParsedQuiz)
 
 			r.Group(func(r chi.Router) {
