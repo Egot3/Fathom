@@ -8,8 +8,7 @@
     type LoginResponse,
   } from "../lib/contracts/user";
   import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
-  import { TokenizedFetch } from "../lib/contracts/tokenizedFetch";
-  import { GetUser, SetUser } from "../lib/bgdata/user.svelte";
+  import { SetUser } from "../lib/bgdata/user.svelte";
   import { LoaderCircle } from "@lucide/svelte";
 
   const passwordPopover = usePopover({ id: "password" });
@@ -217,7 +216,8 @@
 
       <a
         class="btn btn-lg w-2/5 leading-[0.75] text-xl preset-outlined-primary-500 self-center"
-        href={"register?login=" + login}>
+        href={"register?login=" + login}
+      >
         Register
       </a>
     </form>

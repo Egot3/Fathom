@@ -12,6 +12,7 @@
   } from "../lib/contracts/test";
   import TestEnder from "./TestEnder.svelte";
   import TestExtender from "./TestExtender.svelte";
+  import { onMount } from "svelte";
 
   let isCurrentlyRunning: boolean = $state(true);
   let currentlyRunning: TestInfo[] = $state([]);
@@ -47,11 +48,6 @@
   }
 
   $effect(() => {
-    trig;
-    refresh();
-  });
-
-  $effect(() => {
     if (!pauseresuming && chosenTest !== undefined) {
       selectedId = chosenTest.is_paused ? 1 : 0;
     }
@@ -84,6 +80,10 @@
       pauseresuming = false;
     }
   }
+
+  onMount(() => {
+    refresh();
+  });
 </script>
 
 <article class="flex flex-col h-full space-y-5">
@@ -94,11 +94,8 @@
   {:else}
     {#if statusMessage !== ""}
       <div>{statusMessage}</div>
-      <button
-        class="btn preset-filled-warning-500"
-        onclick={() => {
-          trig++;
-        }}>Reload?</button
+      <button class="btn preset-filled-warning-500" onclick={refresh}
+        >Reload?</button
       >
     {:else}
       {#if !isCurrentlyRunning || currentlyRunning.length === 0}
@@ -120,12 +117,7 @@
                 >Extend</Dialog.Trigger
               >
             {/snippet}
-            <TestExtender
-              callback={() => {
-                trig++;
-              }}
-              key={chosenTest.key}
-            />
+            <TestExtender callback={refresh} key={chosenTest.key} />
           </PeekDialogue>
         </div>
         <ChipSelector
@@ -145,11 +137,7 @@
             >Start new</Dialog.Trigger
           >
         {/snippet}
-        <TestStarter
-          callback={() => {
-            trig++;
-          }}
-        />
+        <TestStarter callback={refresh} />
       </PeekDialogue>
 
       <PeekDialogue title="Test ender">
@@ -162,9 +150,7 @@
         <TestEnder
           key={chosenTest?.key}
           name={chosenTest?.name}
-          callback={() => {
-            trig++;
-          }}
+          callback={refresh}
         />
       </PeekDialogue>
       <!-- not stop as it could be confused for pause -->

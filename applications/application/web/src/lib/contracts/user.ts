@@ -49,6 +49,7 @@ export async function FetchLogin(
         },
         body: JSON.stringify(body),
       },
+      true,
     );
 
     if (!response.ok) {
@@ -87,6 +88,7 @@ export async function FetchRegister(
         },
         body: JSON.stringify(body),
       },
+      true,
     );
 
     if (!response.ok) {

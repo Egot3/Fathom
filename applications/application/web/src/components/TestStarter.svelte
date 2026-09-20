@@ -37,7 +37,7 @@
     trigger;
     loading = true;
 
-    console.log("detected change");
+    console.log("detected change", trigger, page, pageSize);
     clearTimeout(time);
 
     time = setTimeout(async () => {
@@ -51,7 +51,7 @@
           () => "",
           (err: JSONError) => err.error,
         );
-    });
+    }, 200);
   });
 
   async function startTest(e: SubmitEvent) {
