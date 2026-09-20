@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import type { Component } from "svelte";
   import Status404 from "./pages/Status404.svelte";
   import { GetUser } from "./lib/bgdata/user.svelte";
   import _ from "lodash";
+  import { createToaster, Toast } from "@skeletonlabs/skeleton-svelte";
+  import { Toaster } from "./lib/apiutils/toaster";
 
   const regex = /^https?:\/\/[^\/]+\/([^?#]+)/;
 
@@ -58,3 +59,15 @@
     {/await}
   {/if}
 {/if}
+
+<Toast.Group toaster={Toaster}>
+  {#snippet children(toast)}
+    <Toast {toast}>
+      <Toast.Message>
+        <Toast.Title>{toast.title}</Toast.Title>
+        <Toast.Description>{toast.description}</Toast.Description>
+      </Toast.Message>
+      <Toast.CloseTrigger />
+    </Toast>
+  {/snippet}
+</Toast.Group>
