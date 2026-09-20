@@ -39,19 +39,22 @@ func randomTest(t *testing.T, db *bun.DB) uuid.UUID {
 	return testUUID
 }
 
-func randomQuiz(t *testing.T, db *bun.DB) (uuid.UUID, string) {
+func randomQuiz(t *testing.T, db *bun.DB) (uuid.UUID, quiz.QuizAnswers) {
 	t.Helper()
 
 	fp, err := filepath.Abs("")
 	require.NoError(t, err)
 
+	answer := quiz.QuizAnswers{Input: new(quiz.AnswerInput{Input: rand.Text()})}
+	b, err := json.Marshal(answer)
+	require.NoError(t, err)
+
 	var quizUUID uuid.UUID
-	answer := rand.Text()
 	err = db.NewInsert().Model(&models.Quiz{
 		Path:          filepath.VolumeName(fp) + string(filepath.Separator) + rand.Text() + ".md",
 		Score:         1,
 		Checksum:      [8]byte{},
-		CorrectAnswer: answer,
+		CorrectAnswer: string(b),
 	}).Returning("uuid").Scan(t.Context(), &quizUUID)
 	require.NoError(t, err)
 
@@ -63,11 +66,15 @@ func predefinedQuiz(t *testing.T, db *bun.DB) (quizUUID uuid.UUID, path string) 
 
 	f := testutils.TestQuiz(t)
 
-	err := db.NewInsert().Model(&models.Quiz{
+	answer := quiz.QuizAnswers{Input: new(quiz.AnswerInput{Input: rand.Text()})}
+	b, err := json.Marshal(answer)
+	require.NoError(t, err)
+
+	err = db.NewInsert().Model(&models.Quiz{
 		Path:          f.Name(),
 		Score:         1,
 		Checksum:      [8]byte{},
-		CorrectAnswer: rand.Text(),
+		CorrectAnswer: string(b),
 	}).Returning("uuid, path").Scan(t.Context(), &quizUUID, &path)
 	require.NoError(t, err)
 
@@ -135,13 +142,15 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		answer := rand.Text()
+		answer := quiz.QuizAnswers{Input: new(quiz.AnswerInput{Input: rand.Text()})}
+		b, err := json.Marshal(answer)
+		require.NoError(t, err)
 		_, err = db.NewInsert().Model(&models.Answer{
 			TestUUID:    testUUID,
 			GroupUUID:   groupUUID,
 			UserUUID:    userUUID,
 			QuizUUID:    quizUUID,
-			AnswerValue: answer,
+			AnswerValue: string(b),
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
@@ -330,12 +339,14 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
+		b, err := json.Marshal(answer)
+		require.NoError(t, err)
 		_, err = db.NewInsert().Model(&models.Answer{
 			TestUUID:    testUUID,
 			GroupUUID:   groupUUID,
 			UserUUID:    userUUID,
 			QuizUUID:    quizUUID,
-			AnswerValue: answer,
+			AnswerValue: string(b),
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
@@ -508,12 +519,14 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
+		b, err := json.Marshal(answer)
+		require.NoError(t, err)
 		_, err = db.NewInsert().Model(&models.Answer{
 			TestUUID:    testUUID,
 			GroupUUID:   groupUUID,
 			UserUUID:    userUUID,
 			QuizUUID:    quizUUID,
-			AnswerValue: answer,
+			AnswerValue: string(b),
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
@@ -672,12 +685,14 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
+		b, err := json.Marshal(answer)
+		require.NoError(t, err)
 		_, err = db.NewInsert().Model(&models.Answer{
 			TestUUID:    testUUID,
 			GroupUUID:   groupUUID,
 			UserUUID:    userUUID,
 			QuizUUID:    quizUUID,
-			AnswerValue: answer,
+			AnswerValue: string(b),
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
@@ -868,12 +883,14 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
+		b, err := json.Marshal(answer)
+		require.NoError(t, err)
 		_, err = db.NewInsert().Model(&models.Answer{
 			TestUUID:    testUUID,
 			GroupUUID:   groupUUID,
 			UserUUID:    userUUID,
 			QuizUUID:    quizUUID,
-			AnswerValue: answer,
+			AnswerValue: string(b),
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
