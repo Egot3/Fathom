@@ -10,13 +10,13 @@ CREATE TABLE IF NOT EXISTS "users" (
     "created_at" TIMESTAMPTZ
 );
 
--- Create table "groups" 
+-- Create table "groups"
 CREATE TABLE IF NOT EXISTS "groups" (
     "uuid" UUID PRIMARY KEY,
     "name" VARCHAR(255) UNIQUE
 );
 
--- Create table "groups_users" 
+-- Create table "groups_users"
 CREATE TABLE IF NOT EXISTS "groups_users" (
     "group_uuid" UUID REFERENCES groups(uuid) ON DELETE CASCADE,
     "user_uuid"  UUID REFERENCES users(uuid) ON DELETE CASCADE,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS "users_groups_tests" (
     "finalized_at" TEXT NOT NULL,
 
     "score"      FLOAT NOT NULL,
-    
+
     PRIMARY KEY("test_uuid","group_uuid","user_uuid")
 );
 
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS "users_groups_tests_quiz_answers" (
     "user_uuid"    UUID REFERENCES users(uuid) ON DELETE CASCADE,
     "quiz_uuid"    UUID REFERENCES quizzes(uuid) ON DELETE CASCADE,
     "score"        FLOAT NOT NULL,
-    "answer_value" TEXT NOT NULL,
+    "answer_value" JSONB NOT NULL,
 
     "answered_at" TIMESTAMPTZ NOT NULL,
 

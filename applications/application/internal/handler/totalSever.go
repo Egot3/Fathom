@@ -83,6 +83,16 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
 		return
 	}
+	answerJSON := quiz.QuizAnswers{}
+	err = json.Unmarshal([]byte(answer), &answerJSON)
+	if err != nil {
+		logger.Error("couldn't parse the user's answer",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse user's answer"})
+		return
+	}
 
 	correct, err := c.quizRepo.CorrectAnswer(ctx, quizUUID)
 	if err != nil {
@@ -93,11 +103,16 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get correct answer"})
 		return
 	}
-
-	answerJSON := quiz.QuizAnswers{}
-	json.Unmarshal([]byte(answer), &answerJSON)
 	correctJSON := quiz.QuizAnswers{}
-	json.Unmarshal([]byte(correct), &correctJSON)
+	err = json.Unmarshal([]byte(correct), &correctJSON)
+	if err != nil {
+		logger.Error("couldn't parse the right answer",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse correct answer"})
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.AnswerResponse{
