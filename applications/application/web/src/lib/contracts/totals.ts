@@ -1,6 +1,7 @@
 import { ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
 import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
+import type { QuizAnswer } from "./quiz";
 
 type rawTotal = {
   test_uuid: string;
@@ -27,8 +28,8 @@ export type Answer = {
   test_uuid: string;
   user_uuid: string;
   quiz_uuid: string;
-  chosen: string;
-  correct: string;
+  chosen: QuizAnswer;
+  correct: QuizAnswer;
   submitted_at: Date;
 
   score: number;
