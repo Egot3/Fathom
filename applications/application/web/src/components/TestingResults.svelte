@@ -59,7 +59,7 @@
           </thead>
 
           <tbody>
-            {#each paginatedTotals.totals as total ((total.group_uuid, total.test_uuid, total.user_uuid))}
+            {#each paginatedTotals.totals as total (total.group_uuid + total.test_uuid + total.user_uuid)}
               <!-- Ultimate IDX -->
               {const ultimateUUID =
                 total.group_uuid + total.test_uuid + total.user_uuid}

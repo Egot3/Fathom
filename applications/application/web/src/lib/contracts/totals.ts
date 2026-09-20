@@ -1,5 +1,6 @@
+import { ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
-import { TokenizedFetch } from "./tokenizedFetch";
+import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
 
 type rawTotal = {
   test_uuid: string;
@@ -105,17 +106,17 @@ export async function FetchTotals(
   }
 }
 
-type AnswersOrJSONError = { answers: Answer[]; total: number } | JSONError;
+export type Answers = { answers: Answer[]; total: number };
 
-export async function FetchAnswers(
+export function FetchAnswers(
   groupUUID: string,
   userUUID: string,
   testUUID: string,
   page: number,
   size: number,
-): Promise<AnswersOrJSONError> {
-  try {
-    const rawRes = await TokenizedFetch(
+): ResultAsync<Answers, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
       `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/${groupUUID}/${userUUID}/${testUUID}/answers?page=${page}&size=${size}`,
       {
         method: "GET",
@@ -124,25 +125,15 @@ export async function FetchAnswers(
           "Content-Type": "application/x-www-form-urlencoded",
         },
       },
-    );
-
-    if (!rawRes.ok) {
-      return (await rawRes.json()) as JSONError;
-    }
-
-    const answers = (await rawRes.json()) as {
-      answers: Answer[];
-      total: number;
-    };
-    return answers;
-  } catch (err) {
-    console.log("Couldn't list answers: ", err);
-    if (err instanceof Error) {
-      return {
-        error: "couldn't fetch list answers because of in-browser error",
-      };
-    }
-
-    return { error: "couldn't fetch list answers because of unknown error" };
-  }
+    ),
+    (err) => {
+      console.log("Couldn't list answers: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch list answers because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch list answers because of unknown error" };
+    },
+  ).andThen((r) => NormalizeJSON<Answers>(r));
 }
