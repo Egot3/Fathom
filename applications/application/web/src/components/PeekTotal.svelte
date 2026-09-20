@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { FetchAnswers } from "../lib/contracts/totals";
-  import { IsJSONError } from "../lib/statuses/jsonerror";
+  import { FetchAnswers, type Answers } from "../lib/contracts/totals";
   import ParsedQuiz from "./ParsedQuiz.svelte";
 
   const {
@@ -18,19 +17,36 @@
   let page = $state(1);
   let pageSize = $state(5);
 
-  const response = $derived(
-    FetchAnswers(groupUUID, userUUID, testUUID, page - 1, pageSize),
-  );
+  let answers: Answers = $state(null as never);
+  let loading = $state(true);
+  let statusMessage = $state("");
+  $effect(() => {
+    loading = true;
+    (async () => {
+      statusMessage = (
+        await FetchAnswers(groupUUID, userUUID, testUUID, page - 1, pageSize)
+      )
+        .andTee((r) => {
+          loading = false;
+          answers = r;
+        })
+        .match(
+          (_) => "",
+          (err) => err.error,
+        );
+    })();
+  });
+
   let chosenUUID: string = $state("");
   let answerValue: string = $state(null as never);
 </script>
 
 <div class="flex flex-col h-23/25">
-  {#await response}
+  {#if loading}
     <div>loading...</div>
-  {:then answers}
-    {#if IsJSONError(answers)}
-      <div>{answers.error}</div>
+  {:else}
+    {#if statusMessage !== ""}
+      <div>{statusMessage}</div>
     {:else}
       <div class="grid grid-cols-12 w-full h-full mt-2">
         <div class="col-start-1 col-end-9 p-3">
@@ -61,5 +77,5 @@
         </div>
       </div>
     {/if}
-  {/await}
+  {/if}
 </div>

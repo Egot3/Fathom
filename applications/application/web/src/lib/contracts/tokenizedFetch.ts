@@ -1,6 +1,9 @@
+import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import { Toaster } from "../apiutils/toaster";
 import { GetTokenExpiration, SetTokenExpiration } from "../bgdata/user.svelte";
 import { ERR_UNAUTHORIZED } from "../carefulness/unauthorized";
+import type { JSONError } from "../statuses/jsonerror";
+import { untrack } from "svelte";
 
 export const maxAgeRegex = /max-age=(\d+)/;
 
@@ -10,7 +13,7 @@ export async function TokenizedFetch(
   loggedout?: boolean,
 ): Promise<Response> {
   if (!loggedout || loggedout === undefined) {
-    const exp = GetTokenExpiration();
+    const exp = untrack(GetTokenExpiration);
     console.log("got token exp: ", exp);
 
     if (exp < new Date()) {
@@ -28,7 +31,7 @@ export async function TokenizedFetch(
 
   switch (res.status) {
     case 401:
-      SetTokenExpiration(new Date(Date.now() - 1));
+      untrack(() => SetTokenExpiration(new Date(Date.now() - 1)));
     default:
       const sessionControl = res.headers.get("Session-Control");
       if (sessionControl !== null) {
@@ -38,9 +41,22 @@ export async function TokenizedFetch(
         }
         const maxAge = parseInt(reg[1], 10);
 
-        SetTokenExpiration(new Date(Date.now() + maxAge * 1000));
+        untrack(() => SetTokenExpiration(new Date(Date.now() + maxAge * 1000)));
       }
   }
 
   return res;
+}
+
+export function NormalizeJSON<T>(r: Response): ResultAsync<T, JSONError> {
+  if (!r.ok) {
+    return ResultAsync.fromPromise(r.json(), (err): JSONError => {
+      console.log("couldn't parse error's body: ", err);
+      return { error: "couldn't parse error's body" };
+    }).andThen((e: JSONError) => errAsync(e));
+  }
+
+  return ResultAsync.fromPromise(r.json(), (): JSONError => ({
+    error: "couldn't parse response body",
+  })).andThen((body: T) => okAsync(body));
 }

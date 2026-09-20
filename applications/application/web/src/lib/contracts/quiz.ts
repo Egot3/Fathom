@@ -6,7 +6,7 @@ import {
   ReadManifest,
 } from "../apiutils/quizManifest";
 import { type JSONError } from "../statuses/jsonerror";
-import { TokenizedFetch } from "./tokenizedFetch";
+import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
 
 export type Quiz = {
   uuid: string;
@@ -341,18 +341,13 @@ export function FetchParsedQuiz(
         error: `Quiz ${quizUUID} not found`,
       });
     }
-    if (!r.ok) {
-      return ResultAsync.fromPromise(r.json(), (): JSONError => ({
-        error: "couldn't parse error body",
-      })).andThen((body) => errAsync<ParsedQuiz, JSONError>(body as JSONError));
-    }
-    return ResultAsync.fromPromise(r.json(), (): JSONError => ({
-      error: "couldn't parse response body",
-    })).andThen((body: ParsedQuizResponse) => {
-      const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
-      console.log("ETag:", etag);
-      SetCachedQuiz(quizUUID, etag, body.quiz);
-      return okAsync(body.quiz);
-    });
+
+    return NormalizeJSON<ParsedQuizResponse>(r)
+      .andTee((body: ParsedQuizResponse) => {
+        const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
+        console.log("ETag:", etag);
+        SetCachedQuiz(quizUUID, etag, body.quiz);
+      })
+      .andThen((r) => okAsync(r.quiz));
   });
 }
