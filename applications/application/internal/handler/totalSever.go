@@ -13,6 +13,7 @@ import (
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/logging"
+	"github.com/egot3/fathom/internal/quiz"
 	testrunner "github.com/egot3/fathom/internal/testRunner"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -93,6 +94,11 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	answerJSON := quiz.QuizAnswers{}
+	json.Unmarshal([]byte(answer), &answerJSON)
+	correctJSON := quiz.QuizAnswers{}
+	json.Unmarshal([]byte(correct), &correctJSON)
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.AnswerResponse{
 		Answer: contracts.Answer{
@@ -100,8 +106,8 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 			TestUUID:  testUUID,
 			UserUUID:  userUUID,
 			QuizUUID:  quizUUID,
-			Chosen:    answer,
-			Correct:   correct,
+			Chosen:    answerJSON,
+			Correct:   correctJSON,
 		},
 	})
 }

@@ -13,13 +13,13 @@ import (
 */
 
 type Answer struct {
-	GroupUUID   uuid.UUID `json:"group_uuid" bun:"group_uuid"`
-	TestUUID    uuid.UUID `json:"test_uuid" bun:"test_uuid"`
-	UserUUID    uuid.UUID `json:"user_uuid" bun:"user_uuid"`
-	QuizUUID    uuid.UUID `json:"quiz_uuid" bun:"quiz_uuid"`
-	Chosen      string    `json:"chosen" bun:"answer_value"`
-	Correct     string    `json:"correct" bun:"correct"`
-	SubmittedAt time.Time `json:"submitted_at" bun:"answered_at"`
+	GroupUUID   uuid.UUID        `json:"group_uuid" bun:"group_uuid"`
+	TestUUID    uuid.UUID        `json:"test_uuid" bun:"test_uuid"`
+	UserUUID    uuid.UUID        `json:"user_uuid" bun:"user_uuid"`
+	QuizUUID    uuid.UUID        `json:"quiz_uuid" bun:"quiz_uuid"`
+	Chosen      quiz.QuizAnswers `json:"chosen" bun:"answer_value"`
+	Correct     quiz.QuizAnswers `json:"correct" bun:"correct"`
+	SubmittedAt time.Time        `json:"submitted_at" bun:"answered_at"`
 
 	Score    float32 `json:"score" bun:"score"`
 	MaxScore uint    `json:"max_score" bun:"max_score"`
