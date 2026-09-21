@@ -23,17 +23,17 @@
     options: QuizOptions;
     answers?: QuizAnswer;
     disabled: boolean;
-    correct?: string;
+    correct?: QuizAnswer;
   } = $props();
-
-  $inspect(options);
 </script>
 
 {#if kind === Kind.Input}
   {#if answers}
     {const inp = AnswerInput(answers)}
+    {const cor = correct!==undefined ? AnswerInput(correct) : ""}
+    {console.log("cor and inp", cor, inp)}
     <UXInput
-      state={correct === inp ? InputStatus.Treat : InputStatus.Punish}
+      state={cor === inp ? InputStatus.Treat : InputStatus.Punish}
       {disabled}
       value={inp}
       message={inp}

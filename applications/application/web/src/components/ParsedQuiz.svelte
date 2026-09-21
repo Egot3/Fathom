@@ -9,10 +9,10 @@
 
   const {
     UUID,
-    answerValue,
+    answeredValue,
   }: {
     UUID: string;
-    answerValue: string;
+    answeredValue: QuizAnswer;
   } = $props();
 
   let loading: boolean = $state(false);
@@ -31,6 +31,7 @@
     loading = true;
     const quizUUID: string = UUID;
 
+    clearTimeout(time)
     time = setTimeout(async () => {
       statusMessage = await FetchParsedQuiz(quizUUID).match(
         (r) => {
@@ -54,6 +55,14 @@
   });
 </script>
 
+{#if loading }
+    <div
+      class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
+    ></div>
+{:else}
+{#if statusMessage!==""}
+ <span class="justify-self-start">{statusMessage}</span>
+{:else}
 <div class="space-y-1 mt-4">
   <h2 class="text-5xl font-bold">{title}</h2>
 
@@ -64,7 +73,12 @@
       disabled={true}
       {kind}
       {options}
-      answers={answers || undefined}
+      answers={answeredValue}
+      correct={answers}
     ></AnsweredQuiz>
   {/if}
 </div>
+
+{/if}
+
+{/if}
