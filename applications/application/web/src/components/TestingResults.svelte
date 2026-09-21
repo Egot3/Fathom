@@ -2,30 +2,43 @@
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
-  import { IsJSONError } from "../lib/statuses/jsonerror";
-  import { FetchTotals, type TotalsOrError } from "../lib/contracts/totals";
+  import { FetchTotals, type Totals } from "../lib/contracts/totals";
   import PeekDialogBig from "./PeekDialogBig.svelte";
   import PeekTotal from "./PeekTotal.svelte";
+    import UserChips from "./UserChips.svelte";
 
   let height = $state(0);
 
   let page = $state(1);
   let pageSize = $derived(Math.trunc((height - 29 - 45 - 40) / 49));
 
+  let loading = $state(true)
+  let statusMessage = $state("")
+
   let trigger = $state(0);
   let time: number;
-  const paginatedTotalPromises = $derived.by(() => {
+  let paginatedTotals: Totals = $state(null as never);
+  $effect(() => {
     const p = page;
     const ps = pageSize;
     trigger; // well well well, it updates as an int(increment) and derived.by fires
 
     clearTimeout(time);
+    loading = true;
 
-    return new Promise<TotalsOrError>((resolve) => {
-      time = setTimeout(() => {
-        resolve(FetchTotals(p - 1, ps));
-      }, 500);
-    });
+    (async()=>{
+      await new Promise((resolve) => {
+       time = setTimeout(async () => {
+         statusMessage = await FetchTotals(p - 1, ps).andTee((r)=>{
+           paginatedTotals = r
+           loading = false
+         }).match((_)=>"", (err)=>err.error);
+
+         resolve(0)
+       }, 500);
+     });
+    })()
+
   });
 
   let focused = $state("");
@@ -35,15 +48,15 @@
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
   bind:clientHeight={height}
 >
-  {#await paginatedTotalPromises}
+  {#if loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
-  {:then paginatedTotals}
-    {#if IsJSONError(paginatedTotals)}
-      <div>{paginatedTotals.error}</div>
+  {:else}
+    {#if statusMessage !== ""}
+      <div>{statusMessage}</div>
     {:else}
-      {#if paginatedTotals.total == 0}
+      {#if paginatedTotals.total === 0}
         No total registered
         <!-- probably useless, 1 total is the one, watching it -->
       {:else}
@@ -67,7 +80,9 @@
                 onclick={() => (focused = ultimateUUID)}
                 class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
               >
-                <td class="w-1/5">{total.user_name}</td>
+                <td class="w-1/5">
+                    {total.user_name}
+                </td>
                 <td class="w-1/5">{total.group_name}</td>
                 <td class="w-1/5">{total.test_name}</td>
                 <td class="w-1/5">{total.score}</td>
@@ -132,5 +147,5 @@
         </div>
       {/if}
     {/if}
-  {/await}
+    {/if}
 </div>
