@@ -3,13 +3,6 @@ import type { JSONError } from "../statuses/jsonerror";
 import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
 import type { QuizAnswer } from "./quiz";
 
-type rawTotal = {
-  test_uuid: string;
-  group_uuid: string;
-  user_uuid: string;
-  score: number;
-};
-
 export type TestTotal = {
   test_name: string;
   group_name: string;

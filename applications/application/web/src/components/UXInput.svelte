@@ -71,7 +71,7 @@
 
     <Popover.Positioner>
       <Popover.Content
-        class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50"
+        class={"p-4 rounded-[4px] text-surface-950-50 border-none " + state === InputStatus.Punish ? "bg-error-50-950" : "bg-success-50-950"}
       >
         <Popover.Title tabindex={-1}>{message}</Popover.Title>
       </Popover.Content>

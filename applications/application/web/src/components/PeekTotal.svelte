@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { FetchAnswers, type Answers } from "../lib/contracts/totals";
+    import type { QuizAnswer } from "../lib/contracts/quiz";
+  import { FetchAnswers, type Answer, type Answers } from "../lib/contracts/totals";
   import ParsedQuiz from "./ParsedQuiz.svelte";
 
   const {
@@ -38,7 +39,10 @@
   });
 
   let chosenUUID: string = $state("");
-  let answerValue: string = $state(null as never);
+  let answerValue: QuizAnswer = $state(null as never);
+  $effect(()=>{
+    answerValue = answers?.answers?.[0]?.chosen ?? null as never
+  })
 </script>
 
 <div class="flex flex-col h-23/25">
@@ -51,8 +55,8 @@
       <div class="grid grid-cols-12 w-full h-full mt-2">
         <div class="col-start-1 col-end-9 p-3">
           <ParsedQuiz
+              answeredValue={answerValue}
             UUID={chosenUUID || answers.answers[0].quiz_uuid}
-            answerValue={answerValue || answers.answers[0].chosen}
           />
         </div>
         <div
