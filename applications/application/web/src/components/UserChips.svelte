@@ -14,9 +14,11 @@
   let {
     chosen = $bindable(new SvelteSet<string>()),
     existing = new SvelteSet<User>(),
+    maxSelect
   }: {
     chosen: SvelteSet<string>;
     existing?: SvelteSet<User>;
+    maxSelect?: number
   } = $props();
   $inspect(chosen);
 
@@ -61,6 +63,9 @@
               if (chosen.has(user.uuid)) {
                 chosen.delete(user.uuid);
               } else {
+                if (maxSelect && chosen.size >= maxSelect) {
+                  return
+                }
                 chosen.add(user.uuid);
               }
             }}
