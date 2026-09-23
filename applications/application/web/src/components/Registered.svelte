@@ -6,11 +6,7 @@
   import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
   import PeekDialogSquare from "./PeekDialogSquare.svelte";
   import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
-  import {
-    FetchUsers,
-    type User,
-    type UsersOrJSONError,
-  } from "../lib/contracts/user";
+  import { FetchUsers, type User } from "../lib/contracts/user";
   import DeleteUserForm from "./DeleteUserForm.svelte";
   import ChangeUserForm from "./ChangeUserForm.svelte";
   import UserPeek from "./UserPeek.svelte";
@@ -23,18 +19,32 @@
   let focused = $state("");
   let clickFocused = $state("");
 
+  let loading = $state(true);
+  let statusMessage = $state("");
+
+  let paginatedUsers: { users: User[]; total: number } = $state(null as never);
+
   let trigger = $state(0);
   let time: number;
-  const paginatedUserPromises = $derived.by(() => {
+  $effect(() => {
     const p = page;
     const ps = pageSize;
-    trigger;
 
     clearTimeout(time);
 
-    return new Promise<UsersOrJSONError>((resolve) => {
-      time = setTimeout(() => {
-        resolve(FetchUsers(p - 1, ps));
+    new Promise((resolve) => {
+      time = setTimeout(async () => {
+        statusMessage = await FetchUsers(p - 1, ps)
+          .andTee((r) => {
+            paginatedUsers = r;
+            loading = false;
+          })
+          .match(
+            (_) => "",
+            (err) => err.error,
+          );
+
+        resolve(0);
       }, 500);
     });
   });
@@ -44,13 +54,13 @@
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
   bind:clientHeight={height}
 >
-  {#await paginatedUserPromises}
+  {#if loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
-  {:then paginatedUsers}
-    {#if IsJSONError(paginatedUsers)}
-      <div>{paginatedUsers.error}</div>
+  {:else}
+    {#if statusMessage !== ""}
+      <div>{statusMessage}</div>
     {:else}
       {#if paginatedUsers.total == 0}
         No user registered
@@ -160,5 +170,5 @@
         </div>
       {/if}
     {/if}
-  {/await}
+  {/if}
 </div>
