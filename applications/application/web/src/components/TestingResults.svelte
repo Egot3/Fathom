@@ -5,15 +5,19 @@
   import { FetchTotals, type Totals } from "../lib/contracts/totals";
   import PeekDialogBig from "./PeekDialogBig.svelte";
   import PeekTotal from "./PeekTotal.svelte";
-    import UserChips from "./UserChips.svelte";
+  import UserChips from "./UserChips.svelte";
+  import { FetchUsers, type User } from "../lib/contracts/user";
+  import { FetchGroups, type Group } from "../lib/contracts/group";
+  import { FetchAllTests, type Test } from "../lib/contracts/test";
+  import SingleSelectPopover from "./SingleSelectPopover.svelte";
 
   let height = $state(0);
 
   let page = $state(1);
   let pageSize = $derived(Math.trunc((height - 29 - 45 - 40) / 49));
 
-  let loading = $state(true)
-  let statusMessage = $state("")
+  let loading = $state(true);
+  let statusMessage = $state("");
 
   let trigger = $state(0);
   let time: number;
@@ -26,19 +30,21 @@
     clearTimeout(time);
     loading = true;
 
-    (async()=>{
-      await new Promise((resolve) => {
-       time = setTimeout(async () => {
-         statusMessage = await FetchTotals(p - 1, ps).andTee((r)=>{
-           paginatedTotals = r
-           loading = false
-         }).match((_)=>"", (err)=>err.error);
+    new Promise((resolve) => {
+      time = setTimeout(async () => {
+        statusMessage = await FetchTotals(p - 1, ps)
+          .andTee((r) => {
+            paginatedTotals = r;
+            loading = false;
+          })
+          .match(
+            (_) => "",
+            (err) => err.error,
+          );
 
-         resolve(0)
-       }, 500);
-     });
-    })()
-
+        resolve(0);
+      }, 500);
+    });
   });
 
   let focused = $state("");
@@ -60,6 +66,27 @@
         No total registered
         <!-- probably useless, 1 total is the one, watching it -->
       {:else}
+        <div class="flex flex-wrap items-center gap-2 mb-2">
+          <SingleSelectPopover
+            label="User"
+            fetcher={FetchUsers}
+            itemLabel={(u: User) => u.nickname}
+            itemKey={(u: User) => u.uuid}
+          />
+          <SingleSelectPopover
+            label="Group"
+            fetcher={FetchGroups}
+            itemLabel={(g: Group) => g.name}
+            itemKey={(g: Group) => g.uuid}
+          />
+          <SingleSelectPopover
+            label="Test"
+            fetcher={FetchAllTests}
+            itemLabel={(t: Test) => t.name}
+            itemKey={(t: Test) => t.uuid}
+          />
+        </div>
+
         <table class="table table-auto self-start">
           <thead>
             <tr class="text-surface-100-900 flex">
@@ -81,7 +108,7 @@
                 class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
               >
                 <td class="w-1/5">
-                    {total.user_name}
+                  {total.user_name}
                 </td>
                 <td class="w-1/5">{total.group_name}</td>
                 <td class="w-1/5">{total.test_name}</td>
@@ -147,5 +174,5 @@
         </div>
       {/if}
     {/if}
-    {/if}
+  {/if}
 </div>

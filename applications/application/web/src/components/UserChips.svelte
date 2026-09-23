@@ -5,37 +5,48 @@
   import { IsJSONError } from "../lib/statuses/jsonerror";
   import { CheckIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
-  import {
-    FetchUsers,
-    type User,
-    type UsersOrJSONError,
-  } from "../lib/contracts/user";
+  import { FetchUsers, type User } from "../lib/contracts/user";
+  import type { Totals } from "../lib/contracts/totals";
 
   let {
     chosen = $bindable(new SvelteSet<string>()),
     existing = new SvelteSet<User>(),
-    maxSelect
+    maxSelect,
   }: {
     chosen: SvelteSet<string>;
     existing?: SvelteSet<User>;
-    maxSelect?: number
+    maxSelect?: number;
   } = $props();
   $inspect(chosen);
 
   let page = $state(1);
   let pageSize = $state(5);
 
+  let loading = $state(true);
+  let statusMessage = $state("");
+
+  let paginatedUsers: { users: User[]; total: number } = $state(null as never);
+
   let time: number;
-  const paginatedUserPromises = $derived.by(() => {
+  $effect(() => {
     const p = page;
     const ps = pageSize;
 
-    console.log("detected change");
     clearTimeout(time);
 
-    return new Promise<UsersOrJSONError>((resolve) => {
-      time = setTimeout(() => {
-        resolve(FetchUsers(p - 1, ps));
+    new Promise((resolve) => {
+      time = setTimeout(async () => {
+        statusMessage = await FetchUsers(p - 1, ps)
+          .andTee((r) => {
+            paginatedUsers = r;
+            loading = false;
+          })
+          .match(
+            (_) => "",
+            (err) => err.error,
+          );
+
+        resolve(0);
       }, 500);
     });
   });
@@ -46,13 +57,13 @@
 </script>
 
 <div class="grid gap-2 w-full place-items-center h-full overflow-auto">
-  {#await paginatedUserPromises}
+  {#if loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
-  {:then paginatedUsers}
-    {#if IsJSONError(paginatedUsers)}
-      <div>{paginatedUsers.error}</div>
+  {:else}
+    {#if statusMessage !== ""}
+      <div>{statusMessage}</div>
     {:else}
       {#if paginatedUsers.total !== 0}
         {#each paginatedUsers.users as user (user.uuid)}
@@ -64,7 +75,7 @@
                 chosen.delete(user.uuid);
               } else {
                 if (maxSelect && chosen.size >= maxSelect) {
-                  return
+                  return;
                 }
                 chosen.add(user.uuid);
               }
@@ -107,5 +118,5 @@
         </div>
       {/if}
     {/if}
-  {/await}
+  {/if}
 </div>

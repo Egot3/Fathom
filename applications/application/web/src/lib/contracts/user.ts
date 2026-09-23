@@ -1,6 +1,6 @@
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
-import { TokenizedFetch } from "./tokenizedFetch";
+import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
 
 type User = {
   uuid: string;
@@ -121,14 +121,12 @@ type ListUsersResponse = {
   users: User[];
 };
 
-export type UsersOrJSONError = ListUsersResponse | JSONError;
-
-export async function FetchUsers(
+export function FetchUsers(
   page: number,
   size: number,
-): Promise<UsersOrJSONError> {
-  try {
-    const rawRes = await TokenizedFetch(
+): ResultAsync<ListUsersResponse, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
       `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/?page=${page}&size=${size}`,
       {
         method: "GET",
@@ -136,21 +134,16 @@ export async function FetchUsers(
           Accept: "application/json",
         },
       },
-    );
+    ),
+    (err) => {
+      console.log("Couldn't fetch users: ", err);
+      if (err instanceof Error) {
+        return { error: "couldn't fetch users because of in-browser error" };
+      }
 
-    if (!rawRes.ok) {
-      return (await rawRes.json()) as JSONError;
-    }
-
-    return (await rawRes.json()) as ListUsersResponse;
-  } catch (err) {
-    console.log("Couldn't fetch users: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't fetch users because of in-browser error" };
-    }
-
-    return { error: "couldn't fetch users because of unknown error" };
-  }
+      return { error: "couldn't fetch users because of unknown error" };
+    },
+  ).andThen((r) => NormalizeJSON<ListUsersResponse>(r));
 }
 
 export function FetchUserDelete(UUID: string): ResultAsync<null, JSONError> {
