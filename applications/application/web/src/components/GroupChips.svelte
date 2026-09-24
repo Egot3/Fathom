@@ -8,7 +8,7 @@
   import {
     FetchGroups,
     type Group,
-    type GroupsOrJSONError,
+    type ListGroupResponse,
   } from "../lib/contracts/group";
 
   let {
@@ -23,17 +23,30 @@
   let page = $state(1);
   let pageSize = $state(5);
 
+  let paginatedGroups: ListGroupResponse = $state(null as never);
+  let statusMessage = $state("");
+  let loading = $state(true);
+
   let time: number;
-  const paginatedGroupPromises = $derived.by(() => {
+  $effect(() => {
     const p = page;
     const ps = pageSize;
 
-    console.log("detected change");
+    loading = true;
     clearTimeout(time);
 
-    return new Promise<GroupsOrJSONError>((resolve) => {
-      time = setTimeout(() => {
-        resolve(FetchGroups(p - 1, ps));
+    new Promise((resolve) => {
+      time = setTimeout(async () => {
+        statusMessage = await FetchGroups(p - 1, ps)
+          .andTee((r) => {
+            paginatedGroups = r;
+            loading = false;
+          })
+          .match(
+            (_) => "",
+            (e) => e.error,
+          );
+        resolve(0);
       }, 500);
     });
   });
@@ -44,13 +57,13 @@
 </script>
 
 <div class="w-full h-full overflow-auto gap-2">
-  {#await paginatedGroupPromises}
+  {#if loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
-  {:then paginatedGroups}
-    {#if IsJSONError(paginatedGroups)}
-      <div>{paginatedGroups.error}</div>
+  {:else}
+    {#if statusMessage}
+      <div>{statusMessage}</div>
     {:else}
       {#if paginatedGroups.total !== 0}
         {#each paginatedGroups.groups as group (group.uuid)}
@@ -102,5 +115,5 @@
         </div>
       {/if}
     {/if}
-  {/await}
+  {/if}
 </div>
