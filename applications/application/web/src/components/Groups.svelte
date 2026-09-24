@@ -11,7 +11,7 @@
   import {
     FetchGroups,
     type Group,
-    type GroupsOrJSONError,
+    type ListGroupResponse,
   } from "../lib/contracts/group";
   import CreateGroupForm from "./CreateGroupForm.svelte";
   import DeleteGroupForm from "./DeleteGroupForm.svelte";
@@ -24,9 +24,13 @@
   let page = $state(1);
   let pageSize = $derived(Math.trunc((height - 39 - 45) / 39));
 
+  let statusMessage = $state("");
+  let loading = $state(true);
+  let paginatedGroups: ListGroupResponse = $state(null as never);
+
   let trigger = $state(0);
   let time: number;
-  const paginatedGroupPromises = $derived.by(() => {
+  $effect(() => {
     const p = page;
     const ps = pageSize;
     trigger;
@@ -34,9 +38,18 @@
     console.log("detected change");
     clearTimeout(time);
 
-    return new Promise<GroupsOrJSONError>((resolve) => {
-      time = setTimeout(() => {
-        resolve(FetchGroups(p - 1, ps));
+    new Promise((resolve) => {
+      time = setTimeout(async () => {
+        statusMessage = await FetchGroups(p - 1, ps)
+          .andTee((r) => {
+            paginatedGroups = r;
+            loading = false;
+          })
+          .match(
+            (_) => "",
+            (e) => e.error,
+          );
+        resolve(0);
       }, 500);
     });
   });
@@ -49,13 +62,13 @@
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
   bind:clientHeight={height}
 >
-  {#await paginatedGroupPromises}
+  {#if loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
-  {:then paginatedGroups}
-    {#if IsJSONError(paginatedGroups)}
-      <div>{paginatedGroups.error}</div>
+  {:else}
+    {#if statusMessage}
+      <div>{statusMessage}</div>
     {:else}
       {#if paginatedGroups.total == 0}
         <CreateDialog
@@ -179,5 +192,5 @@
         </div>
       {/if}
     {/if}
-  {/await}
+  {/if}
 </div>

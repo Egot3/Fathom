@@ -1,6 +1,6 @@
 import { err, errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
-import { TokenizedFetch } from "./tokenizedFetch";
+import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
 import type { User } from "./user";
 
 export type Group = {
@@ -10,21 +10,19 @@ export type Group = {
   pupils: User[];
 };
 
-type ListGroupResponse = {
+export type ListGroupResponse = {
   page: number;
   size: number;
   total: number;
   groups: Group[];
 };
 
-export type GroupsOrJSONError = ListGroupResponse | JSONError;
-
-export async function FetchGroups(
+export function FetchGroups(
   page: number,
   size: number,
-): Promise<GroupsOrJSONError> {
-  try {
-    const rawRes = await TokenizedFetch(
+): ResultAsync<ListGroupResponse, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
       `https://${import.meta.env.VITE_DOMAIN}/api/v1/group?page=${page}&size=${size}`,
       {
         method: "GET",
@@ -32,21 +30,16 @@ export async function FetchGroups(
           Accept: "application/json",
         },
       },
-    );
+    ),
+    (err) => {
+      console.log("Couldn't fetch groups: ", err);
+      if (err instanceof Error) {
+        return { error: "couldn't fetch groups because of in-browser error" };
+      }
 
-    if (!rawRes.ok) {
-      return (await rawRes.json()) as JSONError;
-    }
-
-    return (await rawRes.json()) as ListGroupResponse;
-  } catch (err) {
-    console.log("Couldn't fetch groups: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't fetch groups because of in-browser error" };
-    }
-
-    return { error: "couldn't fetch groups because of unknown error" };
-  }
+      return { error: "couldn't fetch groups because of unknown error" };
+    },
+  ).andThen((r) => NormalizeJSON<ListGroupResponse>(r));
 }
 
 type PostGroupRequest = {

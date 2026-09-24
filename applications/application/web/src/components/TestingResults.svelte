@@ -19,6 +19,10 @@
   let loading = $state(true);
   let statusMessage = $state("");
 
+  let selectedUser = $state("");
+  let selectedGroup = $state("");
+  let selectedTest = $state("");
+
   let trigger = $state(0);
   let time: number;
   let paginatedTotals: Totals = $state(null as never);
@@ -72,18 +76,24 @@
             fetcher={FetchUsers}
             itemLabel={(u: User) => u.nickname}
             itemKey={(u: User) => u.uuid}
+            items={(t) => t.users}
+            selected={selectedUser}
           />
           <SingleSelectPopover
             label="Group"
             fetcher={FetchGroups}
             itemLabel={(g: Group) => g.name}
             itemKey={(g: Group) => g.uuid}
+            items={(g) => g.groups}
+            selected={selectedGroup}
           />
           <SingleSelectPopover
             label="Test"
             fetcher={FetchAllTests}
             itemLabel={(t: Test) => t.name}
             itemKey={(t: Test) => t.uuid}
+            items={(t) => t.tests}
+            selected={selectedTest}
           />
         </div>
 
