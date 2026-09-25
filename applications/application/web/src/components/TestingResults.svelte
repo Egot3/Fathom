@@ -70,39 +70,42 @@
         No total registered
         <!-- probably useless, 1 total is the one, watching it -->
       {:else}
-        <div class="flex flex-wrap items-center gap-2 mb-2">
-          <SingleSelectPopover
-            label="User"
-            fetcher={FetchUsers}
-            itemLabel={(u: User) => u.nickname}
-            itemKey={(u: User) => u.uuid}
-            items={(t) => t.users}
-            selected={selectedUser}
-          />
-          <SingleSelectPopover
-            label="Group"
-            fetcher={FetchGroups}
-            itemLabel={(g: Group) => g.name}
-            itemKey={(g: Group) => g.uuid}
-            items={(g) => g.groups}
-            selected={selectedGroup}
-          />
-          <SingleSelectPopover
-            label="Test"
-            fetcher={FetchAllTests}
-            itemLabel={(t: Test) => t.name}
-            itemKey={(t: Test) => t.uuid}
-            items={(t) => t.tests}
-            selected={selectedTest}
-          />
-        </div>
-
         <table class="table table-auto self-start">
           <thead>
             <tr class="text-surface-100-900 flex">
-              <th class="w-1/5">User</th>
-              <th class="w-1/5">Group</th>
-              <th class="w-1/5">Test</th>
+              <th class="w-1/5 flex gap-2 items-center">
+                User
+                <SingleSelectPopover
+                  label="User"
+                  fetcher={FetchUsers}
+                  itemLabel={(u: User) => u.nickname}
+                  itemKey={(u: User) => u.uuid}
+                  items={(t) => t.users}
+                  selected={selectedUser}
+                />
+              </th>
+              <th class="w-1/5 flex gap-2 items-center">
+                Group
+                <SingleSelectPopover
+                  label="Group"
+                  fetcher={FetchGroups}
+                  itemLabel={(g: Group) => g.name}
+                  itemKey={(g: Group) => g.uuid}
+                  items={(g) => g.groups}
+                  selected={selectedGroup}
+                />
+              </th>
+              <th class="w-1/5 flex gap-2 items-center">
+                Test
+                <SingleSelectPopover
+                  label="Test"
+                  fetcher={FetchAllTests}
+                  itemLabel={(t: Test) => t.name}
+                  itemKey={(t: Test) => t.uuid}
+                  items={(t) => t.tests}
+                  selected={selectedTest}
+                /></th
+              >
               <th class="w-1/5">Score</th>
               <th class="w-1/5">Totalized at</th>
             </tr>
