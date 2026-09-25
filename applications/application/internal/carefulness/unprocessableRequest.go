@@ -3,6 +3,7 @@ package carefulness
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 )
 
 type UnprocessableRequest struct {
@@ -15,10 +16,14 @@ func (e UnprocessableRequest) Error() string {
 }
 
 func (e UnprocessableRequest) JSONError() JSONError {
-	return JSONError{Error: e.Error()}
+	return JSONError{Err: e.Error(), Status: http.StatusUnprocessableEntity}
 }
 
 func (e UnprocessableRequest) Is(target error) bool {
 	var err *json.UnsupportedTypeError
 	return errors.As(target, &err)
+}
+
+func (e UnprocessableRequest) Encode(w http.ResponseWriter) {
+	e.JSONError().Encode(w)
 }

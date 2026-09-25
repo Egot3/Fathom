@@ -20,7 +20,7 @@ func IsTeacherRights(next http.Handler) http.Handler { // did you know you don't
 		if !ok {
 			logger.Error("Failed to retrieve jwt claims")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve jwt's claims"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve jwt's claims"})
 			return
 		}
 
@@ -30,7 +30,7 @@ func IsTeacherRights(next http.Handler) http.Handler { // did you know you don't
 				slog.Bool("IsTeacher", claims.IsTeacher),
 			)
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Not enough permissions for operation"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Not enough permissions for operation"})
 			return
 		}
 

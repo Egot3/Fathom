@@ -62,7 +62,7 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 			upd := testUUIDGetter(runnerKey)
 			if upd == uuid.Nil {
 				w.WriteHeader(http.StatusLocked)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "No test is running"})
+				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "No test is running"})
 				return
 			}
 
@@ -72,7 +72,7 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 			if !ok {
 				logger.Error("Failed to retrieve jwt claims")
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve jwt's claims"})
+				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve jwt's claims"})
 				return
 			}
 
@@ -95,7 +95,7 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 				}
 				if time.Until(d) <= 5*time.Second {
 					w.WriteHeader(http.StatusForbidden)
-					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "can't register new contestants 5s before the end"})
+					json.NewEncoder(w).Encode(carefulness.JSONError{Err: "can't register new contestants 5s before the end"})
 					return
 				}
 
@@ -130,7 +130,7 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 						slog.String("userUUID", userUUID.String()),
 					)
 					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't check if user is in allowed group"})
+					json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't check if user is in allowed group"})
 					return
 				}
 
@@ -140,7 +140,7 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 			if !is {
 				logger.Info("User wasn't found in group")
 				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Can't join the test, as user was not in the allowed group during first request"})
+				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Can't join the test, as user was not in the allowed group during first request"})
 				return
 			}
 

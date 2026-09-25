@@ -18,7 +18,7 @@ func ParseUUID(next http.Handler) http.Handler {
 		UUID, err := uuid.Parse(r.PathValue("uuid"))
 		if err != nil {
 			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Couldn't parse requested uuid"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Couldn't parse requested uuid"})
 
 			return
 		}

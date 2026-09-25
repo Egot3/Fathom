@@ -3,6 +3,7 @@ package carefulness
 import (
 	"errors"
 	"fmt"
+	"net/http"
 )
 
 type PartialSuccess struct {
@@ -18,9 +19,13 @@ func (e PartialSuccess) Error() string {
 }
 
 func (e PartialSuccess) JSONError() JSONError {
-	return JSONError{Error: e.Error()}
+	return JSONError{Err: e.Error(), Status: http.StatusMultiStatus}
 }
 
 func (e PartialSuccess) Is(target error) bool {
 	return ErrConflict == target
+}
+
+func (e PartialSuccess) Encode(w http.ResponseWriter) {
+	e.JSONError().Encode(w)
 }

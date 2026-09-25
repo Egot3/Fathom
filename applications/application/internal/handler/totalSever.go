@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -76,11 +75,11 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Requested answer is not found"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Requested answer is not found"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't get an answer because of unknown error"})
 		return
 	}
 	answerJSON := quiz.QuizAnswers{}
@@ -90,7 +89,7 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse user's answer"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse user's answer"})
 		return
 	}
 
@@ -100,7 +99,7 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get correct answer"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to get correct answer"})
 		return
 	}
 	correctJSON := quiz.QuizAnswers{}
@@ -110,7 +109,7 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse correct answer"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse correct answer"})
 		return
 	}
 
@@ -175,11 +174,11 @@ func (c *chiService) GetUserTotal(w http.ResponseWriter, r *http.Request) {
 
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Requested answer is not found"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Requested answer is not found"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't get an answer because of unknown error"})
 		return
 	}
 
@@ -228,36 +227,12 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.PostAnswerRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
 		logger.Error("Failed to parse body",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 
@@ -272,7 +247,7 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: testrunner.ErrRunnerInactive.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()})
 		return
 	}
 
@@ -290,7 +265,7 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
 		return
 	}
 
@@ -316,7 +291,7 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't set an answer because of unknown error"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't set an answer because of unknown error"})
 		return
 	}
 
@@ -359,7 +334,7 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: testrunner.ErrRunnerInactive.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()})
 		return
 	}
 
@@ -382,7 +357,7 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't totalize because of unknown error"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't totalize because of unknown error"})
 		return
 	}
 
@@ -457,11 +432,11 @@ func (c *chiService) ListTotals(w http.ResponseWriter, r *http.Request) {
 
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "there is no totals to list"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "there is no totals to list"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't get an answer because of unknown error"})
 		return
 	}
 
@@ -516,7 +491,7 @@ func (c *chiService) ListUserAnswer(w http.ResponseWriter, r *http.Request) {
 	err = r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Failed to parse form data"})
 		return
 	}
 
@@ -539,11 +514,11 @@ func (c *chiService) ListUserAnswer(w http.ResponseWriter, r *http.Request) {
 
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "there is no totals to list"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "there is no totals to list"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't get an answer because of unknown error"})
 		return
 	}
 
