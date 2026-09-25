@@ -33,8 +33,8 @@ export type Answer = {
   test_name: string;
 };
 
-export type Totals = { totals: TestTotal[]; total: number }
-export type TotalsOrError =  Totals | JSONError;
+export type Totals = { totals: TestTotal[]; total: number };
+export type TotalsOrError = Totals | JSONError;
 
 export async function GetTotalsForUser(
   userUUID: string,
@@ -72,25 +72,30 @@ export async function GetTotalsForUser(
 export function FetchTotals(
   page: number,
   size: number,
-): ResultAsync<Totals, JSONError> {
 
+  userUUID?: string,
+  groupUUID?: string,
+  testUUID?: string,
+): ResultAsync<Totals, JSONError> {
   return ResultAsync.fromPromise(
     TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/total?page=${page}&size=${size}`,
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/${groupUUID ?? "all"}/${userUUID ?? "all"}/${testUUID ?? "all"}?page=${page}&size=${size}`,
       {
         method: "GET",
         headers: {
           Accept: "application/json",
         },
       },
-    ), (err) => {
+    ),
+    (err) => {
       console.log(err);
       return {
         error: "network error",
       } as JSONError;
-  }).andThen((r) => {
-      return NormalizeJSON<Totals>(r)
-    })
+    },
+  ).andThen((r) => {
+    return NormalizeJSON<Totals>(r);
+  });
 }
 
 export type Answers = { answers: Answer[]; total: number };
