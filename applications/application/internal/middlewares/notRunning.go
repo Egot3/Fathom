@@ -65,7 +65,7 @@ func QuizNotRunning(checker func(uuid.UUID) bool) func(http.Handler) http.Handle
 			uuid, err := uuid.Parse(chi.URLParam(r, "quiz_uuid"))
 			if err != nil {
 				logger.Error("couldn't parse requested quizUUID", slog.String("Error", err.Error()))
-				json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't parse requested quizUUID"})
+				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't parse requested quizUUID"})
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}

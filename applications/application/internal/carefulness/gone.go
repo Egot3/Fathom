@@ -1,5 +1,9 @@
 package carefulness
 
+import (
+	"net/http"
+)
+
 type Gone struct {
 }
 
@@ -10,5 +14,9 @@ func (e Gone) Error() string {
 }
 
 func (e Gone) JSONError() JSONError {
-	return JSONError{Error: e.Error()}
+	return JSONError{Err: e.Error(), Status: http.StatusGone}
+}
+
+func (e Gone) Encode(w http.ResponseWriter) {
+	e.JSONError().Encode(w)
 }

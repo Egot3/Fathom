@@ -34,7 +34,7 @@ func JWT(next http.Handler) http.Handler {
 				Secure:   true,
 			}
 			http.SetCookie(w, cookie)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad token"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Bad token"})
 			return
 		}
 
@@ -54,7 +54,7 @@ func JWT(next http.Handler) http.Handler {
 				Secure:   true,
 			}
 			http.SetCookie(w, cookie)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad token"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Bad token"})
 			return
 		}
 

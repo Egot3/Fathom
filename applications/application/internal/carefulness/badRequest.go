@@ -3,6 +3,7 @@ package carefulness
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 )
 
 type MalformedRequest struct {
@@ -15,10 +16,14 @@ func (e MalformedRequest) Error() string {
 }
 
 func (e MalformedRequest) JSONError() JSONError {
-	return JSONError{Error: e.Error()}
+	return JSONError{Err: e.Error(), Status: http.StatusBadRequest}
 }
 
 func (e MalformedRequest) Is(target error) bool {
 	var err *json.SyntaxError
 	return errors.As(target, &err)
+}
+
+func (e MalformedRequest) Encode(w http.ResponseWriter) {
+	e.JSONError().Encode(w)
 }

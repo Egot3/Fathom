@@ -3,6 +3,7 @@ package carefulness
 import (
 	"errors"
 	"fmt"
+	"net/http"
 )
 
 var ErrQuizNotInTest = errors.New("quiz is not in the test")
@@ -20,5 +21,9 @@ func (e *NotInTestError) Is(target error) bool {
 }
 
 func (e *NotInTestError) JSONError() JSONError {
-	return JSONError{Error: e.Error()}
+	return JSONError{Err: e.Error(), Status: http.StatusNotFound}
+}
+
+func (e NotInTestError) Encode(w http.ResponseWriter) {
+	e.JSONError().Encode(w)
 }

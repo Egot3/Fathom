@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"math"
 	"net/http"
@@ -35,7 +34,7 @@ func (c *chiService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 
@@ -49,7 +48,7 @@ func (c *chiService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, sql.ErrNoRows) {
 			logger.Error("Delete user found no rows")
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "User not found"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "User not found"})
 
 			return
 		}
@@ -75,7 +74,7 @@ func (c *chiService) GetUser(w http.ResponseWriter, r *http.Request) {
 	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 
@@ -86,7 +85,7 @@ func (c *chiService) GetUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "User not found"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "User not found"})
 			return
 		}
 		if gone, ok := errors.AsType[carefulness.Gone](err); ok {
@@ -114,43 +113,18 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	var req contracts.LoginRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		logger.Error("error in register during reading",
-			slog.String("error", err.Error()),
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
+		logger.Error("Failed to parse body",
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Empty body"})
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 
 	if req.Nickname == "" || len(req.Password) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Nickname or password are empty"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Nickname or password are empty"})
 		return
 	}
 
@@ -164,7 +138,7 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "No active user with this username"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "No active user with this username"})
 			return
 		}
 		logger.Error("unexpected login db error",
@@ -187,7 +161,7 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 			Secure:   true,
 		}
 		http.SetCookie(w, cookie)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Bad token"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Bad token"})
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -220,41 +194,17 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 
 	var req contracts.PatchRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
 		logger.Error("Failed to parse body",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusNoContent)
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 	logger = logger.With(slog.String("uuid", userUUID.String()))
@@ -267,13 +217,13 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 
 	var passwordHash []byte = nil
 	if req.Password != nil {
-		err = passwordutils.CheckPasswordSafety(*req.Password)
+		err := passwordutils.CheckPasswordSafety(*req.Password)
 		if err != nil {
 			logger.Error("Unsafe password",
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
 			return
 		}
 		passwordHash, err = bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
@@ -282,7 +232,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Hashing error"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Hashing error"})
 			return
 		}
 	}
@@ -295,7 +245,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to authorize given user"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to authorize given user"})
 			return
 		}
 		if !is {
@@ -304,7 +254,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = c.userRepo.UpdateUser(ctx, models.PatchUser{
+	err := c.userRepo.UpdateUser(ctx, models.PatchUser{
 		UUID:         userUUID,
 		Nickname:     req.Nickname,
 		PasswordHash: passwordHash,
@@ -335,37 +285,12 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	var req contracts.RegisterRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		logger.Error("error in register during reading",
-			slog.String("error", err.Error()),
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
+		logger.Error("Failed to parse body",
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Empty body"})
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 	if req.Nickname == "" || req.Password == "" {
@@ -380,14 +305,14 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 
 	logger = logger.With(slog.String("nickname", req.Nickname))
 
-	err = passwordutils.CheckPasswordSafety(req.Password)
+	err := passwordutils.CheckPasswordSafety(req.Password)
 	if err != nil {
 		logger.Error("bad password",
 			slog.String("password", req.Password),
 			slog.String("because", err.Error()),
 		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
 		return
 	}
 
@@ -398,7 +323,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		)
 
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Hashing error"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Hashing error"})
 		return
 	}
 
@@ -423,7 +348,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		)
 		w.WriteHeader(http.StatusInternalServerError)
 
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Couldn't generate token"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Couldn't generate token"})
 		return
 	}
 
@@ -458,7 +383,7 @@ func (c *chiService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Failed to parse form data"})
 		return
 	}
 
@@ -477,7 +402,7 @@ func (c *chiService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "User not found"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "User not found"})
 			return
 		}
 		if gone, ok := errors.AsType[carefulness.Gone](err); ok {

@@ -23,7 +23,7 @@ func UUIDRights(next http.Handler) http.Handler { // did you know you have right
 		if !ok {
 			logger.Error("Failed to retrieve jwt claims")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve jwt's claims"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve jwt's claims"})
 			return
 		}
 
@@ -31,7 +31,7 @@ func UUIDRights(next http.Handler) http.Handler { // did you know you have right
 		if !ok {
 			logger.Error("Failed to retrieve uuid")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve uuid"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
 			return
 		}
 
@@ -41,7 +41,7 @@ func UUIDRights(next http.Handler) http.Handler { // did you know you have right
 				slog.String("requestedUUID", uuid.String()),
 			)
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Not enough permissions for operation"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Not enough permissions for operation"})
 			return
 		}
 
@@ -58,7 +58,7 @@ func UserRights(next http.Handler) http.Handler {
 		if !ok {
 			logger.Error("Failed to retrieve jwt claims")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve jwt's claims"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve jwt's claims"})
 			return
 		}
 
@@ -68,7 +68,7 @@ func UserRights(next http.Handler) http.Handler {
 				slog.Bool("IsTeacher", claims.IsTeacher),
 			)
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Not enough permissions for operation"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Not enough permissions for operation"})
 			return
 		}
 

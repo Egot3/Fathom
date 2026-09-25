@@ -3,6 +3,7 @@ package carefulness
 import (
 	"errors"
 	"fmt"
+	"net/http"
 )
 
 type Conflict struct {
@@ -16,9 +17,13 @@ func (e Conflict) Error() string {
 }
 
 func (e Conflict) JSONError() JSONError {
-	return JSONError{Error: e.Error()}
+	return JSONError{Err: e.Error(), Status: http.StatusConflict}
 }
 
 func (e Conflict) Is(target error) bool {
 	return ErrConflict == target
+}
+
+func (e Conflict) Encode(w http.ResponseWriter) {
+	e.JSONError().Encode(w)
 }

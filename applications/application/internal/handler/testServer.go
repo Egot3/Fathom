@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"math"
 	"mime"
@@ -39,58 +38,29 @@ func (c *chiService) AddQuizzes(w http.ResponseWriter, r *http.Request) {
 	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve test uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve test uuid"})
 		return
 	}
 	logger = logger.With(slog.String("test_uuid", testUUID.String()))
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.AddQuizzesToTestRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
 		logger.Error("Failed to parse body",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 
-	if len(req.QuizUUIDs) == 0 {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	err = c.testRepo.BundleQuizzesToTest(ctx, testUUID, req.QuizUUIDs)
+	err := c.testRepo.BundleQuizzesToTest(ctx, testUUID, req.QuizUUIDs)
 	if err != nil {
 		logger.Error("couldn't append quizzes to test",
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't append quizzes to test test"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't append quizzes to test test"})
 		return
 	}
 
@@ -108,7 +78,7 @@ func (c *chiService) DeleteTest(w http.ResponseWriter, r *http.Request) {
 	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve test uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve test uuid"})
 		return
 	}
 	logger = logger.With(slog.String("test_uuid", testUUID.String()))
@@ -119,7 +89,7 @@ func (c *chiService) DeleteTest(w http.ResponseWriter, r *http.Request) {
 		logger.Error("couldn't retrive test", slog.String("Error", err.Error()))
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "requested test not found"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "requested test not found"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -152,36 +122,12 @@ func (c *chiService) ExtendTest(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.ExtendTestRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
 		logger.Error("Failed to parse body",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 	logger = logger.With(slog.String("extend_by", req.ExtendBy))
@@ -190,20 +136,20 @@ func (c *chiService) ExtendTest(w http.ResponseWriter, r *http.Request) {
 	extendBy, err := time.ParseDuration(req.ExtendBy)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()}) //always parseError
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()}) //always parseError
 		return
 	}
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: testrunner.ErrRunnerInactive.Error()}) // my own error
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()}) // my own error
 		return
 	}
 
 	err = tr.ExtendTime(extendBy)
 	if err != nil {
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()}) // my own error
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()}) // my own error
 		return
 	}
 
@@ -221,7 +167,7 @@ func (c *chiService) GetTest(w http.ResponseWriter, r *http.Request) {
 	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve test uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve test uuid"})
 		return
 	}
 	logger = logger.With(slog.String("test_uuid", testUUID.String()))
@@ -232,7 +178,7 @@ func (c *chiService) GetTest(w http.ResponseWriter, r *http.Request) {
 		logger.Error("couldn't retrive test", slog.String("Error", err.Error()))
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "requested test not found"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "requested test not found"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -254,43 +200,19 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve test uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve test uuid"})
 		return
 	}
 	logger = logger.With(slog.String("test_uuid", testUUID.String()))
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.PatchTestRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
 		logger.Error("Failed to parse body",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 	logger = logger.With(slog.String("test_uuid", testUUID.String()))
@@ -307,7 +229,7 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 			slog.String("test_name", name),
 		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "test name is too short"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "test name is too short"})
 		return
 	}
 	if len(name) > 255 {
@@ -315,11 +237,11 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 			slog.String("test_name", name),
 		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "test name is too big"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "test name is too big"})
 		return
 	}
 
-	err = c.testRepo.UpdateTest(ctx, testUUID, name)
+	err := c.testRepo.UpdateTest(ctx, testUUID, name)
 	if err != nil {
 		logger.Info("couldn't create test",
 			slog.String("Error", err.Error()),
@@ -331,10 +253,10 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "requested test not found"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "requested test not found"})
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't create test"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create test"})
 		return
 	}
 
@@ -360,7 +282,7 @@ func (c *chiService) PauseTest(w http.ResponseWriter, r *http.Request) {
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: testrunner.ErrRunnerInactive.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()})
 		return
 	}
 
@@ -368,7 +290,7 @@ func (c *chiService) PauseTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't pause test", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
 		return
 	}
 
@@ -384,36 +306,12 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var req contracts.PostTestRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
 		logger.Error("Failed to parse body",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 	logger = logger.With(slog.String("test_name", req.Name))
@@ -424,7 +322,7 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 			slog.String("test_name", req.Name),
 		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "test name is too short"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "test name is too short"})
 		return
 	}
 	if len(req.Name) > 255 {
@@ -432,7 +330,7 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 			slog.String("test_name", req.Name),
 		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "test name is too big"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "test name is too big"})
 		return
 	}
 
@@ -447,7 +345,7 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't create test"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create test"})
 		return
 	}
 
@@ -458,7 +356,7 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusMultiStatus)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't add quizzes to test"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't add quizzes to test"})
 		}
 	}
 
@@ -476,47 +374,23 @@ func (c *chiService) RemoveQuizzes(w http.ResponseWriter, r *http.Request) {
 	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve test uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve test uuid"})
 		return
 	}
 	logger = logger.With(slog.String("test_uuid", testUUID.String()))
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.RemoveQuizzesRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
 		logger.Error("Failed to parse body",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 
-	err = c.testRepo.PruneQuizzesFromTest(ctx, testUUID, req.QuizUUIDs)
+	err := c.testRepo.PruneQuizzesFromTest(ctx, testUUID, req.QuizUUIDs)
 	if err != nil {
 		logger.Info("couldn't prune quizzes from test",
 			slog.String("Error", err.Error()),
@@ -528,11 +402,11 @@ func (c *chiService) RemoveQuizzes(w http.ResponseWriter, r *http.Request) {
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "none of the quizzes is in test"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "none of the quizzes is in test"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't delete quiz from test"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't delete quiz from test"})
 		return
 	}
 
@@ -558,7 +432,7 @@ func (c *chiService) ResumeTest(w http.ResponseWriter, r *http.Request) {
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: testrunner.ErrRunnerInactive.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()})
 		return
 	}
 
@@ -566,7 +440,7 @@ func (c *chiService) ResumeTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't resume test", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
 		return
 	}
 
@@ -582,36 +456,12 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var req contracts.StartRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
 		logger.Error("Failed to parse body",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		if errors.Is(err, carefulness.ErrMalformedRequest) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, carefulness.ErrUnprocessableRequest) {
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-			return
-		}
-		if errors.Is(err, io.EOF) {
-			w.WriteHeader(http.StatusBadRequest)
-
-			return
-		}
-		if errors.Is(err, io.ErrUnexpectedEOF) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
+		jerr.Encode(w)
 		return
 	}
 	logger = logger.With(slog.String("duration", req.Duration), slog.Any("requested test", req.TestUUID))
@@ -620,7 +470,7 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 	duration, err := time.ParseDuration(req.Duration)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()}) //always parseError
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()}) //always parseError
 		return
 	}
 
@@ -631,11 +481,11 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't find all pathes for quizzes"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't find all pathes for quizzes"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get pathes for quizzes"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't get pathes for quizzes"})
 		return
 	}
 
@@ -646,7 +496,7 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 		)
 
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't check if groups exist"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't check if groups exist"})
 		return
 	}
 
@@ -654,7 +504,7 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 		logger.Info("some of requested groups don't exist")
 
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "some of requested groups don't exist"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "some of requested groups don't exist"})
 		return
 	}
 
@@ -669,7 +519,7 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("unable to start test", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest) // all returned errors are user dependant anyways
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
 		return
 	}
 
@@ -694,7 +544,7 @@ func (c *chiService) StopTest(w http.ResponseWriter, r *http.Request) {
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: testrunner.ErrRunnerInactive.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()})
 		return
 	}
 
@@ -713,7 +563,7 @@ func (c *chiService) GetQuizFromRunning(w http.ResponseWriter, r *http.Request) 
 	quizUUID, err := uuid.Parse(chi.URLParam(r, "uuid"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to get uuid"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to get uuid"})
 		return
 	}
 
@@ -731,7 +581,7 @@ func (c *chiService) GetQuizFromRunning(w http.ResponseWriter, r *http.Request) 
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: testrunner.ErrRunnerInactive.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()})
 		return
 	}
 
@@ -739,7 +589,7 @@ func (c *chiService) GetQuizFromRunning(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		logger.Error("couldn't retrive quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: err.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
 		return
 	}
 
@@ -777,7 +627,7 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Failed to parse form data"})
 		return
 	}
 
@@ -796,7 +646,7 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		logger.Error("Failed to retrieve jwt claims")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Unable to retrieve jwt's claims"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve jwt's claims"})
 		return
 	}
 
@@ -850,32 +700,12 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 	)
 
 	var req contracts.ExportTestRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		logger.Error("error in register during reading",
-			slog.String("error", err.Error()),
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
+		logger.Error("Failed to parse body",
+			slog.String("Error", jerr.Error()),
 		)
-		switch {
-		case errors.Is(err, carefulness.ErrMalformedRequest):
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-		case errors.Is(err, carefulness.ErrUnprocessableRequest):
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-		case errors.Is(err, io.EOF):
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Empty body"})
-
-		case errors.Is(err, io.ErrUnexpectedEOF):
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Data loss"})
-
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-
+		jerr.Encode(w)
 		return
 	}
 
@@ -916,7 +746,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't create the YAML file for tests"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create the YAML file for tests"})
 		return
 	}
 
@@ -936,7 +766,7 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(8 << 20); err != nil {
 		logger.Error("archive is too big", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "archive is too big!"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "archive is too big!"})
 		return
 	}
 
@@ -944,7 +774,7 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't get file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse file"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file"})
 		return
 	}
 	defer yamlFile.Close()
@@ -953,12 +783,12 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't parse MIME type", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse MIME"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse MIME"})
 		return
 	}
 	if contentType != "application/yaml" {
 		w.WriteHeader(http.StatusNotAcceptable)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: fmt.Sprintf("unsupported media type: %v", contentType)})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unsupported media type: %v", contentType)})
 		return
 	}
 
@@ -967,7 +797,7 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't parse yaml file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to parse file"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file"})
 		return
 	}
 
@@ -975,12 +805,12 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't check test existance", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to check test existanse"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to check test existanse"})
 		return
 	}
 	if e {
 		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "it's either: this test already exists(probable) or you hit 1 in 18.8 sextillion chance in uuidv7 collision, either way, you address it"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "it's either: this test already exists(probable) or you hit 1 in 18.8 sextillion chance in uuidv7 collision, either way, you address it"})
 		return
 	}
 
@@ -989,12 +819,12 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.Error("couldn't check quiz existance", slog.String("Error", err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "unable to check quiz existanse"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to check quiz existanse"})
 			return
 		}
 		if !e {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "quiz from test is not found on local machine, have you imported quiz bank?"})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "quiz from test is not found on local machine, have you imported quiz bank?"})
 			return
 		}
 	}
@@ -1003,7 +833,7 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't check import test to db", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't check import test to db"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't check import test to db"})
 		return
 	}
 
@@ -1027,7 +857,7 @@ func (c *chiService) GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Reque
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
 		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: testrunner.ErrRunnerInactive.Error()})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()})
 		return
 	}
 
@@ -1072,7 +902,7 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 	tests, err := c.testRepo.Tests(ctx, testUUIDs)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't select running test info"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't select running test info"})
 		return
 	}
 
