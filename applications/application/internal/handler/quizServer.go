@@ -193,8 +193,8 @@ func (c *chiService) ListQuizzes(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if gone, ok := errors.AsType[carefulness.Gone](err); ok {
-			w.WriteHeader(http.StatusGone)
-			json.NewEncoder(w).Encode(gone.JSONError())
+			gone.Encode(w)
+			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -318,8 +318,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
 		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
-			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(conflict.JSONError())
+			conflict.Encode(w)
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -836,8 +835,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
 				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
-					w.WriteHeader(http.StatusConflict)
-					json.NewEncoder(w).Encode(conflict.JSONError())
+					conflict.Encode(w)
 					return
 				}
 				w.WriteHeader(http.StatusInternalServerError)
@@ -938,8 +936,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
 				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
-					w.WriteHeader(http.StatusConflict)
-					json.NewEncoder(w).Encode(conflict.JSONError())
+					conflict.Encode(w)
 					return
 				}
 				w.WriteHeader(http.StatusInternalServerError)
@@ -1050,8 +1047,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
 				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
-					w.WriteHeader(http.StatusConflict)
-					json.NewEncoder(w).Encode(conflict.JSONError())
+					conflict.Encode(w)
 					return
 				}
 				w.WriteHeader(http.StatusInternalServerError)
