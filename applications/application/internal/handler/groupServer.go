@@ -9,10 +9,10 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"strconv"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
+	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/google/uuid"
 )
@@ -434,28 +434,19 @@ func (c *chiService) ListGroups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pageInt, err := strconv.Atoi(r.Form.Get("page"))
+	page, size, err := httputils.Page(r)
 	if err != nil {
+		logger.Error("couldn't retrieve page/size from request",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
-		return
-	}
-	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
-		return
-	}
-	if sizeInt <= 0 {
-		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
 		return
 	}
 
-	logger = logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
+	logger = logger.With(slog.Int("page", page), slog.Int("size", size))
 	ctx = logging.WithLogger(ctx, logger)
 
-	groups, total, err := c.groupRepo.ListGroups(ctx, pageInt, sizeInt)
+	groups, total, err := c.groupRepo.ListGroups(ctx, page, size)
 	if err != nil {
 		logger.Error("Failed to get group",
 			slog.String("Error", err.Error()),
@@ -468,8 +459,8 @@ func (c *chiService) ListGroups(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(contracts.ListGroupsResponse{
 		Groups: groups,
 		Total:  total,
-		Page:   pageInt,
-		Size:   sizeInt,
+		Page:   page,
+		Size:   size,
 	})
 }
 

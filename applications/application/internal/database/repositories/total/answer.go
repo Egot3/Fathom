@@ -187,67 +187,34 @@ func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, grou
 	return total, nil
 }
 
-func (r *bunTotalRepository) UserTotals(ctx context.Context, userUUID uuid.UUID, page, size int) ([]contracts.Total, int, error) {
+func (r *bunTotalRepository) ListTotals(ctx context.Context,
+	page, size int,
+	userUUID, testUUID, groupUUID uuid.UUID,
+) ([]contracts.Total, int, error) {
 	var totals []contracts.Total
-	total, err := r.db.NewSelect().TableExpr("users_groups_tests AS ugt").
-		Where("ugt.user_uuid = ?", userUUID).
-		ColumnExpr("ugt.score AS score, ugt.test_uuid AS test_uuid, ugt.group_uuid AS group_uuid").
-		Join("JOIN groups AS g").JoinOn("g.uuid = ugt.group_uuid").ColumnExpr("g.name AS group_name").
-		Join("JOIN tests AS t").JoinOn("t.uuid = ugt.test_uuid").ColumnExpr("t.name AS test_name").
-		OrderBy("ugt.finalized_at", bun.OrderDesc).
-		Offset(page*size).Limit(size).
-		ScanAndCount(ctx, &totals)
-	if err != nil {
-		return nil, 0, err
-	}
 
-	if len(totals) == 0 {
-		return nil, 0, sql.ErrNoRows
-	}
-
-	return totals, total, nil
-}
-
-func (r *bunTotalRepository) TestTotals(ctx context.Context, testUUID uuid.UUID) ([]contracts.Total, error) {
-	var totals []contracts.Total
-	err := r.db.NewSelect().Model((*models.UserGroupsTests)(nil)).
-		Where("test_uuid = ?", testUUID).Scan(ctx, &totals)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(totals) == 0 {
-		return nil, sql.ErrNoRows
-	}
-
-	return totals, nil
-}
-
-func (r *bunTotalRepository) GroupTestTotals(ctx context.Context, testUUID, groupUUID uuid.UUID) ([]contracts.Total, error) {
-	var totals []contracts.Total
-	err := r.db.NewSelect().Model((*models.UserGroupsTests)(nil)).
-		Where("test_uuid = ?", testUUID).
-		Where("group_uuid = ?", groupUUID).Scan(ctx, &totals)
-	if err != nil {
-		return nil, err
-	}
-	if len(totals) == 0 {
-		return nil, sql.ErrNoRows
-	}
-
-	return totals, nil
-}
-
-func (r *bunTotalRepository) ListTotals(ctx context.Context, page int, size int) ([]contracts.Total, int, error) {
-	var totals []contracts.Total
-	total, err := r.db.NewSelect().TableExpr("users_groups_tests AS ugt").
+	query := r.db.NewSelect().TableExpr("users_groups_tests AS ugt").
 		ColumnExpr("ugt.score AS score, ugt.test_uuid AS test_uuid, ugt.group_uuid AS group_uuid, ugt.user_uuid AS user_uuid, ugt.finalized_at AS finalized_at").
 		Join("JOIN groups AS g").JoinOn("g.uuid = ugt.group_uuid").ColumnExpr("g.name AS group_name").
 		Join("JOIN tests AS t").JoinOn("t.uuid = ugt.test_uuid").ColumnExpr("t.name AS test_name").
 		Join("JOIN users AS u").JoinOn("u.uuid = ugt.user_uuid").ColumnExpr("u.nickname AS user_name").
+		ColumnExpr("ugt.finalized_at as finalized_at").
 		OrderBy("ugt.finalized_at", bun.OrderDesc).
-		Offset(page*size).Limit(size).
-		ScanAndCount(ctx, &totals)
+		Offset(page * size).Limit(size)
+
+	if userUUID != uuid.Nil {
+		query = query.Where("ugt.user_uuid = ?", userUUID)
+	}
+
+	if testUUID != uuid.Nil {
+		query = query.Where("ugt.test_uuid = ?", testUUID)
+	}
+
+	if groupUUID != uuid.Nil {
+		query = query.Where("ugt.group_uuid = ?", groupUUID)
+	}
+
+	total, err := query.ScanAndCount(ctx, &totals)
 	if err != nil {
 		return nil, 0, err
 	}
