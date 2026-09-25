@@ -17,6 +17,7 @@ import (
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
+	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/quiz"
@@ -780,29 +781,16 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pageInt, err := strconv.Atoi(r.Form.Get("page"))
+	page, size, err := httputils.Page(r)
 	if err != nil {
+		logger.Error("couldn't retrieve page/size from request",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
 		return
-	}
-	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
-		return
-	}
-	if sizeInt <= 0 {
-		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
-		return
-	}
-	if pageInt < 0 {
-		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "page can't be less than zero"})
 	}
 
-	logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
+	logger.With(slog.Int("page", page), slog.Int("size", size))
 
 	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
 	if !ok {
@@ -816,11 +804,11 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 	var total int
 	if claims.IsTeacher {
 		logger.Debug("got teacher request")
-		tests, total, err = c.testRepo.ListTestsAdvanced(ctx, pageInt, sizeInt)
+		tests, total, err = c.testRepo.ListTestsAdvanced(ctx, page, size)
 		logger.Debug("got advanced tests info", slog.Any("tests", tests))
 	} else {
 		logger.Debug("got pupil request", slog.Any("claims", claims))
-		tests, total, err = c.testRepo.ListTests(ctx, pageInt, sizeInt)
+		tests, total, err = c.testRepo.ListTests(ctx, page, size)
 	}
 
 	if err != nil {
@@ -837,8 +825,8 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(contracts.ListTestsResponse{
 		Tests: tests,
 		Total: total,
-		Page:  pageInt,
-		Size:  sizeInt,
+		Page:  page,
+		Size:  size,
 	})
 }
 

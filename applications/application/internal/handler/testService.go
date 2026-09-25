@@ -84,9 +84,6 @@ type TotalService interface {
 	Totalize(w http.ResponseWriter, r *http.Request)
 
 	GetUserTotal(w http.ResponseWriter, r *http.Request)
-	GetUserTotals(w http.ResponseWriter, r *http.Request)
-	GetGroupTotals(w http.ResponseWriter, r *http.Request)
-	GetTestTotals(w http.ResponseWriter, r *http.Request)
 	ListTotals(w http.ResponseWriter, r *http.Request)
 	ListUserAnswer(w http.ResponseWriter, r *http.Request)
 }

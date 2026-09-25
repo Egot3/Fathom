@@ -18,13 +18,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
-	acceptutils "github.com/egot3/fathom/internal/acceptUtils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
+	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/quiz"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
@@ -175,27 +174,18 @@ func (c *chiService) ListQuizzes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pageInt, err := strconv.Atoi(r.Form.Get("page"))
+	page, size, err := httputils.Page(r)
 	if err != nil {
+		logger.Error("couldn't retrieve page/size from request",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
-		return
-	}
-	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
-		return
-	}
-	if sizeInt <= 0 {
-		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
 		return
 	}
 
-	logger = logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
+	logger = logger.With(slog.Int("page", page), slog.Int("size", size))
 
-	quizzes, total, err := c.quizRepo.ListQuizzes(ctx, pageInt, sizeInt)
+	quizzes, total, err := c.quizRepo.ListQuizzes(ctx, page, size)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
@@ -214,8 +204,8 @@ func (c *chiService) ListQuizzes(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(contracts.ListQuizResponse{
 		Quizzes: quizzes,
 		Total:   total,
-		Page:    pageInt,
-		Size:    sizeInt,
+		Page:    page,
+		Size:    size,
 	})
 }
 
@@ -635,7 +625,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accept, err := acceptutils.BestAccept(r.Header.Get("Accept"),
+	accept, err := httputils.BestAccept(r.Header.Get("Accept"),
 		"application/zip", "application/tar", "application/gzip",
 	)
 	if (err != nil) || (accept == "") {

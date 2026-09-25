@@ -9,12 +9,12 @@ import (
 	"log/slog"
 	"math"
 	"net/http"
-	"strconv"
 	"time"
 
 	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
+	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/passwordutils"
@@ -462,31 +462,18 @@ func (c *chiService) ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pageInt, err := strconv.Atoi(r.Form.Get("page"))
+	page, size, err := httputils.Page(r)
 	if err != nil {
+		logger.Error("couldn't retrieve page/size from request",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
 		return
-	}
-	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
-		return
-	}
-	if sizeInt <= 0 {
-		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
-		return
-	}
-	req := contracts.ListUsersRequest{
-		Page: pageInt,
-		Size: sizeInt,
 	}
 
-	logger.With(slog.Int("page", req.Page), slog.Int("size", req.Size))
+	logger.With(slog.Int("page", page), slog.Int("size", size))
 
-	users, total, err := c.userRepo.List(ctx, req.Page, req.Size)
+	users, total, err := c.userRepo.List(ctx, page, size)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
@@ -505,7 +492,7 @@ func (c *chiService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(contracts.ListUsersResponse{
 		Users: users,
 		Total: total,
-		Page:  req.Page,
-		Size:  req.Size,
+		Page:  page,
+		Size:  size,
 	})
 }

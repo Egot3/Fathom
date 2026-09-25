@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
+	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/quiz"
 	testrunner "github.com/egot3/fathom/internal/testRunner"
@@ -127,107 +127,6 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetGroupTotals implements [Service].
-func (c *chiService) GetGroupTotals(w http.ResponseWriter, r *http.Request) {
-	logger := logging.LoggerFromContext(r.Context()).With(
-		slog.String("layer", "handler"),
-	)
-	ctx := logging.WithLogger(r.Context(), logger)
-	w.Header().Set("Content-Type", "application/json")
-
-	groupUUID, err := uuid.Parse(chi.URLParam(r, "group_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse groupUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	testUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	logger = logger.With(
-		slog.String("group_uuid", groupUUID.String()),
-		slog.String("test_uuid", testUUID.String()),
-	)
-	ctx = logging.WithLogger(ctx, logger)
-
-	groupTotals, err := c.answerRepo.GroupTestTotals(ctx, testUUID, groupUUID)
-	if err != nil {
-		logger.Error("couldn't get an answer",
-			slog.String("Error", err.Error()),
-		)
-
-		if errors.Is(err, sql.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Requested answer is not found"})
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
-		return
-	}
-
-	logger.Info("group totals retrieved",
-		slog.String("groupTotals", fmt.Sprintf("%+v", groupTotals)),
-	)
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.TotalsResponse{
-		Totals: groupTotals,
-	})
-}
-
-// GetTestTotals implements [Service].
-func (c *chiService) GetTestTotals(w http.ResponseWriter, r *http.Request) {
-	logger := logging.LoggerFromContext(r.Context()).With(
-		slog.String("layer", "handler"),
-	)
-	ctx := logging.WithLogger(r.Context(), logger)
-	w.Header().Set("Content-Type", "application/json")
-
-	testUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	logger = logger.With(
-		slog.String("test_uuid", testUUID.String()),
-	)
-	ctx = logging.WithLogger(ctx, logger)
-
-	testTotals, err := c.answerRepo.TestTotals(ctx, testUUID)
-	if err != nil {
-		logger.Error("couldn't get an answer",
-			slog.String("Error", err.Error()),
-		)
-
-		if errors.Is(err, sql.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Requested answer is not found"})
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.TotalsResponse{
-		Totals: testTotals,
-	})
-}
-
 // GetUserTotal implements [Service].
 func (c *chiService) GetUserTotal(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
@@ -287,80 +186,6 @@ func (c *chiService) GetUserTotal(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.TotalResponse{
 		Total: userTotal,
-	})
-}
-
-// GetUserTotals implements [Service].
-func (c *chiService) GetUserTotals(w http.ResponseWriter, r *http.Request) {
-	logger := logging.LoggerFromContext(r.Context()).With(
-		slog.String("layer", "handler"),
-	)
-	ctx := logging.WithLogger(r.Context(), logger)
-	w.Header().Set("Content-Type", "application/json")
-
-	userUUID, err := uuid.Parse(chi.URLParam(r, "user_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse groupUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	logger = logger.With(
-		slog.String("user_uuid", userUUID.String()),
-	)
-	ctx = logging.WithLogger(ctx, logger)
-
-	err = r.ParseForm()
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
-		return
-	}
-
-	pageInt, err := strconv.Atoi(r.Form.Get("page"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
-		return
-	}
-	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
-		return
-	}
-	if sizeInt <= 0 {
-		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
-		return
-	}
-
-	logger = logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
-
-	userTotals, total, err := c.answerRepo.UserTotals(ctx, userUUID, pageInt, sizeInt)
-	if err != nil {
-		logger.Error("couldn't get an answer",
-			slog.String("Error", err.Error()),
-		)
-
-		if errors.Is(err, sql.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Error: "there is no totals to list"})
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "couldn't get an answer because of unknown error"})
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.TotalsResponse{
-		Totals: userTotals,
-		Total:  total,
-		Page:   pageInt,
-		Size:   sizeInt,
 	})
 }
 
@@ -571,34 +396,60 @@ func (c *chiService) ListTotals(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	err := r.ParseForm()
+	page, size, err := httputils.Page(r)
 	if err != nil {
+		logger.Error("couldn't retrieve page/size from request",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "Failed to parse form data"})
 		return
 	}
 
-	pageInt, err := strconv.Atoi(r.Form.Get("page"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
-		return
-	}
-	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
-		return
-	}
-	if sizeInt <= 0 {
-		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
-		return
+	logger = logger.With(slog.Int("page", page), slog.Int("size", size))
+
+	groupUUID := uuid.Nil
+	if raw := chi.URLParam(r, "group_uuid"); raw != "all" {
+		groupUUID, err = uuid.Parse(raw)
+		if err != nil {
+			logger.Error("couldn't parse groupUUID in url",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 	}
 
-	logger = logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
+	userUUID := uuid.Nil
+	if raw := chi.URLParam(r, "user_uuid"); raw != "all" {
+		userUUID, err = uuid.Parse(raw)
+		if err != nil {
+			logger.Error("couldn't parse userUUID in url",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
 
-	totals, total, err := c.answerRepo.ListTotals(ctx, pageInt, sizeInt)
+	testUUID := uuid.Nil
+	if raw := chi.URLParam(r, "test_uuid"); raw != "all" {
+		testUUID, err = uuid.Parse(raw)
+		if err != nil {
+			logger.Error("couldn't parse testUUID in url",
+				slog.String("Error", err.Error()),
+			)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+	logger = logger.With(
+		slog.String("test_uuid", testUUID.String()),
+		slog.String("user_uuid", userUUID.String()),
+		slog.String("group_uuid", groupUUID.String()),
+	)
+
+	totals, total, err := c.answerRepo.ListTotals(ctx, page, size,
+		userUUID, testUUID, groupUUID)
 	if err != nil {
 		logger.Error("couldn't get an answer",
 			slog.String("Error", err.Error()),
@@ -618,8 +469,8 @@ func (c *chiService) ListTotals(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(contracts.TotalsResponse{
 		Totals: totals,
 		Total:  total,
-		Page:   pageInt,
-		Size:   sizeInt,
+		Page:   page,
+		Size:   size,
 	})
 }
 
@@ -669,27 +520,18 @@ func (c *chiService) ListUserAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pageInt, err := strconv.Atoi(r.Form.Get("page"))
+	page, size, err := httputils.Page(r)
 	if err != nil {
+		logger.Error("couldn't retrieve page/size from request",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form page is not a number"})
-		return
-	}
-	sizeInt, err := strconv.Atoi(r.Form.Get("size"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "given form size is not a number"})
-		return
-	}
-	if sizeInt <= 0 {
-		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Error: "size can't be <= 0"})
 		return
 	}
 
-	logger = logger.With(slog.Int("page", pageInt), slog.Int("size", sizeInt))
+	logger = logger.With(slog.Int("page", page), slog.Int("size", size))
 
-	userAnswers, total, err := c.answerRepo.AnswersInTest(ctx, userUUID, testUUID, groupUUID, pageInt, sizeInt)
+	userAnswers, total, err := c.answerRepo.AnswersInTest(ctx, userUUID, testUUID, groupUUID, page, size)
 	if err != nil {
 		logger.Error("couldn't get an answer",
 			slog.String("Error", err.Error()),
@@ -709,7 +551,7 @@ func (c *chiService) ListUserAnswer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(contracts.AnswersResponse{
 		Answers: userAnswers,
 		Total:   total,
-		Page:    pageInt,
-		Size:    sizeInt,
+		Page:    page,
+		Size:    size,
 	})
 }
