@@ -56,8 +56,7 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 		if partial, ok := errors.AsType[carefulness.PartialSuccess](err); ok {
-			w.WriteHeader(http.StatusMultiStatus)
-			json.NewEncoder(w).Encode(partial.JSONError())
+			partial.Encode(w)
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -190,8 +189,7 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
-			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(conflict.JSONError())
+			conflict.Encode(w)
 			return
 		}
 		if errors.Is(err, sql.ErrNoRows) {
@@ -248,8 +246,7 @@ func (c *chiService) PostGroup(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
-			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(conflict.JSONError())
+			conflict.Encode(w)
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -312,8 +309,7 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 		if partial, ok := errors.AsType[carefulness.PartialSuccess](err); ok {
-			w.WriteHeader(http.StatusMultiStatus)
-			json.NewEncoder(w).Encode(partial.JSONError())
+			partial.Encode(w)
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
