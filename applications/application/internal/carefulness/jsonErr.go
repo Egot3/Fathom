@@ -7,7 +7,7 @@ import (
 
 type JSONError struct {
 	Err    string `json:"error"`
-	Status int
+	Status int    `json:"-"`
 }
 
 type JSONErrorable interface {

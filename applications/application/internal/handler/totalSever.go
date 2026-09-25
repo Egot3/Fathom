@@ -126,68 +126,6 @@ func (c *chiService) GetAnswer(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetUserTotal implements [Service].
-func (c *chiService) GetUserTotal(w http.ResponseWriter, r *http.Request) {
-	logger := logging.LoggerFromContext(r.Context()).With(
-		slog.String("layer", "handler"),
-	)
-	ctx := logging.WithLogger(r.Context(), logger)
-	w.Header().Set("Content-Type", "application/json")
-
-	groupUUID, err := uuid.Parse(chi.URLParam(r, "group_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse groupUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	userUUID, err := uuid.Parse(chi.URLParam(r, "user_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse groupUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	testUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	logger = logger.With(
-		slog.String("group_uuid", groupUUID.String()),
-		slog.String("user_uuid", userUUID.String()),
-		slog.String("test_uuid", testUUID.String()),
-	)
-	ctx = logging.WithLogger(ctx, logger)
-
-	userTotal, err := c.answerRepo.Total(ctx, userUUID, testUUID, groupUUID)
-	if err != nil {
-		logger.Error("couldn't get an answer",
-			slog.String("Error", err.Error()),
-		)
-
-		if errors.Is(err, sql.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Requested answer is not found"})
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't get an answer because of unknown error"})
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.TotalResponse{
-		Total: userTotal,
-	})
-}
-
 // PostAnswer implements [Service].
 func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
@@ -371,16 +309,18 @@ func (c *chiService) ListTotals(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	page, size, err := httputils.Page(r)
-	if err != nil {
+	page, size, jerr := httputils.Page(r)
+	if jerr != nil {
 		logger.Error("couldn't retrieve page/size from request",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		w.WriteHeader(http.StatusBadRequest)
+		jerr.Encode(w)
 		return
 	}
 
 	logger = logger.With(slog.Int("page", page), slog.Int("size", size))
+
+	var err error
 
 	groupUUID := uuid.Nil
 	if raw := chi.URLParam(r, "group_uuid"); raw != "all" {

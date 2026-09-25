@@ -364,7 +364,6 @@ func TestAnswer_Totalization(t *testing.T) {
 
 func TestAnswer_Totals(t *testing.T) {
 	i := NewInjectorWithTestRepo(t)
-	r := do.MustInvoke[total.TotalRepository](i)
 	db := do.MustInvoke[*bun.DB](i)
 
 	testM := models.Test{Name: rand.Text()}
@@ -402,71 +401,4 @@ func TestAnswer_Totals(t *testing.T) {
 	}).Exec(t.Context())
 	require.NoError(t, err)
 
-	t.Run("User total", func(t *testing.T) {
-
-		t.Run("Valid", func(t *testing.T) {
-
-			total, err := r.Total(t.Context(), userUUID, testM.UUID, groupUUID)
-			require.NoError(t, err)
-			require.Equal(t, score, total.Score, total)
-		})
-
-		errTestCases := []struct {
-			desc      string
-			userUUID  uuid.UUID
-			groupUUID uuid.UUID
-			testUUID  uuid.UUID
-		}{
-			{
-				desc:      "No user UUID",
-				userUUID:  uuid.Nil,
-				groupUUID: groupUUID,
-				testUUID:  testM.UUID,
-			},
-			{
-				desc:      "No test UUID",
-				userUUID:  userUUID,
-				groupUUID: groupUUID,
-				testUUID:  uuid.Nil,
-			},
-			{
-				desc:      "No group UUID",
-				userUUID:  userUUID,
-				groupUUID: uuid.Nil,
-				testUUID:  testM.UUID,
-			},
-			{
-				desc:      "No user&group UUID",
-				userUUID:  uuid.Nil,
-				groupUUID: uuid.Nil,
-				testUUID:  testM.UUID,
-			},
-			{
-				desc:      "No user&test UUID",
-				userUUID:  uuid.Nil,
-				groupUUID: groupUUID,
-				testUUID:  uuid.Nil,
-			},
-			{
-				desc:      "No group&test UUID",
-				userUUID:  userUUID,
-				groupUUID: uuid.Nil,
-				testUUID:  uuid.Nil,
-			},
-			{
-				desc:      "No user&test&group UUID",
-				userUUID:  uuid.Nil,
-				groupUUID: uuid.Nil,
-				testUUID:  uuid.Nil,
-			},
-		}
-		for _, etc := range errTestCases {
-			t.Run(etc.desc, func(t *testing.T) {
-
-				retrieved, err := r.Total(t.Context(), etc.userUUID, etc.testUUID, etc.groupUUID)
-				require.Error(t, err, retrieved)
-				require.ErrorIs(t, err, sql.ErrNoRows)
-			})
-		}
-	})
 }

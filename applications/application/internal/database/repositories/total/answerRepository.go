@@ -11,7 +11,6 @@ type TotalRepository interface {
 	SetAnswer(ctx context.Context, testUUID, groupUUID, userUUID, quizUUID uuid.UUID, answerValue string, score float32) error
 	Totalize(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) error
 	AnswerScore(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (float32, error)
-	Total(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID) (contracts.Total, error)
 	Answer(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (string, error)
 	ListTotals(ctx context.Context, page, size int, userUUID, testUUID, groupUUID uuid.UUID) ([]contracts.Total, int, error)
 	AnswersInTest(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, page, size int) ([]contracts.Answer, int, error)

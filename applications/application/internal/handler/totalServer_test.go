@@ -229,7 +229,7 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 		}{
 			{
 				desc:      "No test",
-				testUUID:  uuid.Nil,
+				testUUID:  uuid.Max,
 				groupUUID: groupUUID,
 				userUUID:  userUUID,
 				quizUUID:  quizUUID,
@@ -239,34 +239,34 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 				testUUID:  testUUID,
 				groupUUID: groupUUID,
 				userUUID:  userUUID,
-				quizUUID:  uuid.Nil,
+				quizUUID:  uuid.Max,
 			},
 			{
 				desc:      "No quiz test pair",
-				testUUID:  uuid.Nil,
+				testUUID:  uuid.Max,
 				groupUUID: groupUUID,
 				userUUID:  userUUID,
-				quizUUID:  uuid.Nil,
+				quizUUID:  uuid.Max,
 			},
 			{
 				desc:      "No user",
 				testUUID:  testUUID,
 				groupUUID: groupUUID,
-				userUUID:  uuid.Nil,
+				userUUID:  uuid.Max,
 				quizUUID:  quizUUID,
 			},
 			{
 				desc:      "No group",
 				testUUID:  testUUID,
-				groupUUID: uuid.Nil,
+				groupUUID: uuid.Max,
 				userUUID:  userUUID,
 				quizUUID:  quizUUID,
 			},
 			{
 				desc:      "No user group pair",
 				testUUID:  testUUID,
-				groupUUID: uuid.Nil,
-				userUUID:  uuid.Nil,
+				groupUUID: uuid.Max,
+				userUUID:  uuid.Max,
 				quizUUID:  quizUUID,
 			},
 		}
@@ -278,7 +278,7 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 
 				req := httptest.NewRequest(
 					http.MethodGet,
-					fmt.Sprintf("/api/v1/total/%v/%v/%v/%v",
+					fmt.Sprintf("/api/v1/total/%v/%v/%v/%v?page=0&size=5",
 						tC.groupUUID,
 						tC.userUUID,
 						tC.testUUID,
@@ -360,7 +360,7 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 
 		req := httptest.NewRequest(
 			http.MethodGet,
-			fmt.Sprintf("/api/v1/total/%v/all/%v",
+			fmt.Sprintf("/api/v1/total/%v/all/%v?page=0&size=5",
 				groupUUID,
 				testUUID,
 			),
@@ -438,18 +438,18 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 		}{
 			{
 				desc:      "No test",
-				testUUID:  uuid.Nil,
+				testUUID:  uuid.Max,
 				groupUUID: groupUUID,
 			},
 			{
 				desc:      "No group",
 				testUUID:  testUUID,
-				groupUUID: uuid.Nil,
+				groupUUID: uuid.Max,
 			},
 			{
 				desc:      "Nothing.",
-				testUUID:  uuid.Nil,
-				groupUUID: uuid.Nil,
+				testUUID:  uuid.Max,
+				groupUUID: uuid.Max,
 			},
 		}
 		for _, tC := range testCases {
@@ -460,7 +460,7 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 
 				req := httptest.NewRequest(
 					http.MethodGet,
-					fmt.Sprintf("/api/v1/total/%v/all/%v",
+					fmt.Sprintf("/api/v1/total/%v/all/%v?page=0&size=5",
 						tC.groupUUID,
 						tC.testUUID,
 					),
@@ -540,7 +540,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 
 		req := httptest.NewRequest(
 			http.MethodGet,
-			fmt.Sprintf("/api/v1/total/all/all/%v",
+			fmt.Sprintf("/api/v1/total/all/all/%v?page=0&size=5",
 				testUUID,
 			),
 			nil,
@@ -616,7 +616,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 		}{
 			{
 				desc:     "No test",
-				testUUID: uuid.Nil,
+				testUUID: uuid.Max,
 			},
 		}
 		for _, tC := range testCases {
@@ -627,7 +627,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 
 				req := httptest.NewRequest(
 					http.MethodGet,
-					fmt.Sprintf("/api/v1/total/all/all/%v",
+					fmt.Sprintf("/api/v1/total/all/all/%v?page=0&size=5",
 						tC.testUUID,
 					),
 					nil,
@@ -706,7 +706,7 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 
 		req := httptest.NewRequest(
 			http.MethodGet,
-			fmt.Sprintf("/api/v1/total/%v/%v/%v",
+			fmt.Sprintf("/api/v1/total/%v/%v/%v?page=0&size=1",
 				groupUUID,
 				userUUID,
 				testUUID,
@@ -723,11 +723,12 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, rec.Code, string(body))
 
-		var bodyContract contracts.TotalResponse
+		var bodyContract contracts.TotalsResponse
 		err = json.Unmarshal(body, &bodyContract)
-		require.NoError(t, err)
+		require.NoError(t, err, string(body))
 
-		require.EqualValues(t, 1, bodyContract.Total.Score)
+		require.Len(t, bodyContract.Totals, 1)
+		require.EqualValues(t, 1, bodyContract.Totals[0].Score)
 	})
 
 	t.Run("Not inferred", func(t *testing.T) {
@@ -786,33 +787,33 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 		}{
 			{
 				desc:      "No test",
-				testUUID:  uuid.Nil,
+				testUUID:  uuid.Max,
 				groupUUID: groupUUID,
 				userUUID:  userUUID,
 			},
 			{
 				desc:      "No group",
 				testUUID:  testUUID,
-				groupUUID: uuid.Nil,
+				groupUUID: uuid.Max,
 				userUUID:  userUUID,
 			},
 			{
 				desc:      "No user",
 				testUUID:  testUUID,
 				groupUUID: groupUUID,
-				userUUID:  uuid.Nil,
+				userUUID:  uuid.Max,
 			},
 			{
 				desc:      "No group and user pair",
 				testUUID:  testUUID,
-				groupUUID: uuid.Nil,
-				userUUID:  uuid.Nil,
+				groupUUID: uuid.Max,
+				userUUID:  uuid.Max,
 			},
 			{
 				desc:      "Nothing.",
-				testUUID:  uuid.Nil,
-				groupUUID: uuid.Nil,
-				userUUID:  uuid.Nil,
+				testUUID:  uuid.Max,
+				groupUUID: uuid.Max,
+				userUUID:  uuid.Max,
 			},
 		}
 		for _, tC := range testCases {
@@ -823,7 +824,7 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 
 				req := httptest.NewRequest(
 					http.MethodGet,
-					fmt.Sprintf("/api/v1/total/%v/%v/%v",
+					fmt.Sprintf("/api/v1/total/%v/%v/%v?page=0&size=1",
 						tC.groupUUID,
 						tC.userUUID,
 						tC.testUUID,
@@ -904,7 +905,7 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 
 		req := httptest.NewRequest(
 			http.MethodGet,
-			fmt.Sprintf("/api/v1/total/all/%v?page=0&size=1",
+			fmt.Sprintf("/api/v1/total/all/%v/all?page=0&size=1",
 				userUUID,
 			),
 			nil,
@@ -976,43 +977,31 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 		}).Exec(t.Context())
 		require.NoError(t, err)
 
-		testCases := []struct {
-			desc     string
-			userUUID uuid.UUID
-		}{
-			{
-				desc:     "No user",
-				userUUID: uuid.Nil,
-			},
-		}
-		for _, tC := range testCases {
-			t.Run(tC.desc, func(t *testing.T) {
+		t.Run("No user", func(t *testing.T) {
 
-				router, err := server.ChiServer(i)
-				require.NoError(t, err)
+			router, err := server.ChiServer(i)
+			require.NoError(t, err)
 
-				req := httptest.NewRequest(
-					http.MethodGet,
-					fmt.Sprintf("/api/v1/total/all/%v?page=0&size=1",
-						tC.userUUID,
-					),
-					nil,
-				)
-				req.Header.Set("Content-Type", "application/json")
-				testutils.AddTeacherCookie(t, req)
-				rec := httptest.NewRecorder()
+			req := httptest.NewRequest(
+				http.MethodGet,
+				fmt.Sprintf("/api/v1/total/all/%v/all?page=0&size=1",
+					uuid.Max,
+				),
+				nil,
+			)
+			req.Header.Set("Content-Type", "application/json")
+			testutils.AddTeacherCookie(t, req)
+			rec := httptest.NewRecorder()
 
-				router.ServeHTTP(rec, req)
+			router.ServeHTTP(rec, req)
 
-				t.Log(rec.Body.String())
+			var resp carefulness.JSONError
+			err = json.NewDecoder(rec.Body).Decode(&resp)
+			require.NoError(t, err)
 
-				var resp carefulness.JSONError
-				err = json.NewDecoder(rec.Body).Decode(&resp)
-				require.NoError(t, err)
+			require.Equal(t, http.StatusNotFound, rec.Code, resp)
+		})
 
-				require.Equal(t, http.StatusNotFound, rec.Code, resp)
-			})
-		}
 	})
 }
 
@@ -1200,27 +1189,27 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		}{
 			{
 				desc:      "No group",
-				groupUUID: uuid.Nil,
+				groupUUID: uuid.Max,
 				userUUID:  userUUID,
 				quizUUID:  quizUUID,
 			},
 			{
 				desc:      "No user",
 				groupUUID: groupUUID,
-				userUUID:  uuid.Nil,
+				userUUID:  uuid.Max,
 				quizUUID:  quizUUID,
 			},
 			{
 				desc:      "No group and user",
-				groupUUID: uuid.Nil,
-				userUUID:  uuid.Nil,
+				groupUUID: uuid.Max,
+				userUUID:  uuid.Max,
 				quizUUID:  quizUUID,
 			},
 			{
 				desc:      "No quiz",
 				groupUUID: groupUUID,
 				userUUID:  userUUID,
-				quizUUID:  uuid.Nil,
+				quizUUID:  uuid.Max,
 			},
 		}
 		for _, tC := range testCases {
@@ -1418,18 +1407,18 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		}{
 			{
 				desc:      "No group",
-				groupUUID: uuid.Nil,
+				groupUUID: uuid.Max,
 				userUUID:  userUUID,
 			},
 			{
 				desc:      "No user",
 				groupUUID: groupUUID,
-				userUUID:  uuid.Nil,
+				userUUID:  uuid.Max,
 			},
 			{
 				desc:      "No group and user",
-				groupUUID: uuid.Nil,
-				userUUID:  uuid.Nil,
+				groupUUID: uuid.Max,
+				userUUID:  uuid.Max,
 			},
 		}
 		for _, tC := range testCases {

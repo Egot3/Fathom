@@ -7,9 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
-	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/database/repositories"
 	"github.com/egot3/fathom/internal/handler"
 	"github.com/egot3/fathom/internal/models"
@@ -42,9 +40,6 @@ func TestGroupHandler_Post(t *testing.T) {
 		err = db.NewInsert().Model(&user).Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -55,15 +50,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text())),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 
 		rec := httptest.NewRecorder()
 
@@ -90,9 +77,6 @@ func TestGroupHandler_Post(t *testing.T) {
 		err = db.NewInsert().Model(&user).Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		name := rand.Text()
 		_, err = db.NewInsert().Model(&models.Group{Name: name}).Exec(t.Context())
 		require.NoError(t, err)
@@ -107,15 +91,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, name)),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -146,9 +122,6 @@ func TestGroupHandler_Post(t *testing.T) {
 		err = db.NewInsert().Model(&user).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -159,15 +132,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q, "appendants": [%q]}`, rand.Text(), user.UUID)),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -199,9 +164,6 @@ func TestGroupHandler_Post(t *testing.T) {
 		err = db.NewInsert().Model(&user).Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -212,15 +174,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text()[0:1])),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -245,9 +199,6 @@ func TestGroupHandler_Post(t *testing.T) {
 		err = db.NewInsert().Model(&user).Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -258,15 +209,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, strings.Repeat(rand.Text(), 100))),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -300,9 +243,6 @@ func TestGroupHandler_Delete(t *testing.T) {
 			Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -313,15 +253,7 @@ func TestGroupHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -355,9 +287,6 @@ func TestGroupHandler_Patch(t *testing.T) {
 			Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -368,67 +297,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text())),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
-		rec := httptest.NewRecorder()
-
-		router.ServeHTTP(rec, req)
-
-		bodyString := rec.Body.String()
-		require.Equal(t, http.StatusNoContent, rec.Code, bodyString)
-	})
-
-	t.Run("Valid no name change", func(t *testing.T) {
-
-		i := testutils.NewTestInjector(t,
-			repositories.RepositoryPackage,
-		)
-
-		do.Provide(i, testrunner.NewManager)
-
-		db := do.MustInvoke[*bun.DB](i)
-
-		pswd := rand.Text()
-		pswdhash, err := bcrypt.GenerateFromPassword([]byte(pswd), bcrypt.DefaultCost)
-		require.NoError(t, err)
-		user := models.User{Nickname: rand.Text(), PasswordHash: pswdhash}
-		err = db.NewInsert().Model(&user).Scan(t.Context())
-		require.NoError(t, err)
-
-		group := models.Group{Name: rand.Text()}
-		err = db.NewInsert().Model(&group).Returning("uuid").
-			Scan(t.Context())
-		require.NoError(t, err)
-
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
-		do.Provide(i, handler.NewTestService)
-		router, err := server.ChiServer(i)
-		require.NoError(t, err)
-
-		req := httptest.NewRequest(
-			http.MethodPatch,
-			fmt.Sprintf("/api/v1/group/%v", group.UUID),
-			nil,
-		)
-		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -459,9 +328,6 @@ func TestGroupHandler_Patch(t *testing.T) {
 			Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -472,15 +338,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text())),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -513,9 +371,6 @@ func TestGroupHandler_Patch(t *testing.T) {
 				Scan(t.Context())
 			require.NoError(t, err)
 
-			token, err := jwtutils.GenerateToken(user.UUID, true)
-			require.NoError(t, err)
-
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
 			require.NoError(t, err)
@@ -526,15 +381,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 				strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text()[0:1])),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -565,9 +412,6 @@ func TestGroupHandler_Patch(t *testing.T) {
 				Scan(t.Context())
 			require.NoError(t, err)
 
-			token, err := jwtutils.GenerateToken(user.UUID, true)
-			require.NoError(t, err)
-
 			do.Provide(i, handler.NewTestService)
 			router, err := server.ChiServer(i)
 			require.NoError(t, err)
@@ -578,15 +422,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 				strings.NewReader(fmt.Sprintf(`{"name": %q}`, strings.Repeat(rand.Text(), 100))),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
-				Value:    token,
-				Path:     "/",
-				Expires:  time.Now().Add(jwtutils.JWTTTL),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			})
+			testutils.AddTeacherCookie(t, req)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -622,9 +458,6 @@ func TestGroupHandler_Get(t *testing.T) {
 			Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -635,15 +468,7 @@ func TestGroupHandler_Get(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -676,9 +501,6 @@ func TestGroupHandler_Get(t *testing.T) {
 			Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -689,15 +511,7 @@ func TestGroupHandler_Get(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text())),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -757,9 +571,6 @@ func TestGroupHandler_List(t *testing.T) {
 			Scan(t.Context())
 		require.NoError(t, err)
 
-		token, err := jwtutils.GenerateToken(user.UUID, true)
-		require.NoError(t, err)
-
 		do.Provide(i, handler.NewTestService)
 		router, err := server.ChiServer(i)
 		require.NoError(t, err)
@@ -770,15 +581,7 @@ func TestGroupHandler_List(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
-			Value:    token,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		testutils.AddTeacherCookie(t, req)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)

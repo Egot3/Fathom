@@ -174,12 +174,12 @@ func (c *chiService) ListQuizzes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page, size, err := httputils.Page(r)
-	if err != nil {
+	page, size, jerr := httputils.Page(r)
+	if jerr != nil {
 		logger.Error("couldn't retrieve page/size from request",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		w.WriteHeader(http.StatusBadRequest)
+		jerr.Encode(w)
 		return
 	}
 
