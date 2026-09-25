@@ -75,3 +75,16 @@ func UserRights(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func IsUserRights(r *http.Request) bool {
+	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	if !ok {
+		return false
+	}
+
+	if claims.UserID.String() != chi.URLParam(r, "user_uuid") {
+		return false
+	}
+
+	return true
+}

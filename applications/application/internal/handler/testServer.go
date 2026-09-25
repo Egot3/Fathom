@@ -54,6 +54,11 @@ func (c *chiService) AddQuizzes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(req.QuizUUIDs) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	err := c.testRepo.BundleQuizzesToTest(ctx, testUUID, req.QuizUUIDs)
 	if err != nil {
 		logger.Error("couldn't append quizzes to test",
@@ -629,12 +634,12 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page, size, err := httputils.Page(r)
-	if err != nil {
+	page, size, jerr := httputils.Page(r)
+	if jerr != nil {
 		logger.Error("couldn't retrieve page/size from request",
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
-		w.WriteHeader(http.StatusBadRequest)
+		jerr.Encode(w)
 		return
 	}
 

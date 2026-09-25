@@ -174,7 +174,10 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.IsTeacherRights)
+				r.Use(middleware.Maybe(middlewares.IsTeacherRights, func(r *http.Request) bool {
+					is := middlewares.IsUserRights(r)
+					return !is
+				}))
 
 				r.Get("/{group_uuid}/{user_uuid}/{test_uuid}", svc.ListTotals)
 			})
@@ -185,7 +188,6 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 					return !middlewares.IsTeacherCondition(r)
 				}))
 
-				r.Get("/{group_uuid}/{user_uuid}/{test_uuid}", svc.GetUserTotal)
 				r.Get("/{group_uuid}/{user_uuid}/{test_uuid}/answers", svc.ListUserAnswer)
 			})
 
