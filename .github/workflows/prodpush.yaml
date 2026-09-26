@@ -1,4 +1,4 @@
-name: Build & Push to GHCR
+name: Test & Build & Push to GHCR
 
 on:
   push:
@@ -28,8 +28,13 @@ jobs:
             echo "on_main=false" >> "$GITHUB_OUTPUT"
           fi
 
-  build:
+  test:
     needs: verify-branch
+    if: needs.verify-branch.outputs.on_main == 'true'
+    uses: ./.github/workflows/go-test.yaml
+
+  build:
+    needs: [verify-branch, test]
     if: needs.verify-branch.outputs.on_main == 'true'
     uses: ./.github/workflows/reusable.yaml
     with:
