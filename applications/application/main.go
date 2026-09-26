@@ -18,13 +18,13 @@ func main() {
 	logger := do.MustInvoke[*slog.Logger](i)
 	starter := do.MustInvoke[starters.Starter](i)
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
 	serveErrCh := make(chan error, 1)
 	go func() {
 		serveErrCh <- starter.Serve()
 	}()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 	select {
 	case err := <-serveErrCh:
@@ -32,8 +32,8 @@ func main() {
 			logger.Error("server failed to start", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
-	case <-ctx.Done():
-		logger.Info("shutdown signal received, ceasing-and-draining")
+	case sig := <-sigCh:
+		logger.Info("shutdown signal received, ceasing-and-draining", slog.String("signal", sig.String()))
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
