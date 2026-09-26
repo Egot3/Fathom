@@ -1,10 +1,20 @@
 FROM golang:1-alpine AS builder
+
+ARG VERSION_TYPE
+ENV VERSION_TYPE=$VERSION_TYPE
+
+ARG SEMVER
+ENV SEMVER=$SEMVER
+
+ARG VERSION_NAME
+ENV VERSION_NAME=$VERSION_NAME
+
 RUN apk add --no-cache git
 WORKDIR /fathom
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /app .
+RUN CGO_ENABLED=0 go build -ldflags="-w -s -X github.com/egot3/fathom/internal/version.Type=${VERSION_TYPE} -X github.com/egot3/fathom/internal/version.SemVer=${SEMVER} -X github.com/egot3/fathom/internal/version.Name=${VERSION_NAME}" -o /app .
 
 FROM scratch
 COPY --from=builder /app /app

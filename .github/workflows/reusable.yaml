@@ -6,6 +6,15 @@ on:
       path:
         required: false # so if I would use "" it would go to ghcr.io/<user>/<repo>
         type: string
+      version_name:
+        required: false
+        type: string
+      version_type:
+        required: false
+        type: string
+      semver:
+        required: false
+        type: string
 
 jobs:
   build:
@@ -53,6 +62,11 @@ jobs:
 
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+          build-args: |
+            VERSION_TYPE=${{ inputs.version_type }}
+            SEMVER=${{ inputs.semver }}
+            VERSION_NAME=${{ inputs.version_name }}
 
           cache-from: type=registry,ref=${{ steps.cache.outputs.REF }}:buildcache-${{ github.ref_name }}
           cache-to: type=registry,ref=${{ steps.cache.outputs.REF }}:buildcache-${{ github.ref_name }},mode=max

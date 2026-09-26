@@ -3,13 +3,17 @@ package server
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
+	"github.com/egot3/fathom/health"
 	"github.com/egot3/fathom/internal/handler"
 	"github.com/egot3/fathom/internal/middlewares"
+	"github.com/egot3/fathom/version"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/samber/do/v2"
+	"github.com/uptrace/bun"
 )
 
 func ChiServer(i do.Injector) (chi.Router, error) {
@@ -25,14 +29,15 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 		MaxAge:           300,
 	}), middlewares.BodySizer)
 
-	r.Method("GET", "/health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("healthy"))
-	}))
+	db := do.MustInvoke[*bun.DB](i)
+
+	r.Get("/hearth", health.Handler(version.Version{SemVer: version.SemVer, Name: version.Name, Type: version.Type}, 3*time.Second))
+	r.Get("/hearth/ready", health.Handler(version.Version{SemVer: version.SemVer, Name: version.Name, Type: version.Type}, 3*time.Second, health.Check{Name: "DB check", Fn: db.PingContext}))
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(middlewares.AttachLogger(do.MustInvoke[*slog.Logger](i)))
 		r.Use(middlewares.TraceAttacher)
+		r.Use(middlewares.Recoverer)
 
 		r.Route("/user", func(r chi.Router) {
 
