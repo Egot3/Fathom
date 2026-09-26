@@ -39,4 +39,8 @@ jobs:
     uses: ./.github/workflows/reusable.yaml
     with:
       path: "applications/application"
+      version_name: "め"
+      version_type: "dev"
+      semver: "${{ github.ref_name }}"
+
     secrets: inherit
