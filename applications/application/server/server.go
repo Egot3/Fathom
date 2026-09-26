@@ -31,8 +31,8 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 
 	db := do.MustInvoke[*bun.DB](i)
 
-	r.Get("/hearth", health.Handler(version.Version{SemVer: version.SemVer, Name: version.Name, Type: version.Type}, 3*time.Second))
-	r.Get("/hearth/ready", health.Handler(version.Version{SemVer: version.SemVer, Name: version.Name, Type: version.Type}, 3*time.Second, health.Check{Name: "DB check", Fn: db.PingContext}))
+	r.Get("/health", health.Handler(version.Version{SemVer: version.SemVer, Name: version.Name, Type: version.Type}, 3*time.Second))
+	r.Get("/health/ready", health.Handler(version.Version{SemVer: version.SemVer, Name: version.Name, Type: version.Type}, 3*time.Second, health.Check{Name: "DB check", Fn: db.PingContext}))
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(middlewares.AttachLogger(do.MustInvoke[*slog.Logger](i)))
