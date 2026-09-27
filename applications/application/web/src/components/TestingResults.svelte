@@ -5,7 +5,6 @@
   import { FetchTotals, type Totals } from "../lib/contracts/totals";
   import PeekDialogBig from "./PeekDialogBig.svelte";
   import PeekTotal from "./PeekTotal.svelte";
-  import UserChips from "./UserChips.svelte";
   import { FetchUsers, type User } from "../lib/contracts/user";
   import { FetchGroups, type Group } from "../lib/contracts/group";
   import { FetchAllTests, type Test } from "../lib/contracts/test";
@@ -29,22 +28,35 @@
   $effect(() => {
     const p = page;
     const ps = pageSize;
-    trigger; // well well well, it updates as an int(increment) and derived.by fires
+    const user = selectedUser;
+    const group = selectedGroup;
+    const test = selectedTest;
+
+    console.log(user, group, test);
+
+    trigger;
 
     clearTimeout(time);
     loading = true;
 
     new Promise((resolve) => {
       time = setTimeout(async () => {
-        statusMessage = await FetchTotals(p - 1, ps)
+        statusMessage = await FetchTotals(
+          p - 1,
+          ps,
+          user || "all",
+          group || "all",
+          test || "all",
+        )
           .andTee((r) => {
             paginatedTotals = r;
-            loading = false;
           })
           .match(
             (_) => "",
             (err) => err.error,
           );
+
+        loading = false;
 
         resolve(0);
       }, 500);
@@ -81,7 +93,7 @@
                   itemLabel={(u: User) => u.nickname}
                   itemKey={(u: User) => u.uuid}
                   items={(t) => t.users}
-                  selected={selectedUser}
+                  bind:selected={selectedUser}
                 />
               </th>
               <th class="w-1/5 flex gap-2 items-center">
@@ -92,7 +104,7 @@
                   itemLabel={(g: Group) => g.name}
                   itemKey={(g: Group) => g.uuid}
                   items={(g) => g.groups}
-                  selected={selectedGroup}
+                  bind:selected={selectedGroup}
                 />
               </th>
               <th class="w-1/5 flex gap-2 items-center">
@@ -103,7 +115,7 @@
                   itemLabel={(t: Test) => t.name}
                   itemKey={(t: Test) => t.uuid}
                   items={(t) => t.tests}
-                  selected={selectedTest}
+                  bind:selected={selectedTest}
                 /></th
               >
               <th class="w-1/5">Score</th>

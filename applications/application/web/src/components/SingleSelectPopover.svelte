@@ -48,13 +48,13 @@
           .andTee((r) => {
             total = r.total;
             paginated = items(r);
-            loading = false;
           })
           .match(
             (_) => "",
             (err) => err.error,
           );
 
+        loading = false;
         resolve(0);
       }, 500);
     });
