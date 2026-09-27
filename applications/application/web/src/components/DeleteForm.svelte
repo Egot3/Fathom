@@ -8,12 +8,14 @@
   const {
     name,
     UUID,
+    value,
 
     deletor,
     callback = () => {},
   }: {
     name: string;
     UUID: string;
+    value?: string;
 
     deletor: (UUID: string) => ResultAsync<null, JSONError>;
     callback: () => void;
@@ -77,7 +79,7 @@
     {/if}
     <Dialog.CloseTrigger class="btn preset-tonal">Cancel</Dialog.CloseTrigger>
     <button type="submit" class="btn preset-filled" disabled={!nameReady}
-      >Delete</button
+      >{value ?? "Delete"}</button
     >
   </footer>
 </form>

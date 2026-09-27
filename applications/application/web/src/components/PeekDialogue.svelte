@@ -1,7 +1,6 @@
 <script lang="ts">
   import { X } from "@lucide/svelte";
   import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
-  import type { Snippet } from "svelte";
 
   const {
     title,

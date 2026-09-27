@@ -13,6 +13,7 @@
   import TestEnder from "./TestEnder.svelte";
   import TestExtender from "./TestExtender.svelte";
   import { onMount } from "svelte";
+  import ErrorPopover from "./ErrorPopover.svelte";
 
   let isCurrentlyRunning: boolean = $state(true);
   let currentlyRunning: TestInfo[] = $state([]);
@@ -120,12 +121,19 @@
             <TestExtender callback={refresh} key={chosenTest.key} />
           </PeekDialogue>
         </div>
-        <ChipSelector
-          options={["running", "paused"]}
-          working={pauseresuming}
-          bind:selected={selectedId}
-          onchange={() => togglePauseResume(selectedId)}
-        />
+        <ErrorPopover
+          message={pauseresumeMessage ? pauseresumeMessage.error : ""}
+          open={pauseresumeMessage !== null}
+        >
+          <div class="flex flex-col h-full space-y-5">
+            <ChipSelector
+              options={["running", "paused"]}
+              working={pauseresuming}
+              bind:selected={selectedId}
+              onchange={() => togglePauseResume(selectedId)}
+            />
+          </div>
+        </ErrorPopover>
       {/if}
     {/if}
     <div
