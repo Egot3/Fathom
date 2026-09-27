@@ -1,5 +1,8 @@
-export const CheckPassword = (passwordString: string): string => {
+export const CheckPassword = (passwordString: string): string | null => {
   const passwordLength = passwordString.length;
+  if (passwordLength == 0) {
+    return "";
+  }
   if (passwordLength <= 8) {
     return "password must be longer than 7 characters";
   }
@@ -27,5 +30,5 @@ export const CheckPassword = (passwordString: string): string => {
     return "Password must have at least 2 lowercase letters";
   }
 
-  return "";
+  return null;
 };

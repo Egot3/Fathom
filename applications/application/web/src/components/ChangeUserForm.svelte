@@ -23,7 +23,7 @@
 
   let statusMessage = $state("");
   let nameMessage: string = $state("");
-  let passwordMessage: string = $state("");
+  let passwordMessage: string | null = $state("");
 
   let nameReady: boolean = $state(false);
   let passwordReady: boolean = $state(false);
@@ -106,10 +106,10 @@
     placeholder="unbelievab1y_H4RD_TO_brut3_ForcePassw0rd!"
     bind:value={password}
     bind:ready={passwordReady}
-    bind:message={passwordMessage}
+    message={passwordMessage ?? ""}
     checker={(v: string) => {
       passwordMessage = CheckPassword(v);
-      return passwordMessage === "";
+      return passwordMessage === null;
     }}
   />
 
