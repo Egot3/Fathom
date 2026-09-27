@@ -37,7 +37,6 @@
     trigger;
     loading = true;
 
-    console.log("detected change", trigger, page, pageSize);
     clearTimeout(time);
 
     time = setTimeout(async () => {

@@ -1,4 +1,4 @@
-import { ResultAsync } from "neverthrow";
+import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
 import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
 import type { QuizAnswer } from "./quiz";
@@ -93,9 +93,7 @@ export function FetchTotals(
         error: "network error",
       } as JSONError;
     },
-  ).andThen((r) => {
-    return NormalizeJSON<Totals>(r);
-  });
+  ).andThen((r) => NormalizeJSON<Totals>(r));
 }
 
 export type Answers = { answers: Answer[]; total: number };
