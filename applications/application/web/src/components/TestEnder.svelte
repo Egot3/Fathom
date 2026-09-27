@@ -13,4 +13,5 @@
   } = $props();
 </script>
 
-<DeleteForm {name} UUID={key} {callback} deletor={FetchTestStop}></DeleteForm>
+<DeleteForm {name} UUID={key} {callback} value={"Stop"} deletor={FetchTestStop}
+></DeleteForm>
