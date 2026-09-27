@@ -30,10 +30,10 @@
 {#if kind === Kind.Input}
   {#if answers}
     {const inp = AnswerInput(answers)}
-    {const cor = correct!==undefined ? AnswerInput(correct) : ""}
+    {const cor = correct !== undefined ? AnswerInput(correct) : ""}
     {console.log("cor and inp", cor, inp)}
     <UXInput
-      state={cor === inp ? InputStatus.Treat : InputStatus.Punish}
+      status={cor === inp ? InputStatus.Treat : InputStatus.Punish}
       {disabled}
       value={inp}
       message={inp}
