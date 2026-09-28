@@ -3,9 +3,13 @@
   import { FetchTestExport, type Test } from "../lib/contracts/test";
   import ExistingQuizChips from "./ExistingQuizChips.svelte";
   import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
-    import Exporter from "./Exporter.svelte";
+  import Exporter from "./Exporter.svelte";
+  import AcceptHeaders from "./AcceptHeaders.svelte";
+  import { USER_MIMES, type Accept } from "../lib/apiutils/acceptHeader";
 
   let { content }: { content: Test | JSONError } = $props();
+
+  let best: Accept[] = $state([]);
 </script>
 
 {#if IsJSONError(content)}
@@ -28,18 +32,19 @@
     <ExistingQuizChips disabled {quizzes} />
   </label>
 
-  <div class="flex space-x-2">
-      <details class="disclosure">
-	<summary>Export options</summary>
-	<div class="disclosure-content">
-		<p>
-			Standard orders ship within 1-2 business days and arrive in 3-5 business days. Expedited shipping is available at checkout for
-			next-day delivery in most regions.
-		</p>
-	</div>
-      </details>
+  <div class="flex space-x-2 p-2">
+    <details class="disclosure">
+      <summary>Export options</summary>
+      <div class="disclosure-content">
+        <AcceptHeaders available={USER_MIMES} bind:accepted={best} />
+      </div>
+    </details>
 
-      <Exporter downloadName={content.name} fetcher={FetchTestExport.bind(content.uuid), }/>
+    <div class="mt-auto mb-2">
+      <Exporter
+        downloadName={content.name}
+        fetcher={() => FetchTestExport(content.uuid, best)}
+      />
+    </div>
   </div>
-
 {/if}

@@ -1,31 +1,36 @@
 <script lang="ts">
-    import type { SvelteSet } from "svelte/reactivity";
-    import type { Accept } from "../lib/apiutils/acceptHeader";
+  import { SvelteMap, SvelteSet } from "svelte/reactivity";
+  import type { Accept, USER_MIME } from "../lib/apiutils/acceptHeader";
+  import AcceptOption from "./AcceptOption.svelte";
 
-    let {
-      available,
-      accepted = $bindable()
-    }: {
-      accepted: SvelteSet<Accept>,
-      available: string[]
-    } = $props();
+  let {
+    available,
+    accepted = $bindable(),
+  }: {
+    accepted: Accept[];
+    available: readonly USER_MIME[];
+  } = $props();
 
+  const acceptedMap: SvelteMap<string, number> = $state(
+    new SvelteMap<string, number>(),
+  );
 
+  $effect(() => {
+    acceptedMap.values(); // trigger
+
+    accepted = [...acceptedMap.entries()].map((v): Accept => {
+      console.log("map entry:", v);
+      return {
+        accept: v[0],
+        quality: v[1],
+      };
+    });
+  });
 </script>
 
 <fieldset class="fieldset space-y-2">
-    {#each available as tag }
-        <div class="flex space-x-2">
-            <label class="flex items-center space-x-2">
-                {let checked = false}
-                <input class="checkbox" bind:checked={checked} onclick={()=>{
-                  if(checked) {
-                    accepted.delete(tag)
-                  }
-                }} type="checkbox" />
-                <p>Option 1</p>
-                <input class="input" type="range" value="0" max="1" />
-            </label>
-        </div>
-    {/each}
+  <legend>Compression type & Want level</legend>
+  {#each available as tag}
+    <AcceptOption {acceptedMap} key={tag.mime} tag={tag.name} />
+  {/each}
 </fieldset>
