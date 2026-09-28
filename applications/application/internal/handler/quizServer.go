@@ -545,32 +545,9 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 
 	var req contracts.ExportQuizRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		logger.Error("error in register during reading",
-			slog.String("error", err.Error()),
-		)
-		switch {
-		case errors.Is(err, carefulness.ErrMalformedRequest):
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest.JSONError())
-
-		case errors.Is(err, carefulness.ErrUnprocessableRequest):
-			w.WriteHeader(422)
-			json.NewEncoder(w).Encode(carefulness.ErrUnprocessableRequest.JSONError())
-
-		case errors.Is(err, io.EOF):
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Empty body"})
-
-		case errors.Is(err, io.ErrUnexpectedEOF):
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Data loss"})
-
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-
+	jerr := httputils.ParseJSON(r.Body, &req)
+	if jerr != nil {
+		jerr.Encode(w)
 		return
 	}
 
@@ -587,16 +564,11 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type quizFile struct {
-		uuid string
-		path string
-		fi   os.FileInfo // used by tar
-	}
-	var files []quizFile
+	var files []exportutlis.ExportFile
 	for _, uuid := range req.UUIDs {
 		path, err := c.quizRepo.QuizPath(ctx, uuid)
 		if err != nil {
-			logger.Error("couldn't get path", "uuid", uuid, "error", err)
+			logger.Error("couldn't get path", slog.String("uuid", uuid.String()), slog.String("error", err.Error()))
 			if errors.Is(err, sql.ErrNoRows) {
 				w.WriteHeader(http.StatusNotFound)
 				json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("%v not found", uuid)})
@@ -612,83 +584,35 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		files = append(files, quizFile{uuid: uuid.String(), path: path, fi: fi})
+		files = append(files, exportutlis.ExportFile{UUID: uuid.String(), Path: path, FileInfo: fi})
 	}
 
+	ctx = logging.WithLogger(ctx, logger.With(slog.String("strategy", accept)))
+
+	var exporter exportutlis.Exporter
 	switch accept {
 	case "application/zip":
-		w.Header().Set("Content-Type", "application/zip")
-		zipWriter := zip.NewWriter(w)
-		logger = logger.With(slog.String("strategy", "zip"))
-
-		for _, qf := range files {
-			if err := exportutlis.AddFileToZip(zipWriter, qf.path); err != nil {
-				logger.Error("error writing to zip",
-					slog.String("path", qf.path),
-					slog.String("Error", err.Error()),
-				)
-				zipWriter.Close()
-				return
-			}
-		}
-		if err := zipWriter.Close(); err != nil {
-			logger.Error("error finalising zip", "error", err)
-		}
-		return
-
+		exporter = exportutlis.NewZipExporter()
 	case "application/tar":
-		logger = logger.With(slog.String("strategy", "tar"))
-		w.Header().Set("Content-Type", "application/tar")
-		tarWriter := tar.NewWriter(w)
-
-		for _, qf := range files {
-			if err := exportutlis.AddFileToTar(tarWriter, qf.path, qf.fi); err != nil {
-				logger.Error("error writing to tar",
-					slog.String("path", qf.path),
-					slog.String("Error", err.Error()),
-				)
-
-				tarWriter.Close()
-				return
-			}
-		}
-		if err := tarWriter.Close(); err != nil {
-			logger.Error("error finalising tar", "error", err)
-		}
-		return
-
+		exporter = exportutlis.NewTarExporter()
 	case "application/gzip":
-		logger = logger.With(slog.String("strategy", "tar.gz"))
-		w.Header().Set("Content-Type", "application/gzip")
-
-		gzipWriter := gzip.NewWriter(w)
-		tarWriter := tar.NewWriter(gzipWriter)
-
-		for _, qf := range files {
-			if err := exportutlis.AddFileToTar(tarWriter, qf.path, qf.fi); err != nil {
-				logger.Error("error writing to tar",
-					slog.String("path", qf.path),
-					slog.String("Error", err.Error()),
-				)
-
-				tarWriter.Close()
-				return
-			}
-		}
-
-		if err := tarWriter.Close(); err != nil {
-			logger.Error("error finalising tar", "error", err)
-		}
-		if err := gzipWriter.Close(); err != nil {
-			logger.Error("error finalising gz", "error", err)
-		}
-		return
+		exporter = exportutlis.NewGzipExporter()
 
 	default:
 		w.WriteHeader(http.StatusNotAcceptable)
 		return
 
 	}
+
+	var buf bytes.Buffer
+	err = exporter.Export(ctx, &buf, files)
+	if err != nil {
+		logger.Error("couldn't export test", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "error while writing to archive"})
+		return
+	}
+	w.Header().Set("Content-Type", accept)
 }
 
 func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
