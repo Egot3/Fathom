@@ -7,7 +7,8 @@ import {
 } from "../bgdata/currentlyrunning.svelte";
 import type { JSONError } from "../statuses/jsonerror";
 import type { Quiz } from "./quiz";
-import { maxAgeRegex, TokenizedFetch } from "./tokenizedFetch";
+import { maxAgeRegex, NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
+import { AcceptTransform, type Accept } from "../apiutils/acceptHeader";
 
 export type Test = {
   uuid: string;
@@ -616,4 +617,28 @@ export function FetchTestExtend(
 
     return okAsync(null);
   });
+}
+
+export function FetchTestExport(testUUID: string, ...accepts: Accept[]): ResultAsync<Blob, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/export`,
+      {
+        method: "GET",
+        headers: {
+          Accept: AcceptTransform(accepts),
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
+    ),
+    (err) => {
+      console.log("Couldn't list answers: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch list answers because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch list answers because of unknown error" };
+    },
+  ).andThen((r) => NormalizeJSON<Blob>(r));
 }
