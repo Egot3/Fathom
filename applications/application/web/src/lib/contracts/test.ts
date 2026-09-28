@@ -619,7 +619,10 @@ export function FetchTestExtend(
   });
 }
 
-export function FetchTestExport(testUUID: string, ...accepts: Accept[]): ResultAsync<Blob, JSONError> {
+export function FetchTestExport(
+  testUUID: string,
+  accepts: Accept[],
+): ResultAsync<Blob, JSONError> {
   return ResultAsync.fromPromise(
     TokenizedFetch(
       `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/export`,

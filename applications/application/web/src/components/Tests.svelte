@@ -136,7 +136,7 @@
                       <PeekDialogSquare
                         callback={() => (clickFocused = test.uuid)}
                         title="Test peeker"
-                        contentGetter={async () => {
+                        contentGetter={() => {
                           return FetchTest(test.uuid);
                         }}
                       >
