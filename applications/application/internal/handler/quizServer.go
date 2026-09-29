@@ -22,7 +22,7 @@ import (
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
-	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
+	exportutils "github.com/egot3/fathom/internal/exportutils"
 	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/quiz"
@@ -554,17 +554,17 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 	accept, err := httputils.BestAccept(r.Header.Get("Accept"),
 		"application/zip", "application/tar", "application/gzip",
 	)
-	if (err != nil) || (accept == "") {
+	if jerr, _ := errors.AsType[carefulness.JSONErrorable](err); (err != nil) || (accept == "") {
 		logger.Info("Got an unaccaptable accept header",
 			slog.String("accept", accept),
-			slog.String("Error", err.Error()),
+			slog.String("Error", jerr.Error()),
 		)
 
-		w.WriteHeader(http.StatusNotAcceptable)
+		jerr.Encode(w)
 		return
 	}
 
-	var files []exportutlis.ExportFile
+	var files []exportutils.ExportFile
 	for _, uuid := range req.UUIDs {
 		path, err := c.quizRepo.QuizPath(ctx, uuid)
 		if err != nil {
@@ -584,22 +584,22 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		files = append(files, exportutlis.ExportFile{UUID: uuid.String(), Path: path, FileInfo: fi})
+		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: path, FileInfo: fi})
 	}
 
 	ctx = logging.WithLogger(ctx, logger.With(slog.String("strategy", accept)))
 
-	var exporter exportutlis.Exporter
+	var exporter exportutils.Exporter
 	switch accept {
 	case "application/zip":
-		exporter = exportutlis.NewZipExporter()
+		exporter = exportutils.NewZipExporter()
 	case "application/tar":
-		exporter = exportutlis.NewTarExporter()
+		exporter = exportutils.NewTarExporter()
 	case "application/gzip":
-		exporter = exportutlis.NewGzipExporter()
+		exporter = exportutils.NewGzipExporter()
 
 	default:
-		w.WriteHeader(http.StatusNotAcceptable)
+		carefulness.ErrUnnacaptable.Encode(w)
 		return
 
 	}

@@ -1,4 +1,4 @@
-package exportutlis
+package exportutils
 
 import (
 	"archive/tar"

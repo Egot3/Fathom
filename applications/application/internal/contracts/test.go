@@ -50,10 +50,6 @@ type ListTestsResponse struct {
 	Tests []models.Test `json:"tests"`
 }
 
-type ExportTestRequest struct {
-	Description string `json:"description"`
-}
-
 type GetQuizzesUUIDs struct {
 	UUIDs uuid.UUIDs `json:"quiz_uuids"`
 }

@@ -1,7 +1,8 @@
-package exportutlis
+package exportutils
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"context"
 	"io"
 	"log/slog"
@@ -9,16 +10,17 @@ import (
 	"github.com/egot3/fathom/internal/logging"
 )
 
-type tarExporter struct{}
+type gzipExporter struct{}
 
-func NewTarExporter() Exporter {
+func NewGzipExporter() Exporter {
 	return &tarExporter{}
 }
 
-func (z *tarExporter) Export(ctx context.Context, w io.Writer, files []ExportFile) error {
+func (g *gzipExporter) Export(ctx context.Context, w io.Writer, files []ExportFile) error {
 	logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "exporter"))
 
-	tarWriter := tar.NewWriter(w)
+	gzipWriter := gzip.NewWriter(w)
+	tarWriter := tar.NewWriter(gzipWriter)
 
 	for _, f := range files {
 		if err := AddFileToTar(tarWriter, f.Path, f.FileInfo); err != nil {
@@ -32,9 +34,13 @@ func (z *tarExporter) Export(ctx context.Context, w io.Writer, files []ExportFil
 		}
 	}
 
-	err := tarWriter.Close()
-	if err != nil {
+	if err := tarWriter.Close(); err != nil {
 		logger.Error("error finalising tar", "error", err)
+		return err
 	}
-	return err
+	if err := gzipWriter.Close(); err != nil {
+		logger.Error("error finalising gz", "error", err)
+		return err
+	}
+	return nil
 }
