@@ -564,27 +564,25 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var files []exportutils.ExportFile
-	for _, uuid := range req.UUIDs {
-		path, err := c.quizRepo.QuizPath(ctx, uuid)
+	uuidPathes, err := c.quizRepo.QuizPathes(ctx, req.UUIDs)
+	if err != nil {
+		logger.Info("couldn't select uuidPathes",
+			slog.String("Error", err.Error()),
+		)
+
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't select uuid+pathes of quizzes"})
+		return
+	}
+
+	files := make([]exportutils.ExportFile, 0, len(uuidPathes))
+	for _, uuidPath := range uuidPathes {
+		fi, err := os.Stat(uuidPath.Path)
 		if err != nil {
-			logger.Error("couldn't get path", slog.String("uuid", uuid.String()), slog.String("error", err.Error()))
-			if errors.Is(err, sql.ErrNoRows) {
-				w.WriteHeader(http.StatusNotFound)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("%v not found", uuid)})
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to process %v", uuid)})
-			}
-			return
-		}
-		fi, err := os.Stat(path)
-		if err != nil {
-			logger.Error("quiz file not accessible", "path", path, "error", err)
+			logger.Error("quiz file not accessible", slog.String("path", uuidPath.Path), slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: path, FileInfo: fi})
+		files = append(files, exportutils.ExportFile{UUID: uuidPath.UUID.String(), Path: uuidPath.Path, FileInfo: fi})
 	}
 
 	ctx = logging.WithLogger(ctx, logger.With(slog.String("strategy", accept)))

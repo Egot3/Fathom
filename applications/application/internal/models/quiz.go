@@ -12,6 +12,11 @@ import (
 	"github.com/uptrace/bun"
 )
 
+type QuizPathUUID struct {
+	UUID uuid.UUID `bun:"uuid,pk"`
+	Path string    `bun:"path,unique"`
+}
+
 type Quiz struct {
 	bun.BaseModel `bun:"table:quizzes,alias:q"`
 

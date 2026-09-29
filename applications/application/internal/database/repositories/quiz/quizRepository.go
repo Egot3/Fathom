@@ -15,6 +15,7 @@ type QuizRepository interface {
 	CheckRegistered(ctx context.Context, path string) (bool, error)
 	CheckIntegrity(ctx context.Context, path string, checksum [8]byte) (bool, error)
 	QuizPath(ctx context.Context, quizUUID uuid.UUID) (string, error)
+	QuizPathes(ctx context.Context, quizUUIDs uuid.UUIDs) ([]models.QuizPathUUID, error)
 
 	UpdateChecksum(ctx context.Context, quizUUID uuid.UUID, checksum [8]byte) error
 	PatchQuiz(ctx context.Context, quizUUID uuid.UUID, path *string, score *int, answer *quiz.QuizAnswers, checksum *[8]byte) error
