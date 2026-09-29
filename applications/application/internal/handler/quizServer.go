@@ -607,7 +607,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
 	err = exporter.Export(ctx, &buf, files)
 	if err != nil {
-		logger.Error("couldn't export test", slog.String("Error", err.Error()))
+		logger.Error("couldn't export quiz bank", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "error while writing to archive"})
 		return
