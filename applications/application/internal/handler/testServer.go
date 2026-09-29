@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -9,13 +10,14 @@ import (
 	"math"
 	"mime"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
 	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
-	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
+	exportutils "github.com/egot3/fathom/internal/exportutils"
 	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"
@@ -689,7 +691,15 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		slog.String("layer", "handler"),
 	)
 	ctx := logging.WithLogger(r.Context(), logger)
-	w.Header().Set("Content-Type", "application/json")
+
+	best, err := httputils.BestAccept(r.Header.Get("Accept"),
+		"application/zip", "application/tar", "application/gzip", "application/yaml",
+	)
+	if jerr, _ := errors.AsType[carefulness.JSONErrorable](err); err != nil || best == "" {
+		jerr.Encode(w)
+		return
+	}
+	w.Header().Set("Content-Type", best)
 
 	testUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
 	if err != nil {
@@ -700,20 +710,6 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 
 	logger = logger.With(
 		slog.String("test_uuid", testUUID.String()),
-	)
-
-	var req contracts.ExportTestRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
-	if jerr != nil {
-		logger.Error("Failed to parse body",
-			slog.String("Error", jerr.Error()),
-		)
-		jerr.Encode(w)
-		return
-	}
-
-	logger = logger.With(
-		slog.String("description", req.Description),
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
@@ -730,14 +726,13 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	yamlTest := exportutlis.YamlTest{
-		Kind:        exportutlis.Kind(exportutlis.Test),
-		UUID:        testUUID,
-		Name:        test.Name,
-		Description: req.Description,
-		Quizzes: lo.Map(test.Quizzes, func(quiz models.Quiz, _ int) exportutlis.YamlQuiz {
-			return exportutlis.YamlQuiz{
-				Kind: exportutlis.Kind(exportutlis.Quiz),
+	yamlTest := exportutils.YamlTest{
+		Kind: exportutils.Kind(exportutils.Test),
+		UUID: testUUID,
+		Name: test.Name,
+		Quizzes: lo.Map(test.Quizzes, func(quiz models.Quiz, _ int) exportutils.YamlQuiz {
+			return exportutils.YamlQuiz{
+				Kind: exportutils.Kind(exportutils.Quiz),
 				UUID: quiz.UUID,
 			}
 		}),
@@ -753,8 +748,65 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/yaml")
-	w.Write(out)
+	var exporter exportutils.Exporter
+	switch best {
+	case "application/yaml":
+		w.Write(out)
+		w.WriteHeader(http.StatusOK)
+		return
+	case "application/zip":
+		exporter = exportutils.NewZipExporter()
+	case "application/tar":
+		exporter = exportutils.NewTarExporter()
+	case "application/gzip":
+		exporter = exportutils.NewGzipExporter()
+
+	default:
+		carefulness.ErrUnnacaptable.Encode(w)
+		return
+	}
+
+	var files []exportutils.ExportFile
+	for _, quiz := range test.Quizzes {
+		uuid := quiz.UUID
+		path, err := c.quizRepo.QuizPath(ctx, uuid)
+		if err != nil {
+			logger.Error("couldn't get path", slog.String("uuid", uuid.String()), slog.String("error", err.Error()))
+			if errors.Is(err, sql.ErrNoRows) {
+				w.WriteHeader(http.StatusNotFound)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("%v not found", uuid)})
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to process %v", uuid)})
+			}
+			return
+		}
+		fi, err := os.Stat(path)
+		if err != nil {
+			logger.Error("quiz file not accessible", "path", path, "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: path, FileInfo: fi})
+	}
+
+	var buf bytes.Buffer
+	err = exporter.Export(ctx, &buf, append(files, exportutils.ExportFile{
+		FileInfo: exportutils.NewEmbeddedFile(
+			"manifest.yaml",
+			int64(len(out)),
+		),
+		Path: "manifest.yaml",
+		UUID: test.UUID.String(),
+	}))
+	if err != nil {
+		logger.Error("couldn't export test", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "error while writing to archive"})
+		return
+	}
+	w.Header().Set("Content-Type", best)
+
 }
 
 // ImportTest implements [Service].
@@ -795,7 +847,7 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var test exportutlis.YamlTest
+	var test exportutils.YamlTest
 	err = yaml.NewDecoder(yamlFile).Decode(&test)
 	if err != nil {
 		logger.Error("couldn't parse yaml file", slog.String("Error", err.Error()))

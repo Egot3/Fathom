@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/egot3/fathom/internal/carefulness"
-	exportutlis "github.com/egot3/fathom/internal/exportUtlis"
+	exportutils "github.com/egot3/fathom/internal/exportutils"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
@@ -183,7 +183,7 @@ func (r *bunTestRepository) ExistsByUUID(ctx context.Context, testUUID uuid.UUID
 		Where("uuid = ?", testUUID).Exists(ctx)
 }
 
-func (r *bunTestRepository) ImportTest(ctx context.Context, test exportutlis.YamlTest) error {
+func (r *bunTestRepository) ImportTest(ctx context.Context, test exportutils.YamlTest) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		_, err := tx.NewInsert().Model(&models.Test{
 			UUID: test.UUID,

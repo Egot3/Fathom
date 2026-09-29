@@ -1,10 +1,11 @@
 package httputils
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/egot3/fathom/internal/carefulness"
 )
 
 func BestAccept(acceptHeader string, supported ...string) (string, error) {
@@ -54,5 +55,5 @@ func BestAccept(acceptHeader string, supported ...string) (string, error) {
 			}
 		}
 	}
-	return "", fmt.Errorf("no supported type found")
+	return "", carefulness.ErrUnnacaptable
 }
