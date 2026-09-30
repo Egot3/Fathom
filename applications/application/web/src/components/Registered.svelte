@@ -29,6 +29,7 @@
   $effect(() => {
     const p = page;
     const ps = pageSize;
+    trigger;
 
     clearTimeout(time);
 
