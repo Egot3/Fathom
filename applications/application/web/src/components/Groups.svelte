@@ -32,6 +32,7 @@
     const p = page;
     const ps = pageSize;
     trigger;
+    loading = true;
 
     console.log("detected change");
     clearTimeout(time);
