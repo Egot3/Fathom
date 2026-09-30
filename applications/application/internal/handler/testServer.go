@@ -17,7 +17,7 @@ import (
 	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
-	exportutils "github.com/egot3/fathom/internal/exportutils"
+	exportutils "github.com/egot3/fathom/internal/exportUtils"
 	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"

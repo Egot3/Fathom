@@ -3,7 +3,7 @@ package test
 import (
 	"context"
 
-	exportutils "github.com/egot3/fathom/internal/exportutils"
+	exportutils "github.com/egot3/fathom/internal/exportUtils"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 )

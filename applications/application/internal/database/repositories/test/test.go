@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/egot3/fathom/internal/carefulness"
-	exportutils "github.com/egot3/fathom/internal/exportutils"
+	exportutils "github.com/egot3/fathom/internal/exportUtils"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
