@@ -2,8 +2,6 @@
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
-  import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
-
   import CreateDialog from "./CreateDialog.svelte";
   import SmallBookCreateDialog from "./SmallBookCreateDialog.svelte";
   import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
@@ -104,7 +102,7 @@
                   {#if group.uuid === focused || group.uuid === clickFocused}
                     <div class="flex flex-row-reverse">
                       <DeleteDialogSquare
-                        title="Quiz deleter"
+                        title="Group deleter"
                         callback={() => (clickFocused = group.uuid)}
                       >
                         <DeleteGroupForm
@@ -117,7 +115,7 @@
                       </DeleteDialogSquare>
                       <ChangeDialogSqare
                         callback={() => (clickFocused = group.uuid)}
-                        title="Quiz changer"
+                        title="Group changer"
                         contentGetter={async () => {
                           return group;
                         }}
@@ -136,7 +134,7 @@
 
                       <PeekDialogSquare
                         callback={() => (clickFocused = group.uuid)}
-                        title="Test peeker"
+                        title="Group peeker"
                         contentGetter={async () => {
                           return group;
                         }}
@@ -182,7 +180,7 @@
             </Pagination.NextTrigger>
           </Pagination>
 
-          <SmallBookCreateDialog title="Test maker"
+          <SmallBookCreateDialog title="Group maker"
             ><CreateGroupForm
               callback={() => {
                 trigger++;
