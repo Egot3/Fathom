@@ -14,6 +14,7 @@
   import TestExtender from "./TestExtender.svelte";
   import { onMount } from "svelte";
   import ErrorPopover from "./ErrorPopover.svelte";
+  import PeekLink from "./PeekLink.svelte";
 
   let isCurrentlyRunning: boolean = $state(true);
   let currentlyRunning: TestInfo[] = $state([]);
@@ -134,6 +135,7 @@
             />
           </div>
         </ErrorPopover>
+        <PeekLink key={chosenTest.key}></PeekLink>
       {/if}
     {/if}
     <div
