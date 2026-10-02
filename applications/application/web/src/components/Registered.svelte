@@ -10,11 +10,12 @@
   import DeleteUserForm from "./DeleteUserForm.svelte";
   import ChangeUserForm from "./ChangeUserForm.svelte";
   import UserPeek from "./UserPeek.svelte";
+    import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
 
-  let height = $state(0);
 
+  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
+  let pageSize = $derived(fit.pageSize);
   let page = $state(1);
-  let pageSize = $derived(Math.trunc((height - 29 - 45 - 40) / 49));
 
   let focused = $state("");
   let clickFocused = $state("");
@@ -30,6 +31,9 @@
     const p = page;
     const ps = pageSize;
     trigger;
+    const ready = fit.ready
+    if (!ready) return;
+    loading = true;
 
     clearTimeout(time);
 
@@ -53,7 +57,7 @@
 
 <div
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
-  bind:clientHeight={height}
+  use:fit.measure
 >
   {#if loading}
     <div
@@ -69,7 +73,7 @@
       {:else}
         <table class="table table-auto self-start">
           <thead>
-            <tr class="text-surface-100-900 flex">
+            <tr style="height:20px" class="text-surface-100-900 flex">
               <th class="w-1/2">Nickname</th>
               <th class="w-1/2"></th>
             </tr>
@@ -78,6 +82,7 @@
           <tbody>
             {#each paginatedUsers.users as user (user.uuid)}
               <tr
+                style="height:20px"
                 onmouseenter={() => (focused = user.uuid)}
                 onmouseleave={() => (focused = "")}
                 class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
