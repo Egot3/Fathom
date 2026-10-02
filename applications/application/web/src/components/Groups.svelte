@@ -16,11 +16,12 @@
   import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
   import ChangeGroupForm from "./ChangeGroupForm.svelte";
   import GroupPeek from "./GroupPeek.svelte";
+    import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
 
-  let height = $state(0);
 
+  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
+  let pageSize = $derived(fit.pageSize);
   let page = $state(1);
-  let pageSize = $derived(Math.trunc((height - 39 - 45) / 39));
 
   let statusMessage = $state("");
   let loading = $state(true);
@@ -32,9 +33,10 @@
     const p = page;
     const ps = pageSize;
     trigger;
+    const ready = fit.ready
+    if (!ready) return;
     loading = true;
 
-    console.log("detected change");
     clearTimeout(time);
 
     new Promise((resolve) => {
@@ -59,7 +61,7 @@
 
 <div
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
-  bind:clientHeight={height}
+  use:fit.measure
 >
   {#if loading}
     <div

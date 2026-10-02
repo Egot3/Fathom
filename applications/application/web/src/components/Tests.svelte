@@ -18,11 +18,11 @@
   import ChangeTestForm from "./ChangeTestForm.svelte";
   import PeekDialogSquare from "./PeekDialogSquare.svelte";
   import TestPeek from "./TestPeek.svelte";
+  import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
 
-  let height = $state(0);
-
+  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
+  let pageSize = $derived(fit.pageSize);
   let page = $state(1);
-  let pageSize = $derived(Math.trunc((height - 39 - 45) / 39));
 
   let statusMessage = $state("");
   let loading = $state(true);
@@ -34,22 +34,24 @@
     const p = page;
     const ps = pageSize;
     trigger;
+    const ready = fit.ready
+    if (!ready) return;
     loading = true;
 
-    console.log("detected change");
     clearTimeout(time);
 
     time = setTimeout(async () => {
       statusMessage = await FetchAllTests(p - 1, ps)
-        .map((r) => {
+        .andTee((r) => {
           listTests = r;
-          loading = false;
-          return r;
         })
         .match(
           () => "",
           (err: JSONError) => err.error,
         );
+
+      loading = false;
+
     });
   });
 
@@ -59,7 +61,7 @@
 
 <div
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
-  bind:clientHeight={height}
+  use:fit.measure
 >
   {#if loading}
     <div
@@ -82,7 +84,7 @@
       {:else}
         <table class="table table-auto self-start">
           <thead>
-            <tr class="text-surface-100-900 flex">
+            <tr class="text-surface-100-900 flex"  style="height:20px">
               <th class="w-1/3">Test</th>
               <th class="w-1/3">Quiz count</th>
               <th class="w-1/3"></th>
@@ -94,6 +96,7 @@
               <tr
                 onmouseenter={() => (focused = test.uuid)}
                 onmouseleave={() => (focused = "")}
+                style="height:20px"
                 class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
               >
                 <td class="w-1/3">{test.name}</td>

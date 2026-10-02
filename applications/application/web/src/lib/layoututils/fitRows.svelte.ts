@@ -14,7 +14,6 @@ export function CreateFitRows(opts: {
 
   function measure(node: HTMLElement) {
     const ro = new ResizeObserver(([e]) => {
-      console.log("resize!")
       height = e.contentRect.height;
     });
     ro.observe(node);

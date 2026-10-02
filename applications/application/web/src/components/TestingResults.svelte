@@ -9,11 +9,11 @@
   import { FetchGroups, type Group } from "../lib/contracts/group";
   import { FetchAllTests, type Test } from "../lib/contracts/test";
   import SingleSelectPopover from "./SingleSelectPopover.svelte";
+    import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
 
-  let height = $state(0);
-
+  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
+  let pageSize = $derived(fit.pageSize);
   let page = $state(1);
-  let pageSize = $derived(Math.trunc((height - 29 - 45 - 40) / 49));
 
   let loading = $state(true);
   let statusMessage = $state("");
@@ -31,10 +31,10 @@
     const user = selectedUser;
     const group = selectedGroup;
     const test = selectedTest;
-
-    console.log(user, group, test);
-
+    const ready = fit.ready;
     trigger;
+
+    if (!ready) return
 
     clearTimeout(time);
     loading = true;
@@ -68,7 +68,7 @@
 
 <div
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
-  bind:clientHeight={height}
+  use:fit.measure
 >
   {#if loading}
     <div
@@ -84,7 +84,7 @@
       {:else}
         <table class="table table-auto self-start">
           <thead>
-            <tr class="text-surface-100-900 flex">
+            <tr style="height:20px" class="text-surface-100-900 flex">
               <th class="w-1/5 flex gap-2 items-center">
                 User
                 <SingleSelectPopover
@@ -129,6 +129,7 @@
               {const ultimateUUID =
                 total.group_uuid + total.test_uuid + total.user_uuid}
               <tr
+                style="height:20px"
                 onclick={() => (focused = ultimateUUID)}
                 class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
               >
