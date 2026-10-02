@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SvelteMap, SvelteSet } from "svelte/reactivity";
+  import { SvelteMap } from "svelte/reactivity";
   import type { Accept, USER_MIME } from "../lib/apiutils/acceptHeader";
   import AcceptOption from "./AcceptOption.svelte";
 

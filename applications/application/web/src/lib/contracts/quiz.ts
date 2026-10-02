@@ -100,42 +100,27 @@ export function OptionOrder(qo: QuizOptions): string[] {
   return (qo as OptionsOrder).orders.items;
 }
 
-export type QuizzesOrError = { quizzes: Quiz[]; total: number } | JSONError;
+export type Quizzes = { quizzes: Quiz[]; total: number };
 
-export async function FetchAllQuizzes(
+export  function FetchAllQuizzes(
   page: number,
   size: number,
-): Promise<QuizzesOrError> {
-  try {
-    const rawRes = await TokenizedFetch(
-      "https://" +
-        import.meta.env.VITE_DOMAIN +
-        "/api/v1/quiz/" +
-        "?page=" +
-        page +
-        "&size=" +
-        size,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+): ResultAsync<Quizzes, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/?page=${page}&size=${size}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
       },
-    );
-
-    if (!rawRes.ok) {
-      return (await rawRes.json()) as JSONError;
-    }
-
-    const quizzes = (await rawRes.json()) as { quizzes: Quiz[]; total: number };
-    console.log("quizzes: ", quizzes);
-    return quizzes;
-  } catch (err) {
+    },
+  ), (err) => {
     console.log(err);
     return {
       error: "network error",
-    } as JSONError;
-  }
+    } as JSONError
+  }).andThen((r)=>NormalizeJSON<Quizzes>(r))
 }
 
 export enum Kind {
