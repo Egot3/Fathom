@@ -2,7 +2,7 @@
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
-  import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
+  import { type JSONError } from "../lib/statuses/jsonerror";
   import {
     FetchAllTests,
     FetchTest,
