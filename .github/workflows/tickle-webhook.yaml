@@ -24,14 +24,22 @@ on:
         required: false
 
 jobs:
-  build:
+  tickle:
     runs-on: ubuntu-latest
-
     steps:
       - name: Tickle
+        env:
+          DOMAIN: ${{ inputs.domain }}
+          KEY_HEADER: ${{ inputs.key_header }}
+          SECRET_HEADER: ${{ inputs.secret_header }}
+          API_KEY: ${{ secrets.API_KEY }}
+          API_SECRET: ${{ secrets.API_SECRET }}
+          BODY: ${{ inputs.body }}
         run: |
-          curl -fsS -X POST "https://${{ inputs.domain }}/execute" \
+          args=()
+          if [ -n "$BODY" ]; then args+=(--data "$BODY"); fi
+          curl -fsS -X POST "https://${DOMAIN}/execute" \
             -H "Content-Type: application/json" \
-            -H "${{ inputs.key_header }}: ${{ secrets.API_KEY }}" \
-            -H "${{ inputs.secret_header }}: ${{ secrets.API_SECRET }}" \
-            ${{ inputs.body && format('-d {0}', string(inputs.body)) || '' }}
+            -H "${KEY_HEADER}: ${API_KEY}" \
+            -H "${SECRET_HEADER}: ${API_SECRET}" \
+            "${args[@]}"
