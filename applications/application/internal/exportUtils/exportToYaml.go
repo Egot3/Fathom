@@ -20,5 +20,5 @@ type YamlTest struct {
 
 type YamlQuiz struct {
 	Kind Kind      `yaml:"kind"`
-	UUID uuid.UUID `yaml:"uuid,omitzero"`
+	UUID uuid.UUID `yaml:"uuid,omitempty"`
 }
