@@ -13,7 +13,7 @@ type User struct {
 
 	UUID         uuid.UUID `bun:"uuid,pk" json:"uuid"`
 	Nickname     string    `bun:"nickname,notnull,unique" json:"nickname"`
-	PasswordHash []byte    `bun:"password_hash,notnull"`
+	PasswordHash []byte    `bun:"password_hash,notnull" json:"-"`
 	IsTeacher    bool      `bun:"is_teacher,default:false,type:boolean" json:"is_teacher"`
 
 	DeletedAt *time.Time `bun:"deleted_at,soft_delete"`
