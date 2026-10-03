@@ -44,3 +44,13 @@ jobs:
       semver: "${{ github.ref_name }}"
 
     secrets: inherit
+
+  tickle:
+    needs: [build]
+    uses: ./.github/workflows/tickle-webhook.yaml
+    with:
+      domain: "${{ vars.KOMODO_DOMAIN }}"
+      body: '{"type":"DeployStack","params":{"stack":"fathom_compose"}}'
+    secrets:
+      API_KEY: "${{ secrets.FATHOM_KOMODO_API_KEY }}"
+      API_SECRET: "${{ secrets.FATHOM_KOMODO_API_SECRET }}}"
