@@ -18,7 +18,6 @@ type customFileInfo struct {
 	size    int64
 	mode    fs.FileMode
 	modTime time.Time
-	sys     any
 }
 
 func NewEmbeddedFile(name string, size int64) fs.FileInfo {
@@ -35,7 +34,7 @@ func (fi customFileInfo) Size() int64        { return fi.size }
 func (fi customFileInfo) Mode() fs.FileMode  { return fi.mode }
 func (fi customFileInfo) ModTime() time.Time { return fi.modTime }
 func (fi customFileInfo) IsDir() bool        { return false }
-func (fi customFileInfo) Sys() any           { return fi.sys }
+func (fi customFileInfo) Sys() any           { return 1 }
 
 type Exporter interface {
 	Export(context.Context, io.Writer, []ExportFile) error
