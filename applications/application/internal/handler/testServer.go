@@ -701,11 +701,14 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", best)
 
-	testUUID, err := uuid.Parse(chi.URLParam(r, "test_uuid"))
+	testUUID, err := uuid.Parse(chi.URLParam(r, "uuid"))
 	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
+		logger.Error("couldn't parse UUID in url",
 			slog.String("Error", err.Error()),
 		)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't parse UUID in url"})
+		return
 	}
 
 	logger = logger.With(
