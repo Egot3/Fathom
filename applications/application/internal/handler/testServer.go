@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"math"
 	"mime"
@@ -786,21 +787,43 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		}
 		fi, err := os.Stat(path)
 		if err != nil {
-			logger.Error("quiz file not accessible", "path", path, "error", err)
+			logger.Error("quiz file not accessible", slog.String("path", path), slog.String("Error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: path, FileInfo: fi})
 	}
 
+	f, err := os.CreateTemp("", fmt.Sprintf("%v-manifest.yaml", test.UUID.String()))
+	if err != nil {
+		logger.Error("unable to create temp file", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to create temp file")})
+		return
+	}
+	defer f.Close()
+
+	_, err = io.Copy(f, bytes.NewReader(out))
+	if err != nil {
+		logger.Error("unable to copy to temp file", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to copy manifest to temp file")})
+		return
+	}
+
+	info, err := f.Stat()
+	if err != nil {
+		logger.Error("unable to get info about temp file", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to get info about temp file")})
+		return
+	}
+
 	var buf bytes.Buffer
 	err = exporter.Export(ctx, &buf, append(files, exportutils.ExportFile{
-		FileInfo: exportutils.NewEmbeddedFile(
-			"manifest.yaml",
-			int64(len(out)),
-		),
-		Path: "manifest.yaml",
-		UUID: test.UUID.String(),
+		FileInfo: info,
+		Path:     info.Name(),
+		UUID:     test.UUID.String(),
 	}))
 	if err != nil {
 		logger.Error("couldn't export test", slog.String("Error", err.Error()))
