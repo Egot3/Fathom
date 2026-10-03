@@ -53,4 +53,4 @@ jobs:
       body: '{"type":"DeployStack","params":{"stack":"fathom_compose"}}'
     secrets:
       API_KEY: "${{ secrets.FATHOM_KOMODO_API_KEY }}"
-      API_SECRET: "${{ secrets.FATHOM_KOMODO_API_SECRET }}}"
+      API_SECRET: "${{ secrets.FATHOM_KOMODO_API_SECRET }}"
