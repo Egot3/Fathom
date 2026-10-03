@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"io/fs"
+	"path/filepath"
 	"time"
 )
 
@@ -11,6 +12,7 @@ type ExportFile struct {
 	UUID     string
 	Path     string
 	FileInfo fs.FileInfo
+	Name     string
 }
 
 type customFileInfo struct {
@@ -38,4 +40,12 @@ func (fi customFileInfo) Sys() any           { return 1 }
 
 type Exporter interface {
 	Export(context.Context, io.Writer, []ExportFile) error
+}
+
+func (f ExportFile) ArchiveName() string {
+	name := f.Name
+	if name == "" {
+		name = filepath.Base(f.Path)
+	}
+	return filepath.ToSlash(name)
 }

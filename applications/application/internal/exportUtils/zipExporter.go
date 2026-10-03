@@ -21,7 +21,7 @@ func (z *zipExporter) Export(ctx context.Context, w io.Writer, files []ExportFil
 	zipWriter := zip.NewWriter(w)
 
 	for _, f := range files {
-		if err := AddFileToZip(zipWriter, f.Path); err != nil {
+		if err := AddFileToZip(zipWriter, f); err != nil {
 			logger.Error("error writing to zip",
 				slog.String("path", f.Path),
 				slog.String("Error", err.Error()),

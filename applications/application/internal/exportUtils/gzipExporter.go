@@ -23,7 +23,7 @@ func (g *gzipExporter) Export(ctx context.Context, w io.Writer, files []ExportFi
 	tarWriter := tar.NewWriter(gzipWriter)
 
 	for _, f := range files {
-		if err := AddFileToTar(tarWriter, f.Path, f.FileInfo); err != nil {
+		if err := AddFileToTar(tarWriter, f); err != nil {
 			logger.Error("error writing to tar",
 				slog.String("path", f.Path),
 				slog.String("Error", err.Error()),

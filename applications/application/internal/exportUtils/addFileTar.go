@@ -6,22 +6,22 @@ import (
 	"os"
 )
 
-func AddFileToTar(tw *tar.Writer, filePath string, fi os.FileInfo) error {
-	f, err := os.Open(filePath)
+func AddFileToTar(tw *tar.Writer, f ExportFile) error {
+	file, err := os.Open(f.Path)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer file.Close()
 
-	header, err := tar.FileInfoHeader(fi, "")
+	header, err := tar.FileInfoHeader(f.FileInfo, "")
 	if err != nil {
 		return err
 	}
-	header.Name = filePath
+	header.Name = f.ArchiveName()
 
 	if err := tw.WriteHeader(header); err != nil {
 		return err
 	}
-	_, err = io.Copy(tw, f)
+	_, err = io.Copy(tw, file)
 	return err
 }
