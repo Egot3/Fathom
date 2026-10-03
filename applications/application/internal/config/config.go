@@ -71,3 +71,7 @@ func Load(i do.Injector) (*Config, error) {
 func (c Config) TurnToAbs(name string) (string, error) {
 	return filepath.Abs(filepath.Join(c.QuizPath, name+".md"))
 }
+
+func (c Config) TurnToRel(target string) (string, error) {
+	return filepath.Rel(c.QuizPath, target)
+}

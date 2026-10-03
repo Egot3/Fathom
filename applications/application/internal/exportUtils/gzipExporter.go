@@ -13,7 +13,7 @@ import (
 type gzipExporter struct{}
 
 func NewGzipExporter() Exporter {
-	return &tarExporter{}
+	return &gzipExporter{}
 }
 
 func (g *gzipExporter) Export(ctx context.Context, w io.Writer, files []ExportFile) error {

@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"io"
 	"os"
-	"path/filepath"
 )
 
 func AddFileToTar(tw *tar.Writer, filePath string, fi os.FileInfo) error {
@@ -18,7 +17,7 @@ func AddFileToTar(tw *tar.Writer, filePath string, fi os.FileInfo) error {
 	if err != nil {
 		return err
 	}
-	header.Name = filepath.Base(filePath)
+	header.Name = filePath
 
 	if err := tw.WriteHeader(header); err != nil {
 		return err

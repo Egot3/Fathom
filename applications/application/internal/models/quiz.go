@@ -49,6 +49,10 @@ func (q *Quiz) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 
 type FixedBytes8 [8]byte
 
+func (f FixedBytes8) String() string {
+	return string(f[:])
+}
+
 func (f FixedBytes8) Value() (driver.Value, error) {
 	return bzCopy(f[:]), nil
 }

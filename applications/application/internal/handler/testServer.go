@@ -735,9 +735,12 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		UUID: testUUID,
 		Name: test.Name,
 		Quizzes: lo.Map(test.Quizzes, func(quiz models.Quiz, _ int) exportutils.YamlQuiz {
+			p, _ := c.cfg.TurnToRel(quiz.Path)
 			return exportutils.YamlQuiz{
-				Kind: exportutils.Kind(exportutils.Quiz),
-				UUID: quiz.UUID,
+				Kind:     exportutils.Kind(exportutils.Quiz),
+				UUID:     quiz.UUID,
+				Checksum: string(quiz.Checksum.String()),
+				Path:     p,
 			}
 		}),
 	}
@@ -791,7 +794,15 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: path, FileInfo: fi})
+
+		p, err := c.cfg.TurnToRel(path)
+		if err != nil {
+			logger.Error("unable to turn quiz path to rel", slog.String("Error", err.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to turn quiz path to relative")})
+			return
+		}
+		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: p, FileInfo: fi})
 	}
 
 	err = os.MkdirAll("/tmp/", 0775)

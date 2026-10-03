@@ -19,6 +19,8 @@ type YamlTest struct {
 }
 
 type YamlQuiz struct {
-	Kind Kind      `yaml:"kind"`
-	UUID uuid.UUID `yaml:"uuid,omitempty"`
+	Kind     Kind      `yaml:"kind"`
+	UUID     uuid.UUID `yaml:"uuid,omitempty"`
+	Path     string    `yaml:"path"`
+	Checksum string    `yaml:"checksum"`
 }
