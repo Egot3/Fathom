@@ -830,7 +830,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
 	err = exporter.Export(ctx, &buf, append(files, exportutils.ExportFile{
 		FileInfo: info,
-		Path:     info.Name(),
+		Path:     "/tmp/" + info.Name(),
 		UUID:     test.UUID.String(),
 	}))
 	if err != nil {
