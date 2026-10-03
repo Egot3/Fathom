@@ -551,10 +551,10 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accept, err := httputils.BestAccept(r.Header.Get("Accept"),
+	accept, jerr := httputils.BestAccept(r.Header.Get("Accept"),
 		"application/zip", "application/tar", "application/gzip",
 	)
-	if jerr, _ := errors.AsType[carefulness.JSONErrorable](err); (err != nil) || (accept == "") {
+	if (jerr != nil) || (accept == "") {
 		logger.Info("Got an unaccaptable accept header",
 			slog.String("accept", accept),
 			slog.String("Error", jerr.Error()),

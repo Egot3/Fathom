@@ -8,7 +8,7 @@ import (
 	"github.com/egot3/fathom/internal/carefulness"
 )
 
-func BestAccept(acceptHeader string, supported ...string) (string, error) {
+func BestAccept(acceptHeader string, supported ...string) (string, carefulness.JSONErrorable) {
 	if acceptHeader == "" {
 		if len(supported) > 0 {
 			return supported[0], nil

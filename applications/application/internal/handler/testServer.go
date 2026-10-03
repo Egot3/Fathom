@@ -692,10 +692,10 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx := logging.WithLogger(r.Context(), logger)
 
-	best, err := httputils.BestAccept(r.Header.Get("Accept"),
+	best, jerr := httputils.BestAccept(r.Header.Get("Accept"),
 		"application/zip", "application/tar", "application/gzip", "application/yaml",
 	)
-	if jerr, _ := errors.AsType[carefulness.JSONErrorable](err); err != nil || best == "" {
+	if jerr != nil || best == "" {
 		jerr.Encode(w)
 		return
 	}
