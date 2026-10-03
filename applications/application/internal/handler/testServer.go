@@ -802,7 +802,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to turn quiz path to relative")})
 			return
 		}
-		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: p, FileInfo: fi})
+		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: path, Name: p, FileInfo: fi})
 	}
 
 	err = os.MkdirAll("/tmp/", 0775)
@@ -843,6 +843,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		FileInfo: info,
 		Path:     "/tmp/" + info.Name(),
 		UUID:     test.UUID.String(),
+		Name:     info.Name(),
 	}))
 	if err != nil {
 		logger.Error("couldn't export test", slog.String("Error", err.Error()))

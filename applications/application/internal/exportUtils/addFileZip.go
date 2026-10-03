@@ -6,17 +6,17 @@ import (
 	"os"
 )
 
-func AddFileToZip(zw *zip.Writer, filePath string) error {
-	f, err := os.Open(filePath)
+func AddFileToZip(zw *zip.Writer, f ExportFile) error {
+	file, err := os.Open(f.Path)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer file.Close()
 
-	w, err := zw.Create(filePath)
+	w, err := zw.Create(f.Path)
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(w, f)
+	_, err = io.Copy(w, file)
 	return err
 }

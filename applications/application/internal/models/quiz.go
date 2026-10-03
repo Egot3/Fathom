@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"database/sql/driver"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -50,7 +51,7 @@ func (q *Quiz) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 type FixedBytes8 [8]byte
 
 func (f FixedBytes8) String() string {
-	return string(f[:])
+	return hex.EncodeToString(f[:])
 }
 
 func (f FixedBytes8) Value() (driver.Value, error) {

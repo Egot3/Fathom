@@ -21,7 +21,7 @@ func (z *tarExporter) Export(ctx context.Context, w io.Writer, files []ExportFil
 	tarWriter := tar.NewWriter(w)
 
 	for _, f := range files {
-		if err := AddFileToTar(tarWriter, f.Path, f.FileInfo); err != nil {
+		if err := AddFileToTar(tarWriter, f); err != nil {
 			logger.Error("error writing to tar",
 				slog.String("path", f.Path),
 				slog.String("Error", err.Error()),
