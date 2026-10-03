@@ -1,0 +1,37 @@
+name: Tickle webhook
+
+on:
+  workflow_call:
+    secrets:
+      API_KEY:
+        required: true
+      API_SECRET:
+        required: true
+    inputs:
+      domain:
+        type: string
+        required: true
+      key_header:
+        type: string
+        required: false
+        default: "X-Api-Key"
+      secret_header:
+        type: string
+        required: false
+        default: "X-Api-Secret"
+      body:
+        type: string
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Tickle
+        run: |
+          curl -fsS -X POST "https://${{ inputs.domain }}/execute" \
+            -H "Content-Type: application/json" \
+            -H "${{ inputs.key_header }}: ${{ secrets.API_KEY }}" \
+            -H "${{ inputs.secret_header }}: ${{ secrets.API_SECRET }}" \
+            ${{ inputs.body && format('-d {0}', string(inputs.body)) || '' }}
