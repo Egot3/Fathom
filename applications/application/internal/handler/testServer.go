@@ -840,7 +840,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", best)
-
+	buf.WriteTo(w)
 }
 
 // ImportTest implements [Service].
