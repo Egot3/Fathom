@@ -794,6 +794,14 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: path, FileInfo: fi})
 	}
 
+	err = os.MkdirAll("/tmp/", 644)
+	if err != nil {
+		logger.Error("unable to create temp dir", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to create temp dir")})
+		return
+	}
+
 	f, err := os.CreateTemp("", fmt.Sprintf("%v-manifest.yaml", test.UUID.String()))
 	if err != nil {
 		logger.Error("unable to create temp file", slog.String("Error", err.Error()))
