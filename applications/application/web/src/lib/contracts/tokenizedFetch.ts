@@ -48,6 +48,21 @@ export async function TokenizedFetch(
   return res;
 }
 
+export function NormalizeBlob(r: Response): ResultAsync<Blob, JSONError> {
+  if (!r.ok) {
+    return ResultAsync.fromPromise(r.json(), (err): JSONError => {
+      console.log("couldn't parse error's body: ", err);
+      return { error: "couldn't parse error's body" };
+    }).andThen((e: JSONError) => {
+      return errAsync(e);
+    });
+  }
+
+  return ResultAsync.fromPromise(r.blob(), (): JSONError => ({
+    error: "couldn't parse response body",
+  }));
+}
+
 export function NormalizeJSON<T>(r: Response): ResultAsync<T, JSONError> {
   if (!r.ok) {
     return ResultAsync.fromPromise(r.json(), (err): JSONError => {

@@ -7,7 +7,12 @@ import {
 } from "../bgdata/currentlyrunning.svelte";
 import type { JSONError } from "../statuses/jsonerror";
 import type { Quiz } from "./quiz";
-import { maxAgeRegex, NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
+import {
+  maxAgeRegex,
+  NormalizeBlob,
+  NormalizeJSON,
+  TokenizedFetch,
+} from "./tokenizedFetch";
 import { AcceptTransform, type Accept } from "../apiutils/acceptHeader";
 
 export type Test = {
@@ -643,5 +648,5 @@ export function FetchTestExport(
       }
       return { error: "couldn't fetch list answers because of unknown error" };
     },
-  ).andThen((r) => NormalizeJSON<Blob>(r));
+  ).andThen((r) => NormalizeBlob(r));
 }
