@@ -35,11 +35,11 @@ func (g *gzipExporter) Export(ctx context.Context, w io.Writer, files []ExportFi
 	}
 
 	if err := tarWriter.Close(); err != nil {
-		logger.Error("error finalising tar", "error", err)
+		logger.Error("error finalising tar", slog.String("Error", err.Error()))
 		return err
 	}
 	if err := gzipWriter.Close(); err != nil {
-		logger.Error("error finalising gz", "error", err)
+		logger.Error("error finalising gz", slog.String("Error", err.Error()))
 		return err
 	}
 	return nil

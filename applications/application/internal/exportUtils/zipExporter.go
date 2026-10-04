@@ -33,7 +33,7 @@ func (z *zipExporter) Export(ctx context.Context, w io.Writer, files []ExportFil
 
 	err := zipWriter.Close()
 	if err != nil {
-		logger.Error("error finalising zip", "error", err)
+		logger.Error("error finalising zip", slog.String("Error", err.Error()))
 	}
 	return err
 }
