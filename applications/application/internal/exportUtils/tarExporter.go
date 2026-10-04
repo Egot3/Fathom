@@ -12,10 +12,10 @@ import (
 type tarExporter struct{}
 
 func NewTarExporter() Exporter {
-	return &tarExporter{}
+	return tarExporter{}
 }
 
-func (z *tarExporter) Export(ctx context.Context, w io.Writer, files []ExportFile) error {
+func (z tarExporter) Export(ctx context.Context, w io.Writer, files []ExportFile) error {
 	logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "exporter"))
 
 	tarWriter := tar.NewWriter(w)

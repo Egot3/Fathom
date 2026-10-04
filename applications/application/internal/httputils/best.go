@@ -19,6 +19,15 @@ const (
 
 var AvailableArchiveMimes = []EIMimes{Tar, GZip, Zip, Yaml}
 
+func ValidArchive(v string) bool {
+	switch v {
+	case Tar, GZip, Zip, Yaml:
+		return true
+	default:
+		return false
+	}
+}
+
 func BestAccept[T ~string](acceptHeader string, supported ...T) (T, carefulness.JSONErrorable) {
 	if acceptHeader == "" {
 		if len(supported) > 0 {
