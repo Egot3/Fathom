@@ -12,10 +12,10 @@ import (
 type zipExporter struct{}
 
 func NewZipExporter() Exporter {
-	return &zipExporter{}
+	return zipExporter{}
 }
 
-func (z *zipExporter) Export(ctx context.Context, w io.Writer, files []ExportFile) error {
+func (z zipExporter) Export(ctx context.Context, w io.Writer, files []ExportFile) error {
 	logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "exporter"))
 
 	zipWriter := zip.NewWriter(w)

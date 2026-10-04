@@ -871,14 +871,14 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	yamlFile, handler, err := r.FormFile("imported")
+	importedFile, handler, err := r.FormFile("imported")
 	if err != nil {
 		logger.Error("couldn't get file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file"})
 		return
 	}
-	defer yamlFile.Close()
+	defer importedFile.Close()
 
 	contentType, _, err := mime.ParseMediaType(handler.Header.Get("Content-Type"))
 	if err != nil {
@@ -887,14 +887,21 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse MIME"})
 		return
 	}
-	if contentType != "application/yaml" {
+	if !(httputils.ValidArchive(contentType)) {
 		w.WriteHeader(http.StatusNotAcceptable)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unsupported media type: %v", contentType)})
 		return
 	}
 
+	logger = logger.With(
+		slog.String("file_name", handler.Filename),
+		slog.String("mime", contentType),
+		slog.Int64("size", handler.Size),
+	)
+	ctx = logging.WithLogger(ctx, logger)
+
 	var test exportutils.YamlTest
-	err = yaml.NewDecoder(yamlFile).Decode(&test)
+	err = yaml.NewDecoder(importedFile).Decode(&test)
 	if err != nil {
 		logger.Error("couldn't parse yaml file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)

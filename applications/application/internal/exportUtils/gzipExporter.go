@@ -13,10 +13,10 @@ import (
 type gzipExporter struct{}
 
 func NewGzipExporter() Exporter {
-	return &gzipExporter{}
+	return gzipExporter{}
 }
 
-func (g *gzipExporter) Export(ctx context.Context, w io.Writer, files []ExportFile) error {
+func (g gzipExporter) Export(ctx context.Context, w io.Writer, files []ExportFile) error {
 	logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "exporter"))
 
 	gzipWriter := gzip.NewWriter(w)
