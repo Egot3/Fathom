@@ -694,7 +694,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 
 	best, jerr := httputils.BestAccept(r.Header.Get("Accept"),
-		"application/zip", "application/tar", "application/gzip", "application/yaml",
+		httputils.AvailableArchiveMimes...,
 	)
 	if jerr != nil || best == "" {
 		jerr.Encode(w)
@@ -757,15 +757,15 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 
 	var exporter exportutils.Exporter
 	switch best {
-	case "application/yaml":
+	case httputils.Yaml:
 		w.Write(out)
 		w.WriteHeader(http.StatusOK)
 		return
-	case "application/zip":
+	case httputils.Zip:
 		exporter = exportutils.NewZipExporter()
-	case "application/tar":
+	case httputils.Tar:
 		exporter = exportutils.NewTarExporter()
-	case "application/gzip":
+	case httputils.GZip:
 		exporter = exportutils.NewGzipExporter()
 
 	default:
