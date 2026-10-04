@@ -34,7 +34,7 @@ func (z *tarExporter) Export(ctx context.Context, w io.Writer, files []ExportFil
 
 	err := tarWriter.Close()
 	if err != nil {
-		logger.Error("error finalising tar", "error", err)
+		logger.Error("error finalising tar", slog.String("Error", err.Error()))
 	}
 	return err
 }
