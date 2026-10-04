@@ -8,7 +8,18 @@ import (
 	"github.com/egot3/fathom/internal/carefulness"
 )
 
-func BestAccept(acceptHeader string, supported ...string) (string, carefulness.JSONErrorable) {
+type EIMimes = string
+
+const (
+	Tar  EIMimes = "application/tar"
+	GZip EIMimes = "application/gzip"
+	Zip  EIMimes = "application/zip"
+	Yaml EIMimes = "application/yaml"
+)
+
+var AvailableArchiveMimes = []EIMimes{Tar, GZip, Zip, Yaml}
+
+func BestAccept[T ~string](acceptHeader string, supported ...T) (T, carefulness.JSONErrorable) {
 	if acceptHeader == "" {
 		if len(supported) > 0 {
 			return supported[0], nil
@@ -50,7 +61,7 @@ func BestAccept(acceptHeader string, supported ...string) (string, carefulness.J
 
 	for _, it := range items {
 		for _, sup := range supported {
-			if strings.EqualFold(it.mime, sup) {
+			if strings.EqualFold(it.mime, string(sup)) {
 				return sup, nil
 			}
 		}
