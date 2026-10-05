@@ -20,13 +20,13 @@ import (
 	"github.com/zeebo/xxh3"
 )
 
-type zipImporter struct{}
+type gzipImporter struct{}
 
-func NewZipImporter() Importer {
-	return zipImporter{}
+func NewGzipImporter() Importer {
+	return gzipImporter{}
 }
 
-func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, stageDir string, turnToAbs func(string) (string, error)) ([]StagedQuiz, error) {
+func (z gzipImporter) Import(ctx context.Context, r multipart.File, size int64, stageDir string, turnToAbs func(string) (string, error)) ([]StagedQuiz, error) {
 	logger := logging.LoggerFromContext(ctx).With(slog.String("strategy", httputils.Zip))
 
 	zipReader, err := zip.NewReader(r, size)
