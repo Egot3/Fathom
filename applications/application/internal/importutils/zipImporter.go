@@ -61,7 +61,6 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 		defer rc.Close()
 
 		var buf bytes.Buffer
-
 		tee := io.TeeReader(rc, &buf)
 
 		q, err := quizparser.ParseQuiz(tee)
@@ -70,11 +69,13 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 			return nil, err
 		}
 
-		dest, err := os.Create(absPath)
+		dest, err := os.Create(stagePath)
 		if err != nil {
 			logger.Error("couldn't create file for zip file", slog.String("Error", err.Error()))
 			return nil, err
 		}
+		defer dest.Close()
+
 		_, err = io.Copy(dest, &buf)
 		if err != nil {
 			logger.Error("couldn't write zip entry to file", slog.String("Error", err.Error()))
