@@ -1,18 +1,14 @@
 package handler
 
 import (
-	"archive/tar"
-	"archive/zip"
 	"bufio"
 	"bytes"
-	"compress/gzip"
 	"database/sql"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"mime"
 	"net/http"
@@ -24,6 +20,7 @@ import (
 	"github.com/egot3/fathom/internal/contracts"
 	exportutils "github.com/egot3/fathom/internal/exportUtils"
 	"github.com/egot3/fathom/internal/httputils"
+	"github.com/egot3/fathom/internal/importutils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/quiz"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
@@ -663,327 +660,23 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(tmpDir)
 
+	var importer importutils.Importer
 	switch contentType {
-	case "application/zip":
-		zipReader, err := zip.NewReader(archiveParts, handler.Size)
-		if err != nil {
-			logger.Error("couldn't create new zip-reader", slog.String("Error", err.Error()))
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to create zip reader"})
-			return
-		}
-
-		for _, f := range zipReader.File {
-			cleanPath := filepath.Clean(f.FileInfo().Name())
-			destPath := filepath.Join(tmpDir, cleanPath)
-			absPath, err := filepath.Abs(destPath)
-			if err != nil {
-				logger.Error("zip-slip detected", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "can't use this zip as it was suspected to be unsafe"})
-				return
-			}
-			if !strings.HasPrefix(absPath, filepath.Clean(tmpDir)+string(os.PathSeparator)) {
-				logger.Error("real zip-slip")
-				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "can't use this zip as it IS unsafe(https://developer.android.com/privacy-and-security/risks/zip-path-traversal)"})
-				return
-			}
-
-			if f.FileInfo().IsDir() {
-				if err := os.Mkdir(absPath, 0o750); err != nil {
-					logger.Error("couldn't create dir", slog.String("Error", err.Error()))
-					if errors.Is(err, os.ErrExist) {
-						continue
-					}
-					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to create dir from zip"})
-					return
-				}
-				continue
-			}
-
-			rc, err := f.Open()
-			if err != nil {
-				logger.Error("couldn't create reader for file from zip reader", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't read file from zip"})
-				return
-			}
-			defer rc.Close()
-
-			var buf bytes.Buffer
-
-			tee := io.TeeReader(rc, &buf)
-
-			q, err := quizparser.ParseQuiz(tee)
-			if err != nil {
-				logger.Error("invalid quiz", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't parse quiz" + err.Error()})
-				return
-			}
-
-			dest, err := os.Create(absPath)
-			if err != nil {
-				logger.Error("couldn't create file for zip file", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create file"})
-				return
-			}
-			_, err = io.Copy(dest, &buf)
-			if err != nil {
-				logger.Error("couldn't write zip entry to file", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't write zip entry to file"})
-				return
-			}
-			rc.Close()
-			dest.Close()
-
-			checksumUint := xxh3.Hash(buf.Bytes())
-			checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
-
-			answer, err := json.Marshal(q.Answer)
-			if err != nil {
-				logger.Error("couldn't marshal answer to json",
-					slog.String("Error", err.Error()),
-				)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score, answer)
-			if err != nil {
-				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
-				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
-					conflict.Encode(w)
-					return
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't register quiz"})
-				return
-			}
-		}
-
-		err = os.Rename(tmpDir, filepath.Join("", handler.Filename[:len(handler.Filename)-4]))
-		w.WriteHeader(http.StatusNoContent)
-		return
-	case "application/tar":
-		tarReader := tar.NewReader(archiveParts)
-
-		for {
-			f, err := tarReader.Next()
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				logger.Error("unable to get next tar entry",
-					slog.String("Error", err.Error()),
-				)
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't read tar archive"})
-				return
-			}
-
-			cleanPath := filepath.Clean(f.FileInfo().Name())
-			destPath := filepath.Join(tmpDir, cleanPath)
-			absPath, err := filepath.Abs(destPath)
-			if err != nil {
-				logger.Error("zip-slip detected", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "can't use this zip as it was suspected to be unsafe"})
-				return
-			}
-			if !strings.HasPrefix(absPath, filepath.Clean(tmpDir)+string(os.PathSeparator)) {
-				logger.Error("real tar-slip")
-				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "can't use this zip as it IS unsafe(https://developer.android.com/privacy-and-security/risks/zip-path-traversal)"})
-				return
-			}
-
-			if f.FileInfo().IsDir() {
-				if err := os.Mkdir(absPath, 0o750); err != nil {
-					logger.Error("couldn't create dir", slog.String("Error", err.Error()))
-					if errors.Is(err, os.ErrExist) {
-						continue
-					}
-					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to create dir from zip"})
-					return
-				}
-				continue
-			}
-
-			var buf bytes.Buffer
-			tee := io.TeeReader(tarReader, &buf)
-			q, err := quizparser.ParseQuiz(tee)
-			if err != nil {
-				logger.Error("invalid quiz", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't parse quiz" + err.Error()})
-				return
-			}
-
-			dest, err := os.Create(absPath)
-			if err != nil {
-				logger.Error("couldn't create file for tar file", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create file"})
-				return
-			}
-
-			_, err = io.Copy(dest, &buf)
-			if err != nil {
-				logger.Error("couldn't write tar entry to file", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't write zip entry to file"})
-				return
-			}
-			dest.Close()
-
-			checksumUint := xxh3.Hash(buf.Bytes())
-			checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
-
-			answer, err := json.Marshal(q.Answer)
-			if err != nil {
-				logger.Error("couldn't marshal answer to json",
-					slog.String("Error", err.Error()),
-				)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score, answer)
-			if err != nil {
-				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
-				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
-					conflict.Encode(w)
-					return
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't register quiz"})
-				return
-			}
-		}
-
-		err = os.Rename(tmpDir, filepath.Join("", handler.Filename[:len(handler.Filename)-4]))
-		w.WriteHeader(http.StatusNoContent)
-		return
-	case "application/gzip":
-		gzipReader, err := gzip.NewReader(archiveParts)
-		if err != nil {
-			logger.Error("couldn't create gzip reader",
-				slog.String("Error", err.Error()),
-			)
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create gzip reader"})
-
-			return
-		}
-		tarReader := tar.NewReader(gzipReader)
-
-		for {
-			f, err := tarReader.Next()
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				logger.Error("unable to get next tar entry",
-					slog.String("Error", err.Error()),
-				)
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't read tar archive"})
-				return
-			}
-
-			cleanPath := filepath.Clean(f.FileInfo().Name())
-			destPath := filepath.Join(tmpDir, cleanPath)
-			absPath, err := filepath.Abs(destPath)
-			if err != nil {
-				logger.Error("gzip-slip detected", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "can't use this zip as it was suspected to be unsafe"})
-				return
-			}
-			if !strings.HasPrefix(absPath, filepath.Clean(tmpDir)+string(os.PathSeparator)) {
-				logger.Error("real gzip-slip")
-				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "can't use this zip as it IS unsafe(https://developer.android.com/privacy-and-security/risks/zip-path-traversal)"})
-				return
-			}
-
-			if f.FileInfo().IsDir() {
-				if err := os.Mkdir(absPath, 0o750); err != nil {
-					logger.Error("couldn't create dir", slog.String("Error", err.Error()))
-					if errors.Is(err, os.ErrExist) {
-						continue
-					}
-					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to create dir from zip"})
-					return
-				}
-				continue
-			}
-
-			var buf bytes.Buffer
-			tee := io.TeeReader(tarReader, &buf)
-
-			q, err := quizparser.ParseQuiz(tee)
-			if err != nil {
-				logger.Error("invalid quiz", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't parse quiz" + err.Error()})
-				return
-			}
-
-			dest, err := os.Create(absPath)
-			if err != nil {
-				logger.Error("couldn't create file for tar file", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create file"})
-				return
-			}
-			_, err = io.Copy(dest, &buf)
-			if err != nil {
-				logger.Error("couldn't write tar entry to file", slog.String("Error", err.Error()))
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't write zip entry to file"})
-				return
-			}
-			dest.Close()
-
-			checksumUint := xxh3.Hash(buf.Bytes())
-			checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
-
-			answer, err := json.Marshal(q.Answer)
-			if err != nil {
-				logger.Error("couldn't marshal answer to json",
-					slog.String("Error", err.Error()),
-				)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			err = c.quizRepo.RegisterQuiz(ctx, absPath, checksum, q.Meta.Score, answer)
-			if err != nil {
-				logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
-				if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
-					conflict.Encode(w)
-					return
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't register quiz"})
-				return
-			}
-
-		}
-
-		err = os.Rename(tmpDir, filepath.Join("", handler.Filename[:len(handler.Filename)-4]))
-		w.WriteHeader(http.StatusNoContent)
-		return
+	case httputils.Zip:
+		importer = importutils.NewZipImporter()
+	case httputils.Tar:
+		importer = importutils.NewTarImporter()
+	case httputils.GZip:
+		importer = importutils.NewGzipImporter()
 	default:
 		w.WriteHeader(http.StatusUnsupportedMediaType)
+		return
+	}
+	staged, err := importer.Import(ctx, archiveParts, handler.Size, tmpDir, c.cfg.TurnToAbs)
+	if err != nil {
+		logger.Error("couldn't unarchive an archive", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError) // might change to JSONErrorable
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't unarchive"})
 		return
 	}
 }
