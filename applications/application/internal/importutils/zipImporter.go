@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -27,7 +26,7 @@ func NewZipImporter() Importer {
 	return zipImporter{}
 }
 
-func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, stageDir string) ([]StagedQuiz, error) {
+func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, stageDir string, turnToAbs func(string) (string, error)) ([]StagedQuiz, error) {
 	logger := logging.LoggerFromContext(ctx).With(slog.String("strategy", httputils.Zip))
 
 	zipReader, err := zip.NewReader(r, size)
@@ -38,11 +37,11 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 
 	staged := make([]StagedQuiz, len(zipReader.File))
 	for i, f := range zipReader.File {
-		cleanPath := filepath.Clean(f.FileInfo().Name())
-		destPath := filepath.Join(stageDir, cleanPath)
-		absPath, err := filepath.Abs(destPath)
+		relPath := f.Name
+		stagePath := filepath.Join(stageDir, relPath)
+		absPath, err := turnToAbs(relPath)
 		if err != nil {
-			logger.Error("zip-slip detected", slog.String("Error", err.Error()))
+			logger.Error("couldn't get abs path", slog.String("Error", err.Error()))
 			return nil, err
 		}
 		if !strings.HasPrefix(absPath, filepath.Clean(stageDir)+string(os.PathSeparator)) {
@@ -51,13 +50,6 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 		}
 
 		if f.FileInfo().IsDir() {
-			if err := os.Mkdir(absPath, 0o750); err != nil {
-				logger.Error("couldn't create dir", slog.String("Error", err.Error()))
-				if errors.Is(err, os.ErrExist) {
-					continue
-				}
-				return nil, err
-			}
 			continue
 		}
 
@@ -103,9 +95,8 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 		}
 
 		staged[i] = StagedQuiz{
-			StagedPath: destPath,
+			StagedPath: stagePath,
 			Quiz: models.Quiz{
-				UUID:          q.UUID, // wrong, placeholder
 				Path:          absPath,
 				Checksum:      checksum,
 				CorrectAnswer: string(answer),

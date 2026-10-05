@@ -13,5 +13,5 @@ type StagedQuiz struct {
 }
 
 type Importer interface {
-	Import(ctx context.Context, r multipart.File, size int64, stageDir string) ([]StagedQuiz, error)
+	Import(context.Context, multipart.File, int64, string, func(string) (string, error)) ([]StagedQuiz, error)
 }
