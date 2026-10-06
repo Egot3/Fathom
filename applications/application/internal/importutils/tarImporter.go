@@ -17,7 +17,7 @@ func NewTarImporter() Importer {
 	return tarImporter{}
 }
 
-func (_ tarImporter) Import(ctx context.Context, r multipart.File, size int64, stageDir string, turnToAbs func(string) (string, error)) ([]StagedQuiz, carefulness.JSONErrorable) {
+func (_ tarImporter) Import(ctx context.Context, r multipart.File, size int64, stageDir string, turnToAbs func(string) (string, error)) ([]StagedQuiz, StagedTest, carefulness.JSONErrorable) {
 	logger := logging.LoggerFromContext(ctx).With(slog.String("strategy", httputils.Tar))
 	ctx = logging.WithLogger(ctx, logger)
 
