@@ -7,9 +7,27 @@ import (
 
 	"github.com/egot3/fathom/internal/importutils"
 	"github.com/egot3/fathom/internal/models"
+	"github.com/google/uuid"
 	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 )
+
+func (c *chiService) commitTestImport(ctx context.Context, staged importutils.StagedTest) error {
+	quizTestPairs := lo.Map(staged.QuizUUIDs, func(UUID uuid.UUID, _ int) models.TestsQuizzes {
+		return models.TestsQuizzes{
+			TestUUID: staged.Test.UUID,
+			QuizUUID: UUID,
+		}
+	})
+	return c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		if _, err := tx.NewInsert().Model(&staged.Test).Exec(ctx); err != nil {
+			return err
+		}
+
+		_, err := tx.NewInsert().Model(&quizTestPairs).Exec(ctx)
+		return err
+	})
+}
 
 func (c *chiService) commitImport(ctx context.Context, staged []importutils.StagedQuiz) error {
 	var placed []string
