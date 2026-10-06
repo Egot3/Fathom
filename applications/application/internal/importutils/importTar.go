@@ -8,17 +8,19 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
 	"github.com/zeebo/xxh3"
 )
 
-func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turnToAbs func(string) (string, error)) ([]StagedQuiz, error) {
+func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turnToAbs func(string) (string, error)) ([]StagedQuiz, carefulness.JSONErrorable) {
 	logger := logging.LoggerFromContext(ctx)
 
 	staged := []StagedQuiz{} //unknown amount of files?
@@ -31,7 +33,7 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 			logger.Error("unable to get next tar entry",
 				slog.String("Error", err.Error()),
 			)
-			return nil, err
+			return nil, carefulness.JSONError{Err: "couldn't continue reading archive", Status: http.StatusUnprocessableEntity}
 		}
 
 		relPath := f.Name
@@ -39,11 +41,11 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 		absPath, err := turnToAbs(relPath)
 		if err != nil {
 			logger.Error("couldn't get abs path", slog.String("Error", err.Error()))
-			return nil, err
+			return nil, carefulness.JSONError{Err: "couldn't define writing path", Status: http.StatusInternalServerError}
 		}
 		if !strings.HasPrefix(absPath, filepath.Clean(stageDir)+string(os.PathSeparator)) {
 			logger.Error("real gzip-slip")
-			return nil, err
+			return nil, carefulness.ErrZipSlip
 		}
 
 		if f.FileInfo().IsDir() {
@@ -56,20 +58,20 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 		q, err := quizparser.ParseQuiz(tee)
 		if err != nil {
 			logger.Error("invalid quiz", slog.String("Error", err.Error()))
-			return nil, err
+			return nil, carefulness.JSONError{Err: "badly formatted quiz in archive", Status: http.StatusUnprocessableEntity}
 		}
 
 		dest, err := os.Create(stagePath)
 		if err != nil {
 			logger.Error("couldn't create file for tar file", slog.String("Error", err.Error()))
-			return nil, err
+			return nil, carefulness.JSONError{Err: "unable to create temp quiz", Status: http.StatusInternalServerError}
 		}
 		defer dest.Close()
 
 		_, err = io.Copy(dest, &buf)
 		if err != nil {
 			logger.Error("couldn't write tar entry to file", slog.String("Error", err.Error()))
-			return nil, err
+			return nil, carefulness.JSONError{Err: "unable to write quiz to temp file", Status: http.StatusInternalServerError}
 		}
 		dest.Close()
 
@@ -81,7 +83,7 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 			logger.Error("couldn't marshal answer to json",
 				slog.String("Error", err.Error()),
 			)
-			return nil, err
+			return nil, carefulness.JSONError{Err: "couldn't format correct answer", Status: http.StatusUnprocessableEntity}
 		}
 
 		staged = append(staged, StagedQuiz{

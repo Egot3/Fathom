@@ -672,11 +672,10 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
-	staged, err := importer.Import(ctx, archiveParts, handler.Size, tmpDir, c.cfg.TurnToAbs)
-	if err != nil {
+	staged, jerr := importer.Import(ctx, archiveParts, handler.Size, tmpDir, c.cfg.TurnToAbs)
+	if jerr != nil {
 		logger.Error("couldn't unarchive an archive", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusInternalServerError) // might change to JSONErrorable
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't unarchive"})
+		jerr.Encode(w)
 		return
 	}
 
