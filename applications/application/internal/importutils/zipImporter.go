@@ -40,12 +40,12 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 	for i, f := range zipReader.File {
 		relPath := f.Name
 		stagePath := filepath.Join(stageDir, relPath)
-		absPath, err := turnToAbs(relPath)
+		absPath, err := turnToAbs(strings.TrimSuffix(relPath, ".md"))
 		if err != nil {
 			logger.Error("couldn't get abs path", slog.String("Error", err.Error()))
 			return nil, StagedTest{}, carefulness.JSONError{Err: "couldn't define writing path", Status: http.StatusInternalServerError}
 		}
-		if !strings.HasPrefix(absPath, filepath.Clean(stageDir)+string(os.PathSeparator)) {
+		if !strings.HasPrefix(stagePath, filepath.Clean(stageDir)+string(os.PathSeparator)) {
 			logger.Error("real zip-slip")
 			return nil, StagedTest{}, carefulness.ErrZipSlip
 		}

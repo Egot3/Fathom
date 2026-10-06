@@ -13,10 +13,11 @@ import (
 )
 
 func (c *chiService) commitTestImport(ctx context.Context, staged importutils.StagedTest) error {
-	quizTestPairs := lo.Map(staged.QuizUUIDs, func(UUID uuid.UUID, _ int) models.TestsQuizzes {
+	quizTestPairs := lo.Map(staged.QuizUUIDs, func(UUID uuid.UUID, i int) models.TestsQuizzes {
 		return models.TestsQuizzes{
 			TestUUID: staged.Test.UUID,
 			QuizUUID: UUID,
+			Position: i,
 		}
 	})
 	return c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
