@@ -14,6 +14,7 @@ import (
 	testrunner "github.com/egot3/fathom/internal/testRunner"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
+	"github.com/uptrace/bun"
 )
 
 type chiService struct {
@@ -23,6 +24,7 @@ type chiService struct {
 	testRepo   test.TestRepository
 	answerRepo total.TotalRepository
 
+	db      *bun.DB
 	cfg     *config.Config
 	manager *testrunner.Manager
 }
@@ -108,6 +110,7 @@ func NewTestService(i do.Injector) (Service, error) {
 
 	ma := do.MustInvoke[*testrunner.Manager](i)
 	cf := do.MustInvoke[*config.Config](i)
+	db := do.MustInvoke[*bun.DB](i)
 
 	return &chiService{
 		userRepo:   uR,
@@ -117,5 +120,6 @@ func NewTestService(i do.Injector) (Service, error) {
 		answerRepo: aR,
 		manager:    ma,
 		cfg:        cf,
+		db:         db,
 	}, nil
 }

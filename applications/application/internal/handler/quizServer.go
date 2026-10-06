@@ -649,7 +649,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
-	tmpDir, err := os.MkdirTemp("", "tmp-")
+	tmpDir, err := os.MkdirTemp(filepath.Dir(c.cfg.QuizPath), ".import-")
 	if err != nil {
 		logger.Error("failed to create tmpDir",
 			slog.String("Error", err.Error()),
@@ -679,6 +679,16 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't unarchive"})
 		return
 	}
+
+	err = c.commitImport(ctx, staged)
+	if err != nil {
+		logger.Error("couldn't commit the import", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't commit the import"})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent) // success
 }
 
 func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
