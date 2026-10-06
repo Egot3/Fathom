@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/logging"
@@ -20,30 +21,12 @@ import (
 func writeValidQuiz(ctx context.Context, reader io.ReadCloser, stagePath, absPath string) (StagedQuiz, carefulness.JSONErrorable) {
 	logger := logging.LoggerFromContext(ctx).With(slog.String("type", "quiz"))
 
-	var buf bytes.Buffer
-	tee := io.TeeReader(reader, &buf)
+	raw, err := io.ReadAll(io.LimitReader(reader, 1<<20))
+	q, err := quizparser.ParseQuiz(bytes.NewReader(raw))
+	checksumUint := xxh3.Hash(raw)
+	_ = os.MkdirAll(filepath.Dir(stagePath), 0o755)
+	err = os.WriteFile(stagePath, raw, 0o644)
 
-	q, err := quizparser.ParseQuiz(tee)
-	if err != nil {
-		logger.Error("invalid quiz", slog.String("Error", err.Error()))
-		return StagedQuiz{}, carefulness.JSONError{Err: "badly formatted quiz in archive", Status: http.StatusUnprocessableEntity}
-	}
-
-	dest, err := os.Create(stagePath)
-	if err != nil {
-		logger.Error("couldn't create file for tar file", slog.String("Error", err.Error()))
-		return StagedQuiz{}, carefulness.JSONError{Err: "unable to create temp quiz", Status: http.StatusInternalServerError}
-	}
-	defer dest.Close()
-
-	_, err = io.Copy(dest, &buf)
-	if err != nil {
-		logger.Error("couldn't write tar entry to file", slog.String("Error", err.Error()))
-		return StagedQuiz{}, carefulness.JSONError{Err: "unable to write quiz to temp file", Status: http.StatusInternalServerError}
-	}
-	dest.Close()
-
-	checksumUint := xxh3.Hash(buf.Bytes())
 	checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
 	answer, err := json.Marshal(q.Answer)

@@ -13,7 +13,7 @@ func AddFileToZip(zw *zip.Writer, f ExportFile) error {
 	}
 	defer file.Close()
 
-	w, err := zw.Create(f.Path)
+	w, err := zw.Create(f.ArchiveName())
 	if err != nil {
 		return err
 	}

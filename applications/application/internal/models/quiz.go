@@ -39,10 +39,13 @@ func (q *Quiz) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 		if filepath.Ext(q.Path) != ".md" {
 			return carefulness.PlainMarkdownRequired
 		}
-		var err error
-		q.UUID, err = uuid.NewV7()
-		if err != nil {
-			return err
+
+		if q.UUID == uuid.Nil {
+			var err error
+			q.UUID, err = uuid.NewV7()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

@@ -3,6 +3,8 @@ package importutils
 import (
 	"context"
 	"mime/multipart"
+	"path"
+	"path/filepath"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/models"
@@ -12,7 +14,10 @@ import (
 type StagedQuiz struct {
 	Quiz       models.Quiz
 	StagedPath string
+	RelPath    string
 }
+
+func cleanName(n string) string { return path.Clean(filepath.ToSlash(n)) }
 
 type StagedTest struct {
 	Test      models.Test
