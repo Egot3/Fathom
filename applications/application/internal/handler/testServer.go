@@ -737,7 +737,6 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		Quizzes: lo.Map(test.Quizzes, func(quiz models.Quiz, _ int) exportutils.YamlQuiz {
 			p, _ := c.cfg.TurnToRel(quiz.Path)
 			return exportutils.YamlQuiz{
-				Kind:     exportutils.Kind(exportutils.Quiz),
 				UUID:     quiz.UUID,
 				Checksum: string(quiz.Checksum.String()),
 				Path:     p,
