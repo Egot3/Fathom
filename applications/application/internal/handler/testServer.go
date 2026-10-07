@@ -730,7 +730,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	yamlTest := exportutils.YamlTest{
+	Manifest := exportutils.Manifest{
 		Kind: exportutils.Kind(exportutils.Test),
 		UUID: testUUID,
 		Name: test.Name,
@@ -745,7 +745,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		}),
 	}
 
-	out, err := yaml.Marshal(yamlTest)
+	out, err := yaml.Marshal(Manifest)
 	if err != nil {
 		logger.Error("couldn't marshal test yaml",
 			slog.String("Error", err.Error()),
@@ -900,7 +900,7 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
-	var test exportutils.YamlTest
+	var test exportutils.Manifest
 	err = yaml.NewDecoder(importedFile).Decode(&test)
 	if err != nil {
 		logger.Error("couldn't parse yaml file", slog.String("Error", err.Error()))

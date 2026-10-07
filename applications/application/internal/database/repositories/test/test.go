@@ -183,7 +183,7 @@ func (r *bunTestRepository) ExistsByUUID(ctx context.Context, testUUID uuid.UUID
 		Where("uuid = ?", testUUID).Exists(ctx)
 }
 
-func (r *bunTestRepository) ImportTest(ctx context.Context, test exportutils.YamlTest) error {
+func (r *bunTestRepository) ImportTest(ctx context.Context, test exportutils.Manifest) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		_, err := tx.NewInsert().Model(&models.Test{
 			UUID: test.UUID,

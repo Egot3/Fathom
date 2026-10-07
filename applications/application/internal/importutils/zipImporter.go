@@ -70,7 +70,7 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 			}
 			staged[i] = q
 		case ".yaml":
-			var t exportutils.YamlTest
+			var t exportutils.Manifest
 			err := yaml.NewDecoder(rc).Decode(&t)
 			if err != nil {
 				logger.Error("couldn't unmarshal potential test", slog.String("Error", err.Error()))

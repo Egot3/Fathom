@@ -674,7 +674,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	}
 	staged, _, jerr := importer.Import(ctx, archiveParts, handler.Size, tmpDir, c.cfg.TurnToAbs)
 	if jerr != nil {
-		logger.Error("couldn't unarchive an archive", slog.String("Error", err.Error()))
+		logger.Error("couldn't unarchive an archive", slog.String("Error", jerr.Error()))
 		jerr.Encode(w)
 		return
 	}
