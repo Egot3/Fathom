@@ -22,6 +22,7 @@ func cleanName(n string) string { return path.Clean(filepath.ToSlash(n)) }
 type StagedTest struct {
 	Test      models.Test
 	QuizUUIDs uuid.UUIDs
+	QuizPaths []string
 }
 
 type Importer interface {

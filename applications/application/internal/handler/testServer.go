@@ -12,6 +12,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/egot3/fathom/internal/contracts"
 	exportutils "github.com/egot3/fathom/internal/exportUtils"
 	"github.com/egot3/fathom/internal/httputils"
+	"github.com/egot3/fathom/internal/importutils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/quiz"
@@ -731,7 +733,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Manifest := exportutils.Manifest{
-		Kind: exportutils.Kind(exportutils.Test),
+		Kind: exportutils.Test,
 		UUID: testUUID,
 		Name: test.Name,
 		Quizzes: lo.Map(test.Quizzes, func(quiz models.Quiz, _ int) exportutils.YamlQuiz {
@@ -804,15 +806,18 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: path, Name: p, FileInfo: fi})
 	}
 
-	err = os.MkdirAll("/tmp/", 0775)
+	tmpDir, err := os.MkdirTemp(filepath.Dir(c.cfg.QuizPath), ".import-")
 	if err != nil {
-		logger.Error("unable to create temp dir", slog.String("Error", err.Error()))
+		logger.Error("failed to create tmpDir",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to create temp dir")})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create temp dir for new quiz bank"})
 		return
 	}
+	defer os.RemoveAll(tmpDir)
 
-	f, err := os.CreateTemp("/tmp/", fmt.Sprintf("%v-manifest-*.yaml", test.UUID.String()))
+	f, err := os.CreateTemp(tmpDir, fmt.Sprintf("%v-manifest-*.yaml", test.UUID.String()))
 	if err != nil {
 		logger.Error("unable to create temp file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -870,14 +875,14 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	importedFile, handler, err := r.FormFile("imported")
+	archiveParts, handler, err := r.FormFile("imported")
 	if err != nil {
 		logger.Error("couldn't get file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file"})
 		return
 	}
-	defer importedFile.Close()
+	defer archiveParts.Close()
 
 	contentType, _, err := mime.ParseMediaType(handler.Header.Get("Content-Type"))
 	if err != nil {
@@ -887,8 +892,7 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !(httputils.ValidArchive(contentType)) {
-		w.WriteHeader(http.StatusNotAcceptable)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unsupported media type: %v", contentType)})
+		carefulness.ErrUnnacaptable.Encode(w)
 		return
 	}
 
@@ -899,48 +903,41 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
-	var test exportutils.Manifest
-	err = yaml.NewDecoder(importedFile).Decode(&test)
+	tmpDir, err := os.MkdirTemp(filepath.Dir(c.cfg.QuizPath), ".import-")
 	if err != nil {
-		logger.Error("couldn't parse yaml file", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file"})
-		return
-	}
-
-	e, err := c.testRepo.ExistsByUUID(ctx, test.UUID)
-	if err != nil {
-		logger.Error("couldn't check test existance", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to check test existanse"})
-		return
-	}
-	if e {
-		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "it's either: this test already exists(probable) or you hit 1 in 18.8 sextillion chance in uuidv7 collision, either way, you address it"})
-		return
-	}
-
-	for _, q := range test.Quizzes {
-		e, err := c.quizRepo.ExistsByUUID(ctx, q.UUID)
-		if err != nil {
-			logger.Error("couldn't check quiz existance", slog.String("Error", err.Error()))
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to check quiz existanse"})
-			return
-		}
-		if !e {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "quiz from test is not found on local machine, have you imported quiz bank?"})
-			return
-		}
-	}
-
-	err = c.testRepo.ImportTest(ctx, test)
-	if err != nil {
-		logger.Error("couldn't check import test to db", slog.String("Error", err.Error()))
+		logger.Error("failed to create tmpDir",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't check import test to db"})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create temp dir for new quiz bank"})
+		return
+	}
+	defer os.RemoveAll(tmpDir)
+
+	var importer importutils.Importer
+	switch contentType {
+	case httputils.Zip:
+		importer = importutils.NewZipImporter()
+	case httputils.Tar:
+		importer = importutils.NewTarImporter()
+	case httputils.GZip:
+		importer = importutils.NewGzipImporter()
+	default:
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+		return
+	}
+	staged, test, jerr := importer.Import(ctx, archiveParts, handler.Size, tmpDir, c.cfg.TurnToAbs)
+	if jerr != nil {
+		logger.Error("couldn't unarchive an archive", slog.String("Error", jerr.Error()))
+		jerr.Encode(w)
+		return
+	}
+
+	err = c.commitTestImport(ctx, staged, test)
+	if err != nil {
+		logger.Error("couldn't commit the import", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't commit the import"})
 		return
 	}
 

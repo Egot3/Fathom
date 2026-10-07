@@ -641,6 +641,10 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse MIME"})
 		return
 	}
+	if !(httputils.ValidArchive(contentType)) {
+		carefulness.ErrUnnacaptable.Encode(w)
+		return
+	}
 
 	logger = logger.With(
 		slog.String("file_name", handler.Filename),
