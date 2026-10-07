@@ -2,9 +2,13 @@ package handler
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/importutils"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
@@ -12,20 +16,59 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func (c *chiService) commitTestImport(ctx context.Context, staged importutils.StagedTest) error {
-	quizTestPairs := lo.Map(staged.QuizUUIDs, func(UUID uuid.UUID, i int) models.TestsQuizzes {
-		return models.TestsQuizzes{
-			TestUUID: staged.Test.UUID,
-			QuizUUID: UUID,
-			Position: i,
-		}
-	})
+type UUIDPair struct {
+	ExistingUUID uuid.UUID `bun:"existing_uuid"`
+	AddedUUID    uuid.UUID `bun:"added_uuid"`
+}
+
+func (c *chiService) commitTestImport(
+	ctx context.Context,
+	quizzes []importutils.StagedQuiz,
+	st importutils.StagedTest,
+) error {
 	return c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
-		if _, err := tx.NewInsert().Model(&staged.Test).Exec(ctx); err != nil {
+		resolved := make(map[string]uuid.UUID, len(quizzes))
+
+		for i := range quizzes {
+			q := &quizzes[i].Quiz
+
+			var existing models.Quiz
+			err := tx.NewSelect().Model(&existing).Where("path = ?", q.Path).Scan(ctx)
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				if _, err := tx.NewInsert().Model(q).Exec(ctx); err != nil {
+					return err
+				}
+				resolved[q.Path] = q.UUID
+			case err != nil:
+				return err
+			case existing.Checksum == q.Checksum:
+				resolved[q.Path] = existing.UUID
+			default:
+				return carefulness.Conflict{Conflictor: q.Path}
+			}
+		} // multiple round-trips. The code has fallen
+
+		if _, err := tx.NewInsert().Model(&st.Test).Exec(ctx); err != nil {
 			return err
 		}
 
-		_, err := tx.NewInsert().Model(&quizTestPairs).Exec(ctx)
+		pairs := make([]models.TestsQuizzes, 0, len(st.QuizPaths))
+		for pos, p := range st.QuizPaths {
+			id, ok := resolved[p]
+			if !ok {
+				return fmt.Errorf("test references unknown quiz %q", p)
+			}
+			pairs = append(pairs, models.TestsQuizzes{
+				TestUUID: st.Test.UUID, // read AFTER insert
+				QuizUUID: id,
+				Position: pos,
+			})
+		}
+		if len(pairs) == 0 {
+			return nil
+		}
+		_, err := tx.NewInsert().Model(&pairs).Exec(ctx)
 		return err
 	})
 }

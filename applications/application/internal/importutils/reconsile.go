@@ -22,18 +22,19 @@ func reconcile(quizzes []StagedQuiz, m *exportutils.Manifest) ([]StagedQuiz, Sta
 	}
 
 	var test StagedTest
-	addToStaged := func(UUID uuid.UUID) {}
+	addToStaged := func(UUID uuid.UUID, path string) {}
 	if m.Kind == exportutils.Test {
 		test = StagedTest{Test: models.Test{UUID: m.UUID, Name: m.Name}}
-		addToStaged = func(UUID uuid.UUID) {
+		addToStaged = func(UUID uuid.UUID, path string) {
 			test.QuizUUIDs = append(test.QuizUUIDs, UUID)
+			test.QuizPaths = append(test.QuizPaths, path)
 		}
 	}
 
 	for _, mq := range m.Quizzes {
 		i, inArchive := byPath[cleanName(mq.Path)]
 		if !inArchive {
-			addToStaged(mq.UUID)
+			addToStaged(mq.UUID, mq.Path)
 			continue
 		}
 		if got := quizzes[i].Quiz.Checksum.String(); got != mq.Checksum {
@@ -43,7 +44,8 @@ func reconcile(quizzes []StagedQuiz, m *exportutils.Manifest) ([]StagedQuiz, Sta
 			}
 		}
 		quizzes[i].Quiz.UUID = mq.UUID
-		addToStaged(mq.UUID)
+		quizzes[i].Quiz.Path = mq.Path
+		addToStaged(mq.UUID, mq.Path)
 	}
 	return quizzes, test, nil
 }

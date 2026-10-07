@@ -3,6 +3,8 @@ package importutils
 import (
 	"archive/zip"
 	"context"
+	"errors"
+	"io"
 	"log/slog"
 	"mime/multipart"
 	"net/http"
@@ -14,9 +16,6 @@ import (
 	exportutils "github.com/egot3/fathom/internal/exportUtils"
 	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
-	"github.com/egot3/fathom/internal/models"
-	"github.com/google/uuid"
-	"github.com/samber/lo"
 	"go.yaml.in/yaml/v4"
 )
 
@@ -36,7 +35,7 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 	}
 
 	staged := make([]StagedQuiz, len(zipReader.File))
-	stagedTest := StagedTest{}
+	var manifest *exportutils.Manifest = nil
 	for i, f := range zipReader.File {
 		relPath := f.Name
 		stagePath := filepath.Join(stageDir, relPath)
@@ -70,21 +69,28 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 			}
 			staged[i] = q
 		case ".yaml":
-			var t exportutils.Manifest
-			err := yaml.NewDecoder(rc).Decode(&t)
-			if err != nil {
+			var m exportutils.Manifest
+
+			limited := io.LimitReader(rc, 1<<20)
+			if err := yaml.NewDecoder(limited).Decode(&m); err != nil {
 				logger.Error("couldn't unmarshal potential test", slog.String("Error", err.Error()))
+				if errors.Is(err, io.EOF) {
+					return nil, StagedTest{}, carefulness.ErrLimitExceeded
+				}
 				return nil, StagedTest{}, carefulness.JSONError{Err: "badly formatted test", Status: http.StatusUnprocessableEntity}
 			}
-			stagedTest.Test = models.Test{
-				UUID: t.UUID,
-				Name: t.Name,
+			if manifest != nil {
+				return nil, StagedTest{}, carefulness.JSONError{Err: "multiple manifests in archive", Status: http.StatusUnprocessableEntity}
 			}
-			stagedTest.QuizUUIDs = lo.Map(t.Quizzes, func(q exportutils.YamlQuiz, _ int) uuid.UUID {
-				return q.UUID
-			})
+
+			err := m.Validate()
+			if err != nil {
+				return nil, StagedTest{}, carefulness.JSONError{Err: "badly formatted manifest", Status: http.StatusUnprocessableEntity}
+			}
+
+			manifest = &m
 		}
 	}
 
-	return staged, stagedTest, nil
+	return reconcile(staged, manifest)
 }
