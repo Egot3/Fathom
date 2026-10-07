@@ -3,6 +3,7 @@ package importutils
 import (
 	"archive/tar"
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -21,7 +22,7 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 
 	var (
 		quizzes  []StagedQuiz
-		manifest *exportutils.YamlTest
+		manifest *exportutils.Manifest
 	)
 	for {
 		f, err := tarReader.Next()
@@ -61,16 +62,26 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 			single.RelPath = rel
 			quizzes = append(quizzes, single)
 		case ".yaml":
+			var m exportutils.Manifest
+
+			limited := io.LimitReader(tarReader, 1<<20)
+			if err := yaml.NewDecoder(limited).Decode(&m); err != nil {
+				logger.Error("couldn't unmarshal potential test", slog.String("Error", err.Error()))
+				if errors.Is(err, io.EOF) {
+					return nil, StagedTest{}, carefulness.ErrLimitExceeded
+				}
+				return nil, StagedTest{}, carefulness.JSONError{Err: "badly formatted test", Status: http.StatusUnprocessableEntity}
+			}
 			if manifest != nil {
 				return nil, StagedTest{}, carefulness.JSONError{Err: "multiple manifests in archive", Status: http.StatusUnprocessableEntity}
 			}
-			var t exportutils.YamlTest
 
-			if err := yaml.NewDecoder(tarReader).Decode(&t); err != nil {
-				logger.Error("couldn't unmarshal potential test", slog.String("Error", err.Error()))
-				return nil, StagedTest{}, carefulness.JSONError{Err: "badly formatted test", Status: http.StatusUnprocessableEntity}
+			err := m.Validate()
+			if err != nil {
+				return nil, StagedTest{}, carefulness.JSONError{Err: "badly formatted manifest", Status: http.StatusUnprocessableEntity}
 			}
-			manifest = &t
+
+			manifest = &m
 		}
 	}
 
