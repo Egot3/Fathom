@@ -7,11 +7,6 @@ export function AcceptTransform(accepts: Accept[]): string {
     .join(", ");
 }
 
-type readableMime = {
-  name: string;
-  mime: string;
-};
-
 const mime = {
   Tar: { name: "Tar", mime: "application/tar" },
   Targz: { name: "Tar+gzip", mime: "application/gzip" },

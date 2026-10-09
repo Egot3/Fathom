@@ -650,3 +650,28 @@ export function FetchTestExport(
     },
   ).andThen((r) => NormalizeBlob(r));
 }
+
+export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
+  const formData = new FormData();
+
+  formData.append('imported', file, file.name);
+
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/import`,
+      {
+        method: "POST",
+        body: formData
+      },
+    ),
+    (err) => {
+      console.log("Couldn't import: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch import test because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch import because of unknown error" };
+    },
+  ).andThen((r)=>okAsync(null));
+}

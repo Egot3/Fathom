@@ -1,11 +1,12 @@
 <script lang="ts">
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
-  import { Pagination } from "@skeletonlabs/skeleton-svelte";
+  import { Dialog, Pagination } from "@skeletonlabs/skeleton-svelte";
   import { type JSONError } from "../lib/statuses/jsonerror";
   import {
     FetchAllTests,
     FetchTest,
+    FetchTestImport,
     type Test,
     type Tests,
   } from "../lib/contracts/test";
@@ -19,6 +20,9 @@
   import PeekDialogSquare from "./PeekDialogSquare.svelte";
   import TestPeek from "./TestPeek.svelte";
   import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
+    import PeekDialogue from "./PeekDialogue.svelte";
+    import Importer from "./Importer.svelte";
+    import { CircleArrowDown } from "@lucide/svelte";
 
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
   let pageSize = $derived(fit.pageSize);
@@ -188,13 +192,25 @@
             </Pagination.NextTrigger>
           </Pagination>
 
-          <SmallBookCreateDialog title="Test maker"
-            ><CreateTestForm
-              callback={() => {
-                trigger++;
-              }}
-            /></SmallBookCreateDialog
-          >
+          <div class="flex ms-auto gap-2">
+              <SmallBookCreateDialog title="Test maker"
+                ><CreateTestForm
+                  callback={() => {
+                    trigger++;
+                  }}
+                /></SmallBookCreateDialog
+              >
+
+              <PeekDialogue title="Test importing" content={Promise.resolve(1)}>
+                  {#snippet trigger()}
+                      <Dialog.Trigger class="btn preset-filled-warning-500">
+                          <CircleArrowDown></CircleArrowDown>
+                      </Dialog.Trigger>
+                  {/snippet}
+
+                  <Importer importName="test import" fetcher={(file: File)=>FetchTestImport(file)} />
+              </PeekDialogue>
+          </div>
         </div>
       {/if}
     {/if}

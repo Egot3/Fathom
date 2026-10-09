@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { X } from "@lucide/svelte";
   import { Popover, usePopover } from "@skeletonlabs/skeleton-svelte";
 
   const {
