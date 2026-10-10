@@ -11,6 +11,7 @@ import {
   maxAgeRegex,
   NormalizeBlob,
   NormalizeJSON,
+  NormalizeResponse,
   TokenizedFetch,
 } from "./tokenizedFetch";
 import { AcceptTransform, type Accept } from "../apiutils/acceptHeader";
@@ -654,14 +655,14 @@ export function FetchTestExport(
 export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
   const formData = new FormData();
 
-  formData.append('imported', file, file.name);
+  formData.append("imported", file, file.name);
 
   return ResultAsync.fromPromise(
     TokenizedFetch(
       `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/import`,
       {
         method: "POST",
-        body: formData
+        body: formData,
       },
     ),
     (err) => {
@@ -673,5 +674,7 @@ export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
       }
       return { error: "couldn't fetch import because of unknown error" };
     },
-  ).andThen((r)=>okAsync(null));
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
