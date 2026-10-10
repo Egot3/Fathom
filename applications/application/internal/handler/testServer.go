@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -745,7 +746,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 			p, _ := c.cfg.TurnToRel(quiz.Path)
 			return exportutils.YamlQuiz{
 				UUID:     quiz.UUID,
-				Checksum: string(binary.BigEndian.AppendUint64(nil, checksum)),
+				Checksum: hex.EncodeToString(binary.BigEndian.AppendUint64(nil, checksum)),
 				Path:     p,
 			}
 		}),
