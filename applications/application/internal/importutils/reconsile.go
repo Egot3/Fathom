@@ -3,6 +3,8 @@ package importutils
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	exportutils "github.com/egot3/fathom/internal/exportUtils"
@@ -11,7 +13,7 @@ import (
 )
 
 // thingabob which assigns quiz to test
-func reconcile(quizzes []StagedQuiz, m *exportutils.Manifest) ([]StagedQuiz, StagedTest, carefulness.JSONErrorable) {
+func reconcile(quizzes []StagedQuiz, m *exportutils.Manifest, turnToAbs func(string) (string, error)) ([]StagedQuiz, StagedTest, carefulness.JSONErrorable) {
 	if m == nil {
 		return quizzes, StagedTest{}, nil
 	}
@@ -32,9 +34,19 @@ func reconcile(quizzes []StagedQuiz, m *exportutils.Manifest) ([]StagedQuiz, Sta
 	}
 
 	for _, mq := range m.Quizzes {
+		if !filepath.IsLocal(mq.Path) {
+			return nil, StagedTest{}, carefulness.ErrZipSlip
+		}
+		abs, err := turnToAbs(strings.TrimSuffix(cleanName(mq.Path), ".md"))
+		if err != nil {
+			return nil, StagedTest{}, carefulness.JSONError{
+				Err: "couldn't resolve quiz path", Status: http.StatusUnprocessableEntity,
+			}
+		}
+
 		i, inArchive := byPath[cleanName(mq.Path)]
 		if !inArchive {
-			addToStaged(mq.UUID, mq.Path)
+			addToStaged(mq.UUID, abs)
 			continue
 		}
 		if got := quizzes[i].Quiz.Checksum.String(); got != mq.Checksum {
@@ -44,7 +56,6 @@ func reconcile(quizzes []StagedQuiz, m *exportutils.Manifest) ([]StagedQuiz, Sta
 			}
 		}
 		quizzes[i].Quiz.UUID = mq.UUID
-		quizzes[i].Quiz.Path = mq.Path
 		addToStaged(mq.UUID, mq.Path)
 	}
 	return quizzes, test, nil

@@ -85,5 +85,5 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 		}
 	}
 
-	return reconcile(quizzes, manifest)
+	return reconcile(quizzes, manifest, turnToAbs)
 }

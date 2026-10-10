@@ -22,10 +22,29 @@ func writeValidQuiz(ctx context.Context, reader io.ReadCloser, stagePath, absPat
 	logger := logging.LoggerFromContext(ctx).With(slog.String("type", "quiz"))
 
 	raw, err := io.ReadAll(io.LimitReader(reader, 1<<20))
+	if err != nil {
+		logger.Error("unable to read whole quiz", slog.String("Error", err.Error()))
+		return StagedQuiz{}, carefulness.JSONError{Err: "unable to read whole quiz", Status: http.StatusUnprocessableEntity}
+	}
+
 	q, err := quizparser.ParseQuiz(bytes.NewReader(raw))
+	if err != nil {
+		logger.Error("unable to parse quiz", slog.String("Error", err.Error()))
+		return StagedQuiz{}, carefulness.JSONError{Err: "couldn't to parse quiz", Status: http.StatusUnprocessableEntity}
+	}
+
 	checksumUint := xxh3.Hash(raw)
-	_ = os.MkdirAll(filepath.Dir(stagePath), 0o755)
+	err = os.MkdirAll(filepath.Dir(stagePath), 0o755)
+	if err != nil {
+		logger.Error("unable to create required pathes for quizzes", slog.String("Error", err.Error()))
+		return StagedQuiz{}, carefulness.JSONError{Err: "unable to create required pathes for quizzes", Status: http.StatusUnprocessableEntity}
+	}
+
 	err = os.WriteFile(stagePath, raw, 0o644)
+	if err != nil {
+		logger.Error("unable to write quiz info to file", slog.String("Error", err.Error()))
+		return StagedQuiz{}, carefulness.JSONError{Err: "couldn't write quiz to file", Status: http.StatusUnprocessableEntity}
+	}
 
 	checksum := [8]byte(binary.BigEndian.AppendUint64(nil, checksumUint))
 
