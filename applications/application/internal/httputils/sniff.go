@@ -13,7 +13,7 @@ var magicBytesTar = [][]byte{
 }
 
 // https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcWl2aW9wemw0OGRkbGdiZnh6MXdtZnZlbTBkbXVhZXZ1Y2Zuanc0dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/hpqWzmAXaaBl1heu3i/giphy.gif
-func SniffArchive(f multipart.File) (string, bool) {
+func SniffArchive(f multipart.File) (EIMimes, bool) {
 	var head [8]byte
 	n, _ := io.ReadFull(f, head[:])
 	defer f.Seek(0, io.SeekStart)
@@ -21,6 +21,7 @@ func SniffArchive(f multipart.File) (string, bool) {
 	if n < 4 {
 		return "", false
 	}
+
 	switch {
 	case head[0] == 'P' && head[1] == 'K' && head[2] == 3 && head[3] == 4:
 		return Zip, true
@@ -32,8 +33,13 @@ func SniffArchive(f multipart.File) (string, bool) {
 			return "", false
 		}
 
+		n, _ = io.ReadFull(f, head[:])
+		if n == 0 {
+			return "", false
+		}
+
 		for _, magic := range magicBytesTar {
-			if bytes.HasPrefix(head[:], magic[:len(head)]) {
+			if bytes.HasPrefix(head[:n], magic) {
 				return Tar, true
 			}
 		}
