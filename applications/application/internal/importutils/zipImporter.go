@@ -34,9 +34,9 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 		return nil, StagedTest{}, carefulness.JSONError{Err: "failed to start reading zip", Status: http.StatusUnprocessableEntity}
 	}
 
-	staged := make([]StagedQuiz, len(zipReader.File))
+	staged := make([]StagedQuiz, 0, len(zipReader.File))
 	var manifest *exportutils.Manifest = nil
-	for i, f := range zipReader.File {
+	for _, f := range zipReader.File {
 		relPath := f.Name
 		stagePath := filepath.Join(stageDir, relPath)
 		absPath, err := turnToAbs(strings.TrimSuffix(relPath, ".md"))
@@ -64,10 +64,11 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 		case ".md":
 			q, jerr := writeValidQuiz(ctx, rc, stagePath, absPath)
 			if jerr != nil {
-				logger.Error("couldn't write quiz", slog.String("Error", err.Error()))
+				logger.Error("couldn't write quiz", slog.String("Error", jerr.Error()))
 				return nil, StagedTest{}, jerr
 			}
-			staged[i] = q
+			q.RelPath = cleanName(f.Name)
+			staged = append(staged, q)
 		case ".yaml":
 			var m exportutils.Manifest
 
@@ -92,5 +93,5 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 		}
 	}
 
-	return reconcile(staged, manifest)
+	return reconcile(staged, manifest, turnToAbs)
 }
