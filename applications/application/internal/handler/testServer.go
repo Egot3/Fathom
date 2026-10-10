@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"database/sql"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	exportutils "github.com/egot3/fathom/internal/exportUtils"
+	"github.com/egot3/fathom/internal/hashutils"
 	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/importutils"
 	"github.com/egot3/fathom/internal/logging"
@@ -736,10 +738,14 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		UUID: testUUID,
 		Name: test.Name,
 		Quizzes: lo.Map(test.Quizzes, func(quiz models.Quiz, _ int) exportutils.YamlQuiz {
+			f, _ := os.Open(quiz.Path)
+			defer f.Close()
+			checksum, _ := hashutils.HashFile(f)
+
 			p, _ := c.cfg.TurnToRel(quiz.Path)
 			return exportutils.YamlQuiz{
 				UUID:     quiz.UUID,
-				Checksum: string(quiz.Checksum.String()),
+				Checksum: string(binary.BigEndian.AppendUint64(nil, checksum)),
 				Path:     p,
 			}
 		}),
