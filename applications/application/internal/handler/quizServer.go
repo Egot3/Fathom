@@ -449,7 +449,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 
 		raw := buf.Bytes()
 
-		q, err := quizparser.ParseQuiz(&buf)
+		q, err := quizparser.ParseQuiz(bytes.NewReader(raw))
 		if err != nil {
 			logger.Error("couldn't parse quiz", slog.String("Error", err.Error()), slog.String("Quiz", buf.String()))
 			w.WriteHeader(http.StatusBadRequest)
@@ -471,7 +471,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 		}
 		defer f.Close()
 
-		c := [8]byte(binary.BigEndian.AppendUint64(nil, xxh3.Hash(buf.Bytes())))
+		c := [8]byte(binary.BigEndian.AppendUint64(nil, xxh3.Hash(raw)))
 		checksum = &c
 		_, err = f.Write(raw)
 		if err != nil {
