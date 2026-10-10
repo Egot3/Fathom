@@ -20,9 +20,9 @@
   import PeekDialogSquare from "./PeekDialogSquare.svelte";
   import TestPeek from "./TestPeek.svelte";
   import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
-    import PeekDialogue from "./PeekDialogue.svelte";
-    import Importer from "./Importer.svelte";
-    import { CircleArrowDown } from "@lucide/svelte";
+  import PeekDialogue from "./PeekDialogue.svelte";
+  import Importer from "./Importer.svelte";
+  import { CircleArrowDown } from "@lucide/svelte";
 
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
   let pageSize = $derived(fit.pageSize);
@@ -38,7 +38,7 @@
     const p = page;
     const ps = pageSize;
     trigger;
-    const ready = fit.ready
+    const ready = fit.ready;
     if (!ready) return;
     loading = true;
 
@@ -55,7 +55,6 @@
         );
 
       loading = false;
-
     });
   });
 
@@ -88,7 +87,7 @@
       {:else}
         <table class="table table-auto self-start">
           <thead>
-            <tr class="text-surface-100-900 flex"  style="height:20px">
+            <tr class="text-surface-100-900 flex" style="height:20px">
               <th class="w-1/3">Test</th>
               <th class="w-1/3">Quiz count</th>
               <th class="w-1/3"></th>
@@ -123,7 +122,7 @@
                       </DeleteDialogSquare>
                       <ChangeDialogSqare
                         callback={() => (clickFocused = test.uuid)}
-                        title="Quiz changer"
+                        title="Test changer"
                         contentGetter={async () => {
                           return await FetchTest(test.uuid);
                         }}
@@ -193,23 +192,26 @@
           </Pagination>
 
           <div class="flex ms-auto gap-2">
-              <SmallBookCreateDialog title="Test maker"
-                ><CreateTestForm
-                  callback={() => {
-                    trigger++;
-                  }}
-                /></SmallBookCreateDialog
-              >
+            <SmallBookCreateDialog title="Test maker"
+              ><CreateTestForm
+                callback={() => {
+                  trigger++;
+                }}
+              /></SmallBookCreateDialog
+            >
 
-              <PeekDialogue title="Test importing" content={Promise.resolve(1)}>
-                  {#snippet trigger()}
-                      <Dialog.Trigger class="btn preset-filled-warning-500">
-                          <CircleArrowDown></CircleArrowDown>
-                      </Dialog.Trigger>
-                  {/snippet}
+            <PeekDialogue title="Test importing" content={Promise.resolve(1)}>
+              {#snippet trigger()}
+                <Dialog.Trigger class="btn preset-filled-warning-500">
+                  <CircleArrowDown></CircleArrowDown>
+                </Dialog.Trigger>
+              {/snippet}
 
-                  <Importer importName="test import" fetcher={(file: File)=>FetchTestImport(file)} />
-              </PeekDialogue>
+              <Importer
+                importName="test import"
+                fetcher={(file: File) => FetchTestImport(file)}
+              />
+            </PeekDialogue>
           </div>
         </div>
       {/if}

@@ -2,11 +2,10 @@
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { Pagination } from "@skeletonlabs/skeleton-svelte";
-  import { IsJSONError } from "../lib/statuses/jsonerror";
   import {
     FetchAllQuizzes,
     type Quiz,
-    type QuizzesOrError,
+    type Quizzes,
   } from "../lib/contracts/quiz";
   import { CheckIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
@@ -25,17 +24,31 @@
   let page = $state(1);
   let pageSize = $state(5);
 
+  let loading = $state(true);
+  let statusMessage = $state("");
+
+  let paginatedQuizzes: Quizzes = $state(null as never);
+
   let time: number;
-  const paginatedQuizPromises = $derived.by(() => {
+  $effect(() => {
     const p = page;
     const ps = pageSize;
 
-    console.log("detected change");
     clearTimeout(time);
 
-    return new Promise<QuizzesOrError>((resolve) => {
-      time = setTimeout(() => {
-        resolve(FetchAllQuizzes(p - 1, ps));
+    new Promise((resolve) => {
+      time = setTimeout(async () => {
+        statusMessage = await FetchAllQuizzes(p - 1, ps)
+          .andTee((r) => {
+            paginatedQuizzes = r;
+            loading = false;
+          })
+          .match(
+            (_) => "",
+            (err) => err.error,
+          );
+
+        resolve(0);
       }, 500);
     });
   });
@@ -49,13 +62,13 @@
   class="grid gap-2 w-full place-items-center h-full overflow-auto"
   bind:clientHeight={height}
 >
-  {#await paginatedQuizPromises}
+  {#if loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
-  {:then paginatedQuizzes}
-    {#if IsJSONError(paginatedQuizzes)}
-      <div>{paginatedQuizzes.error}</div>
+  {:else}
+    {#if statusMessage}
+      <div>{statusMessage}</div>
     {:else}
       {#if paginatedQuizzes.total !== 0}
         {#each paginatedQuizzes.quizzes as quiz (quiz.uuid)}
@@ -107,5 +120,5 @@
         </div>
       {/if}
     {/if}
-  {/await}
+  {/if}
 </div>

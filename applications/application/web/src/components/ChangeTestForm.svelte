@@ -34,7 +34,7 @@
   let quizzes = $derived(new SvelteSet(response.quizzes));
   let newQuizzes = $state(new SvelteSet<string>());
 
-  async function ChangeGroup(e: Event) {
+  async function ChangeTest(e: Event) {
     e.preventDefault();
 
     if (newName !== name && newName) {
@@ -74,7 +74,7 @@
   const existing = new SvelteSet((() => quizzes)());
 </script>
 
-<form onsubmit={ChangeGroup} class="w-full flex flex-col h-full space-y-2">
+<form onsubmit={ChangeTest} class="w-full flex flex-col h-full space-y-2">
   <UXInput
     label="Name"
     placeholder="go-regenerics"
