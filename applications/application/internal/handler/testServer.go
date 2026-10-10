@@ -9,7 +9,6 @@ import (
 	"io"
 	"log/slog"
 	"math"
-	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -884,14 +883,9 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	}
 	defer archiveParts.Close()
 
-	contentType, _, err := mime.ParseMediaType(handler.Header.Get("Content-Type"))
-	if err != nil {
-		logger.Error("couldn't parse MIME type", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse MIME"})
-		return
-	}
-	if !(httputils.ValidArchive(contentType)) {
+	contentType, ok := httputils.SniffArchive(archiveParts)
+	if !ok {
+		logger.Error("got non-archive file")
 		carefulness.ErrUnnacaptable.Encode(w)
 		return
 	}
