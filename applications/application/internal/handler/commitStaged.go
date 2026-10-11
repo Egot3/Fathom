@@ -21,6 +21,11 @@ type UUIDPair struct {
 	AddedUUID    uuid.UUID `bun:"added_uuid"`
 }
 
+type resolvedUUID struct {
+	UUID   uuid.UUID
+	Exists bool
+}
+
 func (c *chiService) commitTestImport(
 	ctx context.Context,
 	quizzes []importutils.StagedQuiz,
@@ -28,7 +33,7 @@ func (c *chiService) commitTestImport(
 ) error {
 	var placed []string
 	err := c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
-		resolved := make(map[string]uuid.UUID, len(quizzes))
+		resolved := make(map[string]resolvedUUID, len(quizzes))
 
 		for i := range quizzes {
 			q := &quizzes[i].Quiz
@@ -41,11 +46,17 @@ func (c *chiService) commitTestImport(
 				if _, err := tx.NewInsert().Model(q).Exec(ctx); err != nil {
 					return err
 				}
-				resolved[relPath] = q.UUID
+				resolved[relPath] = resolvedUUID{
+					UUID:   q.UUID,
+					Exists: false,
+				}
 			case err != nil:
 				return err
 			case existing.Checksum == q.Checksum:
-				resolved[relPath] = existing.UUID
+				resolved[relPath] = resolvedUUID{
+					UUID:   existing.UUID,
+					Exists: true,
+				}
 			default:
 				return carefulness.Conflict{Conflictor: relPath}
 			}
@@ -57,13 +68,13 @@ func (c *chiService) commitTestImport(
 
 		pairs := make([]models.TestsQuizzes, 0, len(st.QuizPaths))
 		for pos, p := range st.QuizPaths {
-			id, ok := resolved[p]
+			pair, ok := resolved[p]
 			if !ok {
 				return fmt.Errorf("test references unknown quiz %q", p)
 			}
 			pairs = append(pairs, models.TestsQuizzes{
 				TestUUID: st.Test.UUID, // read AFTER insert
-				QuizUUID: id,
+				QuizUUID: pair.UUID,
 				Position: pos,
 			})
 		}
@@ -76,8 +87,8 @@ func (c *chiService) commitTestImport(
 		}
 
 		for _, s := range quizzes {
-			if resolved[s.RelPath] != s.Quiz.UUID {
-				continue // exists
+			if resolved[s.RelPath].Exists {
+				continue
 			}
 			if err := os.MkdirAll(filepath.Dir(s.Quiz.Path), 0o755); err != nil {
 				return err
