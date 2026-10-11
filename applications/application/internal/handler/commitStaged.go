@@ -26,11 +26,13 @@ func (c *chiService) commitTestImport(
 	quizzes []importutils.StagedQuiz,
 	st importutils.StagedTest,
 ) error {
-	return c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+	var placed []string
+	err := c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		resolved := make(map[string]uuid.UUID, len(quizzes))
 
 		for i := range quizzes {
 			q := &quizzes[i].Quiz
+			relPath := quizzes[i].RelPath
 
 			var existing models.Quiz
 			err := tx.NewSelect().Model(&existing).Where("path = ?", q.Path).Scan(ctx)
@@ -39,13 +41,13 @@ func (c *chiService) commitTestImport(
 				if _, err := tx.NewInsert().Model(q).Exec(ctx); err != nil {
 					return err
 				}
-				resolved[q.Path] = q.UUID
+				resolved[relPath] = q.UUID
 			case err != nil:
 				return err
 			case existing.Checksum == q.Checksum:
-				resolved[q.Path] = existing.UUID
+				resolved[relPath] = existing.UUID
 			default:
-				return carefulness.Conflict{Conflictor: q.Path}
+				return carefulness.Conflict{Conflictor: relPath}
 			}
 		} // multiple round-trips. The code has fallen
 
@@ -69,8 +71,29 @@ func (c *chiService) commitTestImport(
 			return nil
 		}
 		_, err := tx.NewInsert().Model(&pairs).Exec(ctx)
-		return err
+		if err != nil {
+			return err
+		}
+
+		for _, s := range quizzes {
+			if err := os.MkdirAll(filepath.Dir(s.Quiz.Path), 0o755); err != nil {
+				return err
+			}
+			if err := os.Link(s.StagedPath, s.Quiz.Path); err != nil {
+				return err
+			}
+			placed = append(placed, s.Quiz.Path)
+		}
+		return nil
 	})
+
+	if err != nil {
+		for _, p := range placed {
+			_ = os.Remove(p)
+		}
+		return err
+	}
+	return nil
 }
 
 func (c *chiService) commitImport(ctx context.Context, staged []importutils.StagedQuiz) error {
