@@ -32,12 +32,12 @@
   let loading = $state(true);
   let listTests: Tests = $state(null as never);
 
-  let trigger = $state(0);
+  let trig = $state(0);
   let time: number;
   $effect(() => {
     const p = page;
     const ps = pageSize;
-    trigger;
+    trig;
     const ready = fit.ready;
     if (!ready) return;
     loading = true;
@@ -80,7 +80,7 @@
           title="Create your first test"
           ><CreateTestForm
             callback={() => {
-              trigger++;
+              trig++;
             }}
           /></CreateDialog
         >
@@ -116,7 +116,7 @@
                           name={test.name}
                           UUID={test.uuid}
                           callback={() => {
-                            trigger++;
+                            trig++;
                           }}
                         />
                       </DeleteDialogSquare>
@@ -132,7 +132,7 @@
                             UUID={test.uuid}
                             name={test.name}
                             callback={() => {
-                              trigger++;
+                              trig++;
                             }}
                             response={content}
                           />
@@ -195,12 +195,12 @@
             <SmallBookCreateDialog title="Test maker"
               ><CreateTestForm
                 callback={() => {
-                  trigger++;
+                  trig++;
                 }}
               /></SmallBookCreateDialog
             >
 
-            <PeekDialogue title="Test importing" content={Promise.resolve(1)}>
+            <PeekDialogue title="Test importing">
               {#snippet trigger()}
                 <Dialog.Trigger class="btn preset-filled-warning-500">
                   <CircleArrowDown></CircleArrowDown>
@@ -208,6 +208,9 @@
               {/snippet}
 
               <Importer
+                callback={() => {
+                  trig++;
+                }}
                 importName="test import"
                 fetcher={(file: File) => FetchTestImport(file)}
               />
