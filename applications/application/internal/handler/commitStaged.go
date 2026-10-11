@@ -76,6 +76,9 @@ func (c *chiService) commitTestImport(
 		}
 
 		for _, s := range quizzes {
+			if resolved[s.RelPath] != s.Quiz.UUID {
+				continue // exists
+			}
 			if err := os.MkdirAll(filepath.Dir(s.Quiz.Path), 0o755); err != nil {
 				return err
 			}
