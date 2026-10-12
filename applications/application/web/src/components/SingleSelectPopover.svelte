@@ -1,12 +1,9 @@
 <script lang="ts" generics="T, R extends { total: number }">
   import { ArrowLeftIcon, ArrowRightIcon, XIcon } from "@lucide/svelte";
-  import {
-    Pagination,
-    Popover,
-    usePopover,
-  } from "@skeletonlabs/skeleton-svelte";
+  import { Popover, usePopover } from "@skeletonlabs/skeleton-svelte";
   import type { ResultAsync } from "neverthrow";
   import type { JSONError } from "../lib/statuses/jsonerror";
+  import Pagination from "./Pagination.svelte";
 
   let {
     label,
@@ -106,33 +103,7 @@
           {/each}
         {/if}
       {/if}
-      <Pagination
-        count={total ?? 0}
-        pageSize={5}
-        {page}
-        onPageChange={(event) => (page = event.page)}
-        class="rounded-xl"
-      >
-        <Pagination.PrevTrigger>
-          <ArrowLeftIcon class="size-4" />
-        </Pagination.PrevTrigger>
-        <Pagination.Context>
-          {#snippet children(pagination)}
-            {#each pagination().pages as page, index (page)}
-              {#if page.type === "page"}
-                <Pagination.Item {...page}>
-                  {page.value}
-                </Pagination.Item>
-              {:else}
-                <Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
-              {/if}
-            {/each}
-          {/snippet}
-        </Pagination.Context>
-        <Pagination.NextTrigger>
-          <ArrowRightIcon class="size-4" />
-        </Pagination.NextTrigger>
-      </Pagination>
+      <Pagination bind:page pageSize={5} {total} />
     </Popover.Content>
   </Popover.Positioner>
 </Popover.Provider>

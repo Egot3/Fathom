@@ -1,7 +1,6 @@
 <script lang="ts">
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
-  import { Pagination } from "@skeletonlabs/skeleton-svelte";
   import {
     FetchAllQuizzes,
     type Quiz,
@@ -9,6 +8,7 @@
   } from "../lib/contracts/quiz";
   import { CheckIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
+  import Pagination from "./Pagination.svelte";
 
   let {
     chosen = $bindable(new SvelteSet<string>()),
@@ -90,33 +90,7 @@
         {/each}
 
         <div class="flex justify-between items-center gap-4 w-full self-end">
-          <Pagination
-            count={paginatedQuizzes?.total ?? 0}
-            {pageSize}
-            {page}
-            onPageChange={(event) => (page = event.page)}
-            class="rounded-xl"
-          >
-            <Pagination.PrevTrigger>
-              <ArrowLeftIcon class="size-4" />
-            </Pagination.PrevTrigger>
-            <Pagination.Context>
-              {#snippet children(pagination)}
-                {#each pagination().pages as page, index (page)}
-                  {#if page.type === "page"}
-                    <Pagination.Item {...page}>
-                      {page.value}
-                    </Pagination.Item>
-                  {:else}
-                    <Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
-                  {/if}
-                {/each}
-              {/snippet}
-            </Pagination.Context>
-            <Pagination.NextTrigger>
-              <ArrowRightIcon class="size-4" />
-            </Pagination.NextTrigger>
-          </Pagination>
+          <Pagination bind:page {pageSize} total={paginatedQuizzes.total} />
         </div>
       {/if}
     {/if}
