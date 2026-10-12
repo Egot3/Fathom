@@ -44,7 +44,9 @@
       <Exporter
         downloadName={content.name}
         fetcher={() => FetchTestExport(content.uuid, best)}
-      />
+      >
+        Export
+      </Exporter>
     </div>
   </div>
 {/if}

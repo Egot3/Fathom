@@ -4,15 +4,18 @@
   import { Download } from "../lib/apiutils/download";
   import ErrorPopover from "./ErrorPopover.svelte";
   import { CircleArrowUp, LoaderCircle } from "@lucide/svelte";
+  import type { Snippet } from "svelte";
 
   const {
     fetcher,
     disabled,
     downloadName,
+    children,
   }: {
     fetcher: () => ResultAsync<Blob, JSONError>;
     disabled?: boolean;
     downloadName: string;
+    children?: Snippet;
   } = $props();
 
   let downloading = $state(false);
@@ -40,7 +43,8 @@
     {#if downloading}
       <LoaderCircle class="animate-spin" />
     {:else}
-      <CircleArrowUp /> Export
+      <CircleArrowUp />
     {/if}
+    {@render children?.()}
   </button>
 </ErrorPopover>

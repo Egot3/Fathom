@@ -19,7 +19,6 @@
     acceptedMap.values(); // trigger
 
     accepted = [...acceptedMap.entries()].map((v): Accept => {
-      console.log("map entry:", v);
       return {
         accept: v[0],
         quality: v[1],
