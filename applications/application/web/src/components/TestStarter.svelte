@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { Pagination } from "@skeletonlabs/skeleton-svelte";
   import {
     FetchAllTests,
     FetchTestStart,
     type Tests,
   } from "../lib/contracts/test";
   import type { JSONError } from "../lib/statuses/jsonerror";
-  import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "@lucide/svelte";
+  import { CheckIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
   import GroupChips from "./GroupChips.svelte";
+  import Pagination from "./Pagination.svelte";
 
   const { callback }: { callback: () => void } = $props();
 
@@ -80,9 +80,6 @@
       },
       (e) => e.error,
     );
-
-    console.log("resp got");
-
     return;
   }
 </script>
@@ -111,33 +108,7 @@
         {/each}
 
         <div class="flex justify-between items-center gap-4 w-full self-end">
-          <Pagination
-            count={listTests?.total ?? 0}
-            {pageSize}
-            {page}
-            onPageChange={(event) => (page = event.page)}
-            class="rounded-xl"
-          >
-            <Pagination.PrevTrigger>
-              <ArrowLeftIcon class="size-4" />
-            </Pagination.PrevTrigger>
-            <Pagination.Context>
-              {#snippet children(pagination)}
-                {#each pagination().pages as page, index (page)}
-                  {#if page.type === "page"}
-                    <Pagination.Item {...page}>
-                      {page.value}
-                    </Pagination.Item>
-                  {:else}
-                    <Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
-                  {/if}
-                {/each}
-              {/snippet}
-            </Pagination.Context>
-            <Pagination.NextTrigger>
-              <ArrowRightIcon class="size-4" />
-            </Pagination.NextTrigger>
-          </Pagination>
+          <Pagination bind:page {pageSize} total={listTests.total} />
         </div>
 
         <GroupChips bind:chosen={chosenGroups} />

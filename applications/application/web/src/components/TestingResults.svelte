@@ -1,7 +1,4 @@
 <script lang="ts">
-  import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
-  import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
-  import { Pagination } from "@skeletonlabs/skeleton-svelte";
   import { FetchTotals, type Totals } from "../lib/contracts/totals";
   import PeekDialogBig from "./PeekDialogBig.svelte";
   import PeekTotal from "./PeekTotal.svelte";
@@ -9,7 +6,8 @@
   import { FetchGroups, type Group } from "../lib/contracts/group";
   import { FetchAllTests, type Test } from "../lib/contracts/test";
   import SingleSelectPopover from "./SingleSelectPopover.svelte";
-    import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
+  import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
+  import Pagination from "./Pagination.svelte";
 
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
   let pageSize = $derived(fit.pageSize);
@@ -34,7 +32,7 @@
     const ready = fit.ready;
     trigger;
 
-    if (!ready) return
+    if (!ready) return;
 
     clearTimeout(time);
     loading = true;
@@ -170,33 +168,7 @@
         </table>
 
         <div class="flex justify-between items-center gap-4 w-full self-end">
-          <Pagination
-            count={paginatedTotals?.total ?? 0}
-            {pageSize}
-            {page}
-            onPageChange={(event) => (page = event.page)}
-            class="rounded-xl"
-          >
-            <Pagination.PrevTrigger>
-              <ArrowLeftIcon class="size-4" />
-            </Pagination.PrevTrigger>
-            <Pagination.Context>
-              {#snippet children(pagination)}
-                {#each pagination().pages as page, index (page)}
-                  {#if page.type === "page"}
-                    <Pagination.Item {...page}>
-                      {page.value}
-                    </Pagination.Item>
-                  {:else}
-                    <Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
-                  {/if}
-                {/each}
-              {/snippet}
-            </Pagination.Context>
-            <Pagination.NextTrigger>
-              <ArrowRightIcon class="size-4" />
-            </Pagination.NextTrigger>
-          </Pagination>
+          <Pagination bind:page {pageSize} total={paginatedTotals.total} />
         </div>
       {/if}
     {/if}

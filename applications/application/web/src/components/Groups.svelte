@@ -1,7 +1,6 @@
 <script lang="ts">
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
-  import { Pagination } from "@skeletonlabs/skeleton-svelte";
   import CreateDialog from "./CreateDialog.svelte";
   import SmallBookCreateDialog from "./SmallBookCreateDialog.svelte";
   import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
@@ -16,8 +15,8 @@
   import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
   import ChangeGroupForm from "./ChangeGroupForm.svelte";
   import GroupPeek from "./GroupPeek.svelte";
-    import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
-
+  import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
+  import Pagination from "./Pagination.svelte";
 
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
   let pageSize = $derived(fit.pageSize);
@@ -33,7 +32,7 @@
     const p = page;
     const ps = pageSize;
     trigger;
-    const ready = fit.ready
+    const ready = fit.ready;
     if (!ready) return;
     loading = true;
 
@@ -155,33 +154,7 @@
         </table>
 
         <div class="flex justify-between items-center gap-4 w-full self-end">
-          <Pagination
-            count={paginatedGroups?.total ?? 0}
-            {pageSize}
-            {page}
-            onPageChange={(event) => (page = event.page)}
-            class="rounded-xl"
-          >
-            <Pagination.PrevTrigger>
-              <ArrowLeftIcon class="size-4" />
-            </Pagination.PrevTrigger>
-            <Pagination.Context>
-              {#snippet children(pagination)}
-                {#each pagination().pages as page, index (page)}
-                  {#if page.type === "page"}
-                    <Pagination.Item {...page}>
-                      {page.value}
-                    </Pagination.Item>
-                  {:else}
-                    <Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
-                  {/if}
-                {/each}
-              {/snippet}
-            </Pagination.Context>
-            <Pagination.NextTrigger>
-              <ArrowRightIcon class="size-4" />
-            </Pagination.NextTrigger>
-          </Pagination>
+          <Pagination bind:page {pageSize} total={paginatedGroups.total} />
 
           <SmallBookCreateDialog title="Group maker"
             ><CreateGroupForm
