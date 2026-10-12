@@ -6,7 +6,13 @@ import {
   ReadManifest,
 } from "../apiutils/quizManifest";
 import { type JSONError } from "../statuses/jsonerror";
-import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
+import {
+  NormalizeBlob,
+  NormalizeJSON,
+  NormalizeResponse,
+  TokenizedFetch,
+} from "./tokenizedFetch";
+import { AcceptTransform, type Accept } from "../apiutils/acceptHeader";
 
 export type Quiz = {
   uuid: string;
@@ -102,25 +108,27 @@ export function OptionOrder(qo: QuizOptions): string[] {
 
 export type Quizzes = { quizzes: Quiz[]; total: number };
 
-export  function FetchAllQuizzes(
+export function FetchAllQuizzes(
   page: number,
   size: number,
 ): ResultAsync<Quizzes, JSONError> {
   return ResultAsync.fromPromise(
     TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/?page=${page}&size=${size}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/?page=${page}&size=${size}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
       },
+    ),
+    (err) => {
+      console.log(err);
+      return {
+        error: "network error",
+      } as JSONError;
     },
-  ), (err) => {
-    console.log(err);
-    return {
-      error: "network error",
-    } as JSONError
-  }).andThen((r)=>NormalizeJSON<Quizzes>(r))
+  ).andThen((r) => NormalizeJSON<Quizzes>(r));
 }
 
 export enum Kind {
@@ -335,4 +343,33 @@ export function FetchParsedQuiz(
       })
       .andThen((r) => okAsync(r.quiz));
   });
+}
+
+export function FetchQuizExport(
+  UUIDs: string[],
+  accepts: Accept[],
+): ResultAsync<Blob, JSONError> {
+  const body = JSON.stringify({ uuids: UUIDs });
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/export`,
+      {
+        method: "POST",
+        body: body,
+        headers: {
+          Accept: AcceptTransform(accepts),
+          "Content-Type": "application/json",
+        },
+      },
+    ),
+    (err): JSONError => {
+      console.log("Couldn't fetch quiz export: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch quiz export because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch quiz export because of unknown error" };
+    },
+  ).andThen(NormalizeBlob);
 }

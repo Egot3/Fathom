@@ -1,7 +1,7 @@
 <script lang="ts">
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
-  import { Dialog, Pagination } from "@skeletonlabs/skeleton-svelte";
+  import { Dialog } from "@skeletonlabs/skeleton-svelte";
   import { type JSONError } from "../lib/statuses/jsonerror";
   import {
     FetchAllTests,
@@ -23,6 +23,7 @@
   import PeekDialogue from "./PeekDialogue.svelte";
   import Importer from "./Importer.svelte";
   import { CircleArrowDown } from "@lucide/svelte";
+  import Pagination from "./Pagination.svelte";
 
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
   let pageSize = $derived(fit.pageSize);
@@ -163,33 +164,7 @@
         </table>
 
         <div class="flex justify-between items-center gap-4 w-full self-end">
-          <Pagination
-            count={listTests?.total ?? 0}
-            {pageSize}
-            {page}
-            onPageChange={(event) => (page = event.page)}
-            class="rounded-xl"
-          >
-            <Pagination.PrevTrigger>
-              <ArrowLeftIcon class="size-4" />
-            </Pagination.PrevTrigger>
-            <Pagination.Context>
-              {#snippet children(pagination)}
-                {#each pagination().pages as page, index (page)}
-                  {#if page.type === "page"}
-                    <Pagination.Item {...page}>
-                      {page.value}
-                    </Pagination.Item>
-                  {:else}
-                    <Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
-                  {/if}
-                {/each}
-              {/snippet}
-            </Pagination.Context>
-            <Pagination.NextTrigger>
-              <ArrowRightIcon class="size-4" />
-            </Pagination.NextTrigger>
-          </Pagination>
+          <Pagination bind:page {pageSize} total={listTests.total} />
 
           <div class="flex ms-auto gap-2">
             <SmallBookCreateDialog title="Test maker"
