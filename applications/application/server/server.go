@@ -95,7 +95,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				r.Get("/", svc.ListQuizzes)
 				r.Post("/", svc.PostQuiz)
 				r.Post("/import", svc.ImportQuizBank)
-				r.Get("/export", svc.ExportQuizBank)
+				r.Post("/export", svc.ExportQuizBank)
 
 				r.Group(func(r chi.Router) {
 					r.Use(middlewares.ParseUUID)
