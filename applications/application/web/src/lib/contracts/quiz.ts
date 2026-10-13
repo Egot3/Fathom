@@ -373,3 +373,30 @@ export function FetchQuizExport(
     },
   ).andThen(NormalizeBlob);
 }
+
+export function FetchQuizImport(file: File): ResultAsync<null, JSONError> {
+  const formData = new FormData();
+
+  formData.append("imported", file, file.name);
+
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/import`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    ),
+    (err) => {
+      console.log("Couldn't import: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch import quiz because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch quiz import because of unknown error" };
+    },
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
+}

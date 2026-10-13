@@ -8,6 +8,7 @@
     type Quiz as QuizType,
     type QuizFile,
     FetchQuizExport,
+    FetchQuizImport,
   } from "../lib/contracts/quiz";
   import CreateDialog from "./CreateDialog.svelte";
   import CreateQuizForm from "./CreateQuizForm.svelte";
@@ -26,7 +27,8 @@
   import type { Accept } from "../lib/apiutils/acceptHeader";
   import { Dialog, Popover, Portal } from "@skeletonlabs/skeleton-svelte";
   import PeekDialogue from "./PeekDialogue.svelte";
-  import { CircleArrowUp } from "@lucide/svelte";
+  import { CircleArrowDown, CircleArrowUp } from "@lucide/svelte";
+  import Importer from "./Importer.svelte";
 
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
   let pageSize = $derived(fit.pageSize);
@@ -40,13 +42,13 @@
   let selected = $state(new SvelteMap<string, string>());
   let best = $state([] as Accept[]);
 
-  let trigger = $state(0);
+  let trig = $state(0);
   let time: number;
   $effect(() => {
     const p = page,
       ps = pageSize,
       ready = fit.ready;
-    trigger;
+    trig;
     if (!ready) {
       console.log("not ready yet...");
       return;
@@ -91,7 +93,7 @@
         <CreateDialog title="Quiz creator" name="Create your first quiz"
           ><CreateQuizForm
             callback={() => {
-              trigger++;
+              trig++;
             }}
           /></CreateDialog
         >
@@ -146,7 +148,7 @@
                               {name}
                               UUID={quiz.uuid}
                               callback={() => {
-                                trigger++;
+                                trig++;
                               }}
                             />
                           </DeleteDialogSquare>
@@ -168,7 +170,7 @@
                                   ? name.slice(0, -3)
                                   : name}
                                 callback={() => {
-                                  trigger++;
+                                  trig++;
                                 }}
                                 response={content}
                               />
@@ -231,10 +233,26 @@
                 <SmallPaperCreateDialog title="Quiz maker">
                   <CreateQuizForm
                     callback={() => {
-                      trigger++;
+                      trig++;
                     }}
                   />
                 </SmallPaperCreateDialog>
+
+                <PeekDialogue title="Quiz importing">
+                  {#snippet trigger()}
+                    <Dialog.Trigger class="btn preset-filled-warning-500">
+                      <CircleArrowDown></CircleArrowDown>
+                    </Dialog.Trigger>
+                  {/snippet}
+
+                  <Importer
+                    callback={() => {
+                      trig++;
+                    }}
+                    importName="quiz import"
+                    fetcher={(file: File) => FetchQuizImport(file)}
+                  />
+                </PeekDialogue>
               </div>
             </div>
           </footer>

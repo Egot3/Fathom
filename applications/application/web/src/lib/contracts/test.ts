@@ -672,7 +672,7 @@ export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
           error: "couldn't fetch import test because of in-browser error",
         };
       }
-      return { error: "couldn't fetch import because of unknown error" };
+      return { error: "couldn't fetch test import because of unknown error" };
     },
   )
     .andThen(NormalizeResponse)
