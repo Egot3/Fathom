@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -549,7 +548,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 	}
 
 	accept, jerr := httputils.BestAccept(r.Header.Get("Accept"),
-		"application/zip", "application/tar", "application/gzip",
+		httputils.AvailableArchiveMimes...,
 	)
 	if (jerr != nil) || (accept == "") {
 		logger.Info("Got an unaccaptable accept header",
@@ -567,6 +566,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 
+		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't select uuid+pathes of quizzes"})
 		return
 	}
@@ -608,6 +608,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", accept)
+	buf.WriteTo(w)
 }
 
 func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
@@ -634,14 +635,9 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	}
 	defer archiveParts.Close()
 
-	contentType, _, err := mime.ParseMediaType(handler.Header.Get("Content-Type"))
-	if err != nil {
-		logger.Error("couldn't parse MIME type", slog.String("Error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse MIME"})
-		return
-	}
-	if !(httputils.ValidArchive(contentType)) {
+	contentType, ok := httputils.SniffArchive(archiveParts)
+	if !ok {
+		logger.Error("got non-archive file")
 		carefulness.ErrUnnacaptable.Encode(w)
 		return
 	}
