@@ -12,7 +12,6 @@ import (
 	"github.com/egot3/fathom/internal/importutils"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/google/uuid"
-	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 )
 
@@ -114,10 +113,24 @@ func (c *chiService) commitImport(ctx context.Context, staged []importutils.Stag
 	var placed []string
 
 	err := c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
-		quizzes := lo.Map(staged, func(s importutils.StagedQuiz, _ int) models.Quiz { return s.Quiz })
+		for i := range staged {
+			q := &staged[i].Quiz
+			relPath := staged[i].RelPath
 
-		if _, err := tx.NewInsert().Model(&quizzes).Exec(ctx); err != nil {
-			return err
+			var existing models.Quiz
+			err := tx.NewSelect().Model(&existing).Where("path = ?", q.Path).Scan(ctx)
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				if _, err := tx.NewInsert().Model(q).Exec(ctx); err != nil {
+					return err
+				}
+			case err != nil:
+				return err
+			case existing.Checksum == q.Checksum:
+				continue
+			default:
+				return carefulness.Conflict{Conflictor: relPath}
+			}
 		}
 
 		for _, s := range staged {
