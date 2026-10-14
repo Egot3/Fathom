@@ -54,8 +54,8 @@ func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, check
 	return nil
 }
 
-func (r *bunQuizRepository) DeallocateQuiz(ctx context.Context, quizUUID uuid.UUID) error {
-	res, err := r.db.NewDelete().Model(&models.Quiz{UUID: quizUUID}).WherePK().Exec(ctx)
+func (r *bunQuizRepository) DeallocateQuiz(ctx context.Context, quizUUID uuid.UUID, db bun.IDB) error {
+	res, err := db.NewDelete().Model(&models.Quiz{UUID: quizUUID}).WherePK().Exec(ctx)
 	if err != nil {
 		return err
 	}
