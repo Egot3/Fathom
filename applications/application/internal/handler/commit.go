@@ -167,7 +167,10 @@ func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, for
 		err := tx.NewSelect().Model(&models.Quiz{UUID: quizUUID}).
 			WherePK().Column("path").Scan(ctx, &quizPath)
 		if err != nil {
-			return err
+			logger.Error("unable to find quiz's path",
+				slog.String("Error", err.Error()),
+			)
+			return carefulness.JSONError{Err: "couldn't find quiz's path", Status: http.StatusNotFound}
 		}
 
 		err = c.quizRepo.DeallocateQuiz(ctx, quizUUID, tx)
@@ -176,7 +179,7 @@ func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, for
 				slog.String("Error", err.Error()),
 			)
 			if errors.Is(err, sql.ErrNoRows) {
-				return (carefulness.JSONError{Err: "Quiz not found", Status: http.StatusNotFound})
+				return carefulness.JSONError{Err: "Quiz not found", Status: http.StatusNotFound}
 			}
 			return carefulness.JSONError{Err: "couldn't deallocate quiz", Status: http.StatusInternalServerError}
 		}
