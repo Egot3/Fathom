@@ -50,43 +50,8 @@ func (c *chiService) DeleteQuiz(w http.ResponseWriter, r *http.Request) {
 		slog.String("quizUUID", quizUUID.String()),
 	))
 
-	err := c.quizRepo.DeallocateQuiz(ctx, quizUUID)
-	if err != nil {
-		logger.Error("unable to deallocate quiz",
-			slog.String("Error", err.Error()),
-		)
-		if errors.Is(err, sql.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Quiz not found"})
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if s := r.Header.Get("force-delete"); s == "true" {
-		quizPath, err := c.quizRepo.QuizPath(ctx, quizUUID)
-		if err != nil {
-			logger.Error("unable to retrieve quizPath",
-				slog.String("Error", err.Error()),
-			)
-			w.WriteHeader(http.StatusMultiStatus)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to get test's path internally"})
-			return
-		}
-
-		err = os.Remove(quizPath)
-		if err != nil {
-			logger.Error("unable to delete quiz by quizPath",
-				slog.String("Error", err.Error()),
-			)
-			w.WriteHeader(http.StatusMultiStatus)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to delete quiz"})
-			return
-		}
-	}
-
-	w.WriteHeader(http.StatusNoContent)
+	json.NewEncoder(w).Encode(c.commitDeletion(ctx, quizUUID, r.Header.Get("force-delete") == "true"))
+	return
 }
 
 // GetQuiz implements [Service].

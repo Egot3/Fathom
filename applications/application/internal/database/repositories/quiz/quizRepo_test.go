@@ -94,7 +94,7 @@ func TestQuiz_Deallocate(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 
-			err = r.DeallocateQuiz(context.Background(), tC.uuid)
+			err = r.DeallocateQuiz(context.Background(), tC.uuid, db)
 			if tC.expectNotFound {
 				require.ErrorIs(t, err, sql.ErrNoRows)
 				return

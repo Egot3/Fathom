@@ -6,11 +6,12 @@ import (
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/quiz"
 	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 type QuizRepository interface {
 	RegisterQuiz(ctx context.Context, path string, checksum [8]byte, score int, answer []byte) error
-	DeallocateQuiz(ctx context.Context, quizUUID uuid.UUID) error
+	DeallocateQuiz(ctx context.Context, quizUUID uuid.UUID, db bun.IDB) error
 	ListQuizzes(ctx context.Context, page, size int) ([]models.Quiz, int, error)
 	CheckRegistered(ctx context.Context, path string) (bool, error)
 	CheckIntegrity(ctx context.Context, path string, checksum [8]byte) (bool, error)
