@@ -50,7 +50,12 @@ func (c *chiService) DeleteQuiz(w http.ResponseWriter, r *http.Request) {
 		slog.String("quizUUID", quizUUID.String()),
 	))
 
-	json.NewEncoder(w).Encode(c.commitDeletion(ctx, quizUUID, r.Header.Get("force-delete") == "true"))
+	jerr := c.commitDeletion(ctx, quizUUID, r.Header.Get("force-delete") == "true")
+	if jerr != nil {
+		jerr.Encode(w)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 	return
 }
 
