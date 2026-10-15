@@ -56,6 +56,10 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				r.Delete("/{uuid}", svc.DeleteUser)
 
 			})
+
+			r.Group(func(r chi.Router) {
+				r.With(middlewares.JWT, middlewares.IsTeacherRights).Post("/import", svc.ImportUser)
+			})
 			r.Post("/register", svc.Register)
 			r.Post("/login", svc.Login)
 		})

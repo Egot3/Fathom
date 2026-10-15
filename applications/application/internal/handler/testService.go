@@ -36,6 +36,7 @@ type UserService interface {
 	DeleteUser(w http.ResponseWriter, r *http.Request)
 	GetUser(w http.ResponseWriter, r *http.Request)
 	ListUsers(w http.ResponseWriter, r *http.Request)
+	ImportUser(w http.ResponseWriter, r *http.Request)
 }
 
 type GroupService interface {
