@@ -132,7 +132,7 @@ func (c *chiService) commitImport(ctx context.Context, staged []importutils.Stag
 			case err != nil:
 				return err
 			case existing.Checksum == q.Checksum:
-				toLink[q.Path] = staged[i].StagedPath
+				continue
 			default:
 				return carefulness.Conflict{Conflictor: relPath}
 			}
