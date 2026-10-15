@@ -114,6 +114,7 @@ func (c *chiService) commitTestImport(
 
 func (c *chiService) commitImport(ctx context.Context, staged []importutils.StagedQuiz) error {
 	var placed []string
+	toLink := make(map[string]string, len(placed))
 
 	err := c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		for i := range staged {
@@ -127,23 +128,24 @@ func (c *chiService) commitImport(ctx context.Context, staged []importutils.Stag
 				if _, err := tx.NewInsert().Model(q).Exec(ctx); err != nil {
 					return err
 				}
+				toLink[q.Path] = staged[i].StagedPath
 			case err != nil:
 				return err
 			case existing.Checksum == q.Checksum:
-				continue
+				toLink[q.Path] = staged[i].StagedPath
 			default:
 				return carefulness.Conflict{Conflictor: relPath}
 			}
 		}
 
-		for _, s := range staged {
-			if err := os.MkdirAll(filepath.Dir(s.Quiz.Path), 0o755); err != nil {
+		for absolute, staged := range toLink {
+			if err := os.MkdirAll(filepath.Dir(absolute), 0o755); err != nil {
 				return err
 			}
-			if err := os.Link(s.StagedPath, s.Quiz.Path); err != nil {
+			if err := os.Link(staged, absolute); err != nil {
 				return err
 			}
-			placed = append(placed, s.Quiz.Path)
+			placed = append(placed, absolute)
 		}
 		return nil
 	})
