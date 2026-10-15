@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"compress/gzip"
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"math"
+	"mime"
 	"net/http"
 	"time"
 
@@ -418,4 +421,76 @@ func (c *chiService) ListUsers(w http.ResponseWriter, r *http.Request) {
 		Page:  page,
 		Size:  size,
 	})
+}
+
+func (c *chiService) ImportUser(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	w.Header().Add("content-type", "application/json")
+
+	if err := r.ParseMultipartForm(8 << 20); err != nil {
+		logger.Error("archive is too big", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "archive is too big!"})
+		return
+	}
+
+	archiveParts, handler, err := r.FormFile("imported")
+	if err != nil {
+		logger.Error("couldn't get file", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file"})
+		return
+	}
+	defer archiveParts.Close()
+
+	contentType, _, err := mime.ParseMediaType(handler.Header.Get("Content-Type"))
+	if err != nil {
+		logger.Error("couldn't get file's mime", slog.String("Error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file's mime"})
+		return
+	}
+
+	logger = logger.With(
+		slog.String("file_name", handler.Filename),
+		slog.String("mime", contentType),
+		slog.Int64("size", handler.Size),
+	)
+	ctx = logging.WithLogger(ctx, logger)
+
+	var csvReader *csv.Reader
+	switch contentType {
+	case "text/csv":
+		csvReader = csv.NewReader(archiveParts)
+	case httputils.GZip:
+		gzipReader, err := gzip.NewReader(archiveParts)
+		if err != nil {
+			logger.Error("couldn't create gzip reader",
+				slog.String("Error", err.Error()),
+			)
+			carefulness.JSONError{Err: "malformed gzip", Status: http.StatusUnprocessableEntity}.Encode(w)
+			return
+		}
+
+		csvReader = csv.NewReader(gzipReader)
+	case "text/tsv":
+		csvReader = csv.NewReader(archiveParts)
+		csvReader.Comma = '\t'
+	default:
+		carefulness.UnsupportedMediaType{Mime: contentType}.Encode(w)
+		return
+	}
+
+	jerr := c.commitUserImport(ctx, csvReader)
+	if jerr != nil {
+		logger.Error("couldn't commit all users", slog.String("Error", jerr.Error()))
+		jerr.Encode(w)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

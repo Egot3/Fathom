@@ -639,7 +639,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	case httputils.GZip:
 		importer = importutils.NewGzipImporter()
 	default:
-		w.WriteHeader(http.StatusUnsupportedMediaType)
+		carefulness.UnsupportedMediaType{Mime: contentType}.Encode(w)
 		return
 	}
 	staged, _, jerr := importer.Import(ctx, archiveParts, handler.Size, tmpDir, c.cfg.TurnToAbs)

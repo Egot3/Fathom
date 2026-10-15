@@ -1,21 +1,27 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/importutils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"
+	"github.com/egot3/fathom/internal/passwordutils"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UUIDPair struct {
@@ -250,6 +256,83 @@ func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, for
 
 			return carefulness.JSONError{Err: err.Error(), Status: http.StatusInternalServerError}
 
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		if jerr, ok := errors.AsType[carefulness.JSONErrorable](err); ok {
+			return jerr
+		}
+		panic("not jsonerrorable got from transaction")
+	}
+
+	return nil
+}
+
+func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) carefulness.JSONErrorable {
+	logger := logging.LoggerFromContext(ctx).With(
+		slog.String("layer", "commit"),
+	)
+	ctx = logging.WithLogger(ctx, logger)
+
+	if first, err := reader.Read(); err != nil {
+		if !slices.Equal(first, []string{"name", "password"}) {
+			return carefulness.JSONError{Err: `wrong header(want: name,password)`, Status: http.StatusUnprocessableEntity}
+		}
+	}
+
+	err := c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		for {
+			raw, err := reader.Read()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				logger.Error("got unknown error while reading csv", slog.String("Error", err.Error()))
+				return err
+			}
+			if len(raw) != 2 {
+				return carefulness.JSONError{Err: "row length is not 2", Status: http.StatusUnprocessableEntity}
+			}
+
+			err = passwordutils.CheckPasswordSafety(raw[1])
+			if err != nil {
+				logger.Error("bad password",
+					slog.String("password", raw[1]),
+					slog.String("because", err.Error()),
+				)
+				return carefulness.JSONError{Err: err.Error(), Status: http.StatusBadRequest}
+			}
+
+			passwordHash, err := bcrypt.GenerateFromPassword([]byte(raw[1]), bcrypt.DefaultCost)
+			if err != nil {
+				logger.Error("couldn't hash password",
+					slog.String("error", err.Error()),
+				)
+
+				return carefulness.JSONError{Err: "Hashing error", Status: http.StatusInternalServerError}
+			}
+
+			var existing models.User
+			err = tx.NewSelect().Model(&existing).Where("nickname = ?", raw[0]).Scan(ctx)
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				if _, err := tx.NewInsert().Model(&models.User{
+					Nickname:     raw[0],
+					PasswordHash: passwordHash,
+				}).Exec(ctx); err != nil {
+					return err
+				}
+				logger.Info("resolved user as new")
+			case err != nil:
+				return err
+			case bytes.Equal(existing.PasswordHash, passwordHash):
+				logger.Info("resolved user as existing")
+			default:
+				return carefulness.Conflict{Conflictor: raw[0]}
+			}
 		}
 
 		return nil
