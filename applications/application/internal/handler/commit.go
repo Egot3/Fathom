@@ -34,12 +34,20 @@ func (c *chiService) commitTestImport(
 	st importutils.StagedTest,
 ) error {
 	var placed []string
+
+	logger := logging.LoggerFromContext(ctx).With(
+		slog.String("layer", "commit"),
+	)
+	ctx = logging.WithLogger(ctx, logger)
+
 	err := c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		resolved := make(map[string]resolvedUUID, len(quizzes))
 
 		for i := range quizzes {
 			q := &quizzes[i].Quiz
 			relPath := quizzes[i].RelPath
+
+			logger := logger.With(slog.String("quiz_uuid", q.UUID.String()), slog.String("absolute_path", q.Path), slog.String("rel_path", relPath))
 
 			var existing models.Quiz
 			err := tx.NewSelect().Model(&existing).Where("path = ?", q.Path).Scan(ctx)
@@ -52,6 +60,7 @@ func (c *chiService) commitTestImport(
 					UUID:   q.UUID,
 					Exists: false,
 				}
+				logger.Info("resolved quiz as new")
 			case err != nil:
 				return err
 			case existing.Checksum == q.Checksum:
@@ -59,6 +68,7 @@ func (c *chiService) commitTestImport(
 					UUID:   existing.UUID,
 					Exists: true,
 				}
+				logger.Info("resolved quiz as existing")
 			default:
 				return carefulness.Conflict{Conflictor: relPath}
 			}
@@ -115,11 +125,17 @@ func (c *chiService) commitTestImport(
 func (c *chiService) commitImport(ctx context.Context, staged []importutils.StagedQuiz) error {
 	var placed []string
 	toLink := make(map[string]string, len(placed))
+	logger := logging.LoggerFromContext(ctx).With(
+		slog.String("layer", "commit"),
+	)
+	ctx = logging.WithLogger(ctx, logger)
 
 	err := c.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		for i := range staged {
 			q := &staged[i].Quiz
 			relPath := staged[i].RelPath
+
+			logger := logger.With(slog.String("absolute_path", q.Path), slog.String("rel_path", relPath))
 
 			var existing models.Quiz
 			err := tx.NewSelect().Model(&existing).Where("path = ?", q.Path).Scan(ctx)
@@ -129,9 +145,11 @@ func (c *chiService) commitImport(ctx context.Context, staged []importutils.Stag
 					return err
 				}
 				toLink[q.Path] = staged[i].StagedPath
+				logger.Info("added quiz entry to db")
 			case err != nil:
 				return err
 			case existing.Checksum == q.Checksum:
+				logger.Info("added found matching quiz in db")
 				continue
 			default:
 				return carefulness.Conflict{Conflictor: relPath}
@@ -160,7 +178,7 @@ func (c *chiService) commitImport(ctx context.Context, staged []importutils.Stag
 
 func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, forceDelete bool) carefulness.JSONErrorable {
 	logger := logging.LoggerFromContext(ctx).With(
-		slog.String("layer", "handler"),
+		slog.String("layer", "commit"),
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
