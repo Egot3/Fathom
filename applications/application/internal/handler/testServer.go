@@ -125,11 +125,6 @@ func (c *chiService) ExtendTest(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest)
 		return
 	}
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest)
-		return
-	}
 	logger = logger.With(slog.Uint64("runner_key", runnerKey))
 	ctx = logging.WithLogger(ctx, logger)
 
@@ -806,7 +801,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.Error("unable to turn quiz path to rel", slog.String("Error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to turn quiz path to relative")})
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to turn quiz path to relative"})
 			return
 		}
 		files = append(files, exportutils.ExportFile{UUID: uuid.String(), Path: path, Name: p, FileInfo: fi})
@@ -827,7 +822,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("unable to create temp file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to create temp file")})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to create temp file"})
 		return
 	}
 	defer f.Close()
@@ -836,7 +831,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("unable to copy to temp file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to copy manifest to temp file")})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: ("unable to copy manifest to temp file")})
 		return
 	}
 
@@ -844,7 +839,7 @@ func (c *chiService) ExportTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("unable to get info about temp file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: fmt.Sprintf("unable to get info about temp file")})
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: ("unable to get info about temp file")})
 		return
 	}
 
