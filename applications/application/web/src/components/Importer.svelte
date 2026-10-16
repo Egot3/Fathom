@@ -41,11 +41,7 @@
   }
 </script>
 
-<FileUpload
-  validate={(file) => (USER_MIMES.some((v) => v.mime == file.type) ? null : [])}
-  onFileChange={switchFile}
-  maxFiles={1}
->
+<FileUpload onFileChange={switchFile} maxFiles={1}>
   <FileUpload.Label>{importName}</FileUpload.Label>
   <FileUpload.Dropzone>
     <CircleArrowDown class="size-10" />

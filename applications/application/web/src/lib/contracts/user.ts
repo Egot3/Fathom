@@ -1,6 +1,10 @@
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
-import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
+import {
+  NormalizeJSON,
+  NormalizeResponse,
+  TokenizedFetch,
+} from "./tokenizedFetch";
 
 type User = {
   uuid: string;
@@ -230,4 +234,31 @@ export async function FetchUserPatch(
 
     return { error: "couldn't send user patch because of unknown error" };
   }
+}
+
+export function FetchUserImport(file: File): ResultAsync<null, JSONError> {
+  const formData = new FormData();
+
+  formData.append("imported", file, file.name);
+
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/import`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    ),
+    (err) => {
+      console.log("Couldn't import: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch import user because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch user import because of unknown error" };
+    },
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }

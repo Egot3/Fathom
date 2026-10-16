@@ -4,12 +4,20 @@
   import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
   import PeekDialogSquare from "./PeekDialogSquare.svelte";
   import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
-  import { FetchUsers, type User } from "../lib/contracts/user";
+  import {
+    FetchUserImport,
+    FetchUsers,
+    type User,
+  } from "../lib/contracts/user";
   import DeleteUserForm from "./DeleteUserForm.svelte";
   import ChangeUserForm from "./ChangeUserForm.svelte";
   import UserPeek from "./UserPeek.svelte";
   import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
   import Pagination from "./Pagination.svelte";
+  import PeekDialogue from "./PeekDialogue.svelte";
+  import { Dialog } from "@skeletonlabs/skeleton-svelte";
+  import { CircleArrowDown } from "@lucide/svelte";
+  import Importer from "./Importer.svelte";
 
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
   let pageSize = $derived(fit.pageSize);
@@ -23,12 +31,12 @@
 
   let paginatedUsers: { users: User[]; total: number } = $state(null as never);
 
-  let trigger = $state(0);
+  let trig = $state(0);
   let time: number;
   $effect(() => {
     const p = page;
     const ps = pageSize;
-    trigger;
+    trig;
     const ready = fit.ready;
     if (!ready) return;
     loading = true;
@@ -97,7 +105,7 @@
                           name={user.nickname}
                           UUID={user.uuid}
                           callback={() => {
-                            trigger++;
+                            trig++;
                           }}
                         />
                         <!-- need only cofirmation, as user is regenerated on re-deploy -->
@@ -113,7 +121,7 @@
                           <ChangeUserForm
                             UUID={user.uuid}
                             callback={() => {
-                              trigger++;
+                              trig++;
                             }}
                             response={content}
                           />
@@ -146,6 +154,22 @@
         <div class="flex justify-between items-center gap-4 w-full self-end">
           <Pagination {pageSize} bind:page total={paginatedUsers.total}
           ></Pagination>
+
+          <PeekDialogue title="Quiz importing">
+            {#snippet trigger()}
+              <Dialog.Trigger class="btn preset-filled-warning-500">
+                <CircleArrowDown></CircleArrowDown>
+              </Dialog.Trigger>
+            {/snippet}
+
+            <Importer
+              callback={() => {
+                trig++;
+              }}
+              importName="quiz import"
+              fetcher={(file: File) => FetchUserImport(file)}
+            />
+          </PeekDialogue>
         </div>
       {/if}
     {/if}
