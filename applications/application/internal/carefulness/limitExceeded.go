@@ -1,7 +1,6 @@
 package carefulness
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -10,7 +9,7 @@ type limitExceeded struct{}
 var ErrLimitExceeded limitExceeded
 
 func (e limitExceeded) Error() string {
-	return fmt.Sprintf("payload's size exceeds the limit")
+	return ("payload's size exceeds the limit")
 }
 
 func (e limitExceeded) Is(target error) bool {
