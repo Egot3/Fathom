@@ -19,7 +19,7 @@ func (e UnsupportedMediaType) JSONError() JSONError {
 }
 
 func (e UnsupportedMediaType) Is(target error) bool {
-	return errors.As(target, e)
+	return errors.As(target, &e)
 }
 
 func (e UnsupportedMediaType) Encode(w http.ResponseWriter) {
