@@ -1,5 +1,10 @@
+import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
-import { TokenizedFetch } from "./tokenizedFetch";
+import {
+  NormalizeJSON,
+  NormalizeResponse,
+  TokenizedFetch,
+} from "./tokenizedFetch";
 
 type User = {
   uuid: string;
@@ -48,6 +53,7 @@ export async function FetchLogin(
         },
         body: JSON.stringify(body),
       },
+      true,
     );
 
     if (!response.ok) {
@@ -86,6 +92,7 @@ export async function FetchRegister(
         },
         body: JSON.stringify(body),
       },
+      true,
     );
 
     if (!response.ok) {
@@ -110,3 +117,148 @@ export type {
   RegisterRequest,
   RegisterResponse,
 };
+
+type ListUsersResponse = {
+  page: number;
+  size: number;
+  total: number;
+  users: User[];
+};
+
+export function FetchUsers(
+  page: number,
+  size: number,
+): ResultAsync<ListUsersResponse, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/?page=${page}&size=${size}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      },
+    ),
+    (err) => {
+      console.log("Couldn't fetch users: ", err);
+      if (err instanceof Error) {
+        return { error: "couldn't fetch users because of in-browser error" };
+      }
+
+      return { error: "couldn't fetch users because of unknown error" };
+    },
+  ).andThen((r) => NormalizeJSON<ListUsersResponse>(r));
+}
+
+export function FetchUserDelete(UUID: string): ResultAsync<null, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/${UUID}`,
+      {
+        method: "DELETE",
+      },
+    ),
+    (err) => {
+      console.log("Couldn't fetch user delete: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send user delete because of in-browser error",
+        };
+      }
+
+      return { error: "couldn't send user delete because of unknown error" };
+    },
+  ).andThen((r) => {
+    if (!r.ok) {
+      console.log("response is not ok!");
+      return ResultAsync.fromPromise(
+        r.json() as Promise<JSONError>,
+        (err): JSONError => {
+          console.log("couldn't parse error's body: ", err);
+          return { error: "couldn't parse error's body" };
+        },
+      ).andThen((e: JSONError) => errAsync(e));
+    }
+    return okAsync(null);
+  });
+}
+
+type PatchUserRequest = {
+  name: string | undefined;
+  password: string | undefined;
+  is_teacher: boolean | undefined;
+};
+
+export type PatchUserStruct = {
+  Name?: string;
+  Password?: string;
+  IsTeacher?: boolean;
+};
+
+export async function FetchUserPatch(
+  UUID: string,
+  { Name, Password, IsTeacher }: PatchUserStruct,
+): Promise<null | JSONError> {
+  const body: PatchUserRequest = {
+    name: Name,
+    password: Password,
+    is_teacher: IsTeacher,
+  };
+
+  const bodyString = JSON.stringify(body);
+
+  try {
+    const response = await TokenizedFetch(
+      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/" + UUID,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: bodyString,
+      },
+    );
+
+    if (!response.ok) {
+      console.log("response is not ok!");
+      return (await response.json()) as JSONError;
+    }
+
+    return null;
+  } catch (err) {
+    console.log("Couldn't fetch user patch: ", err);
+    if (err instanceof Error) {
+      return { error: "couldn't send user patch because of in-browser error" };
+    }
+
+    return { error: "couldn't send user patch because of unknown error" };
+  }
+}
+
+export function FetchUserImport(file: File): ResultAsync<null, JSONError> {
+  const formData = new FormData();
+
+  formData.append("imported", file, file.name);
+
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/import`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    ),
+    (err) => {
+      console.log("Couldn't import: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch import user because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch user import because of unknown error" };
+    },
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
+}

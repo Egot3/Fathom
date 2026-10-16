@@ -1,30 +1,80 @@
-import { GetUser, SetTokenExpiration } from "../bgdata/user.svelte";
+import { errAsync, okAsync, ResultAsync } from "neverthrow";
+import { Toaster } from "../apiutils/toaster";
+import { GetTokenExpiration, SetTokenExpiration } from "../bgdata/user.svelte";
+import { ERR_UNAUTHORIZED } from "../carefulness/unauthorized";
+import type { JSONError } from "../statuses/jsonerror";
+import { untrack } from "svelte";
 
 export const maxAgeRegex = /max-age=(\d+)/;
 
 export async function TokenizedFetch(
   url: RequestInfo | URL,
   opts?: RequestInit,
+  loggedout?: boolean,
 ): Promise<Response> {
+  if (!loggedout || loggedout === undefined) {
+    const exp = untrack(GetTokenExpiration);
+    console.log("got token exp: ", exp);
+
+    if (exp < new Date()) {
+      console.log("expired");
+      window.location.reload();
+      Toaster.info({
+        title: "Session expired!",
+        description: "login again",
+      });
+      throw ERR_UNAUTHORIZED;
+    }
+  }
+
   const res = await fetch(url, { ...opts, credentials: "include" });
 
   switch (res.status) {
     case 401:
-      SetTokenExpiration(new Date(Date.now() - 1));
+      untrack(() => SetTokenExpiration(new Date(Date.now() - 1)));
     default:
       const sessionControl = res.headers.get("Session-Control");
-      console.log("session control: ", sessionControl);
-      if (sessionControl != null) {
+      if (sessionControl !== null) {
         const reg = maxAgeRegex.exec(sessionControl);
-        if (reg == null || reg.length < 2) {
+        if (reg === null || reg.length < 2) {
           return res;
         }
         const maxAge = parseInt(reg[1], 10);
 
-        console.log("max age", maxAge);
-        SetTokenExpiration(new Date(Date.now() + maxAge * 1000));
+        untrack(() => SetTokenExpiration(new Date(Date.now() + maxAge * 1000)));
       }
   }
 
   return res;
+}
+
+export function NormalizeResponse(
+  r: Response,
+): ResultAsync<Response, JSONError> {
+  if (!r.ok) {
+    return ResultAsync.fromPromise(r.json(), (err): JSONError => {
+      console.log("couldn't parse error's body: ", err);
+      return { error: "couldn't parse error's body" };
+    }).andThen((e: JSONError) => {
+      return errAsync(e);
+    });
+  }
+
+  return okAsync(r);
+}
+
+export function NormalizeBlob(r: Response): ResultAsync<Blob, JSONError> {
+  return NormalizeResponse(r).andThen((r) =>
+    ResultAsync.fromPromise(r.blob(), (): JSONError => ({
+      error: "couldn't parse response body",
+    })),
+  );
+}
+
+export function NormalizeJSON<T>(r: Response): ResultAsync<T, JSONError> {
+  return NormalizeResponse(r).andThen((r) =>
+    ResultAsync.fromPromise(r.json(), (): JSONError => ({
+      error: "couldn't parse response body",
+    })).andThen((body: T) => okAsync(body)),
+  );
 }
