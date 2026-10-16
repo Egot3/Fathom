@@ -1,0 +1,170 @@
+<script lang="ts">
+  import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
+  import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
+  import CreateDialog from "./CreateDialog.svelte";
+  import SmallBookCreateDialog from "./SmallBookCreateDialog.svelte";
+  import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
+  import PeekDialogSquare from "./PeekDialogSquare.svelte";
+  import {
+    FetchGroups,
+    type Group,
+    type ListGroupResponse,
+  } from "../lib/contracts/group";
+  import CreateGroupForm from "./CreateGroupForm.svelte";
+  import DeleteGroupForm from "./DeleteGroupForm.svelte";
+  import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
+  import ChangeGroupForm from "./ChangeGroupForm.svelte";
+  import GroupPeek from "./GroupPeek.svelte";
+  import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
+  import Pagination from "./Pagination.svelte";
+
+  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
+  let pageSize = $derived(fit.pageSize);
+  let page = $state(1);
+
+  let statusMessage = $state("");
+  let loading = $state(true);
+  let paginatedGroups: ListGroupResponse = $state(null as never);
+
+  let trigger = $state(0);
+  let time: number;
+  $effect(() => {
+    const p = page;
+    const ps = pageSize;
+    trigger;
+    const ready = fit.ready;
+    if (!ready) return;
+    loading = true;
+
+    clearTimeout(time);
+
+    new Promise((resolve) => {
+      time = setTimeout(async () => {
+        statusMessage = await FetchGroups(p - 1, ps)
+          .andTee((r) => {
+            paginatedGroups = r;
+            loading = false;
+          })
+          .match(
+            (_) => "",
+            (e) => e.error,
+          );
+        resolve(0);
+      }, 500);
+    });
+  });
+
+  let focused = $state("");
+  let clickFocused = $state("");
+</script>
+
+<div
+  class="grid gap-4 w-full place-items-center h-full overflow-auto"
+  use:fit.measure
+>
+  {#if loading}
+    <div
+      class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
+    ></div>
+  {:else}
+    {#if statusMessage}
+      <div>{statusMessage}</div>
+    {:else}
+      {#if paginatedGroups.total == 0}
+        <CreateDialog
+          name="Create your first group"
+          title="Create your first group"
+          ><CreateGroupForm
+            callback={() => {
+              trigger++;
+            }}
+          /></CreateDialog
+        >
+      {:else}
+        <table class="table table-auto self-start">
+          <thead>
+            <tr class="text-surface-100-900 flex">
+              <th class="w-1/3">Group</th>
+              <th class="w-1/3">User count</th>
+              <th class="w-1/3"></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {#each paginatedGroups.groups as group}
+              <tr
+                onmouseenter={() => (focused = group.uuid)}
+                onmouseleave={() => (focused = "")}
+                class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
+              >
+                <td class="w-1/3">{group.name}</td>
+                <!-- 10.5 rem = 168px -->
+                <td class="w-1/3">{group.pupils?.length ?? 0}</td>
+                <td class="w-1/3">
+                  {#if group.uuid === focused || group.uuid === clickFocused}
+                    <div class="flex flex-row-reverse">
+                      <DeleteDialogSquare
+                        title="Group deleter"
+                        callback={() => (clickFocused = group.uuid)}
+                      >
+                        <DeleteGroupForm
+                          name={group.name}
+                          UUID={group.uuid}
+                          callback={() => {
+                            trigger++;
+                          }}
+                        />
+                      </DeleteDialogSquare>
+                      <ChangeDialogSqare
+                        callback={() => (clickFocused = group.uuid)}
+                        title="Group changer"
+                        contentGetter={async () => {
+                          return group;
+                        }}
+                      >
+                        {#snippet children({ content }: { content: Group })}
+                          <ChangeGroupForm
+                            UUID={group.uuid}
+                            name={group.name}
+                            callback={() => {
+                              trigger++;
+                            }}
+                            response={content}
+                          />
+                        {/snippet}</ChangeDialogSqare
+                      >
+
+                      <PeekDialogSquare
+                        callback={() => (clickFocused = group.uuid)}
+                        title="Group peeker"
+                        contentGetter={async () => {
+                          return group;
+                        }}
+                      >
+                        {#snippet children({ content }: { content: Group })}
+                          <GroupPeek {content} />
+                        {/snippet}
+                      </PeekDialogSquare>
+                    </div>
+                  {/if}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+
+        <div class="flex justify-between items-center gap-4 w-full self-end">
+          <Pagination bind:page {pageSize} total={paginatedGroups.total} />
+
+          <SmallBookCreateDialog title="Group maker"
+            ><CreateGroupForm
+              callback={() => {
+                trigger++;
+              }}
+            /></SmallBookCreateDialog
+          >
+        </div>
+      {/if}
+    {/if}
+  {/if}
+</div>

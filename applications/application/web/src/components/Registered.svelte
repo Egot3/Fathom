@@ -1,43 +1,61 @@
 <script lang="ts">
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
-  import { Pagination } from "@skeletonlabs/skeleton-svelte";
-  import { IsJSONError } from "../lib/statuses/jsonerror";
-  import CreateDialog from "./CreateDialog.svelte";
-  import SmallPaperCreateDialog from "./SmallPaperCreateDialog.svelte";
-  import ChangeQuizForm from "./ChangeQuizForm.svelte";
   import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
   import PeekDialogSquare from "./PeekDialogSquare.svelte";
   import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
   import {
+    FetchUserImport,
     FetchUsers,
     type User,
-    type UsersOrJSONError,
   } from "../lib/contracts/user";
   import DeleteUserForm from "./DeleteUserForm.svelte";
   import ChangeUserForm from "./ChangeUserForm.svelte";
   import UserPeek from "./UserPeek.svelte";
+  import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
+  import Pagination from "./Pagination.svelte";
+  import PeekDialogue from "./PeekDialogue.svelte";
+  import { Dialog } from "@skeletonlabs/skeleton-svelte";
+  import { CircleArrowDown } from "@lucide/svelte";
+  import Importer from "./Importer.svelte";
 
-  let height = $state(0);
-
+  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
+  let pageSize = $derived(fit.pageSize);
   let page = $state(1);
-  let pageSize = $derived(Math.trunc((height - 29 - 45 - 40) / 49));
 
   let focused = $state("");
   let clickFocused = $state("");
 
-  let trigger = $state(0);
+  let loading = $state(true);
+  let statusMessage = $state("");
+
+  let paginatedUsers: { users: User[]; total: number } = $state(null as never);
+
+  let trig = $state(0);
   let time: number;
-  const paginatedUserPromises = $derived.by(() => {
+  $effect(() => {
     const p = page;
     const ps = pageSize;
-    trigger;
+    trig;
+    const ready = fit.ready;
+    if (!ready) return;
+    loading = true;
 
     clearTimeout(time);
 
-    return new Promise<UsersOrJSONError>((resolve) => {
-      time = setTimeout(() => {
-        resolve(FetchUsers(p - 1, ps));
+    new Promise((resolve) => {
+      time = setTimeout(async () => {
+        statusMessage = await FetchUsers(p - 1, ps)
+          .andTee((r) => {
+            paginatedUsers = r;
+            loading = false;
+          })
+          .match(
+            (_) => "",
+            (err) => err.error,
+          );
+
+        resolve(0);
       }, 500);
     });
   });
@@ -45,15 +63,15 @@
 
 <div
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
-  bind:clientHeight={height}
+  use:fit.measure
 >
-  {#await paginatedUserPromises}
+  {#if loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
-  {:then paginatedUsers}
-    {#if IsJSONError(paginatedUsers)}
-      <div>{paginatedUsers.error}</div>
+  {:else}
+    {#if statusMessage !== ""}
+      <div>{statusMessage}</div>
     {:else}
       {#if paginatedUsers.total == 0}
         No user registered
@@ -61,7 +79,7 @@
       {:else}
         <table class="table table-auto self-start">
           <thead>
-            <tr class="text-surface-100-900 flex">
+            <tr style="height:20px" class="text-surface-100-900 flex">
               <th class="w-1/2">Nickname</th>
               <th class="w-1/2"></th>
             </tr>
@@ -70,6 +88,7 @@
           <tbody>
             {#each paginatedUsers.users as user (user.uuid)}
               <tr
+                style="height:20px"
                 onmouseenter={() => (focused = user.uuid)}
                 onmouseleave={() => (focused = "")}
                 class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
@@ -86,7 +105,7 @@
                           name={user.nickname}
                           UUID={user.uuid}
                           callback={() => {
-                            trigger++;
+                            trig++;
                           }}
                         />
                         <!-- need only cofirmation, as user is regenerated on re-deploy -->
@@ -102,7 +121,7 @@
                           <ChangeUserForm
                             UUID={user.uuid}
                             callback={() => {
-                              trigger++;
+                              trig++;
                             }}
                             response={content}
                           />
@@ -110,10 +129,15 @@
                       >
 
                       <PeekDialogSquare
-                        callback={() => (clickFocused = user.uuid)}
+                        callback={() => {
+                          clickFocused = user.uuid;
+                          console.log("user is", user);
+                        }}
                         title="User peeker"
-                        contentGetter={async () =>
-                          new Promise((res) => res(user))}
+                        contentGetter={async () => {
+                          console.log("user in resolve", user);
+                          return Promise.resolve($state.snapshot(user));
+                        }}
                       >
                         {#snippet children({ content }: { content: User })}
                           <UserPeek {content} />
@@ -128,35 +152,26 @@
         </table>
 
         <div class="flex justify-between items-center gap-4 w-full self-end">
-          <Pagination
-            count={paginatedUsers?.total ?? 0}
-            {pageSize}
-            {page}
-            onPageChange={(event) => (page = event.page)}
-            class="rounded-xl"
-          >
-            <Pagination.PrevTrigger>
-              <ArrowLeftIcon class="size-4" />
-            </Pagination.PrevTrigger>
-            <Pagination.Context>
-              {#snippet children(pagination)}
-                {#each pagination().pages as page, index (page)}
-                  {#if page.type === "page"}
-                    <Pagination.Item {...page}>
-                      {page.value}
-                    </Pagination.Item>
-                  {:else}
-                    <Pagination.Ellipsis {index}>…</Pagination.Ellipsis>
-                  {/if}
-                {/each}
-              {/snippet}
-            </Pagination.Context>
-            <Pagination.NextTrigger>
-              <ArrowRightIcon class="size-4" />
-            </Pagination.NextTrigger>
-          </Pagination>
+          <Pagination {pageSize} bind:page total={paginatedUsers.total}
+          ></Pagination>
+
+          <PeekDialogue title="Quiz importing">
+            {#snippet trigger()}
+              <Dialog.Trigger class="btn preset-filled-warning-500">
+                <CircleArrowDown></CircleArrowDown>
+              </Dialog.Trigger>
+            {/snippet}
+
+            <Importer
+              callback={() => {
+                trig++;
+              }}
+              importName="quiz import"
+              fetcher={(file: File) => FetchUserImport(file)}
+            />
+          </PeekDialogue>
         </div>
       {/if}
     {/if}
-  {/await}
+  {/if}
 </div>
