@@ -211,12 +211,6 @@ func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, for
 		}
 
 		if forceDelete {
-			if err != nil {
-				logger.Error("unable to retrieve quizPath",
-					slog.String("Error", err.Error()),
-				)
-				return (carefulness.JSONError{Err: "unable to get test's path internally", Status: http.StatusNotFound})
-			}
 
 			err = os.Remove(quizPath)
 			if err != nil {
@@ -277,7 +271,7 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
-	if first, err := reader.Read(); err != nil {
+	if first, err := reader.Read(); err == nil {
 		if !slices.Equal(first, []string{"name", "password"}) {
 			return carefulness.JSONError{Err: `wrong header(want: name,password)`, Status: http.StatusUnprocessableEntity}
 		}
