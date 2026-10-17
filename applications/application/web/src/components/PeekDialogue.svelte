@@ -11,7 +11,7 @@
     title: string;
     children: any;
     trigger: any;
-    content?: Promise<unknown>;
+    content?: Promise<unknown> | unknown;
   } = $props();
 </script>
 
