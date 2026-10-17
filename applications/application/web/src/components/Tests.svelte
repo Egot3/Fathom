@@ -1,6 +1,4 @@
 <script lang="ts">
-  import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
-  import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import { Dialog } from "@skeletonlabs/skeleton-svelte";
   import { type JSONError } from "../lib/statuses/jsonerror";
   import {
@@ -8,7 +6,6 @@
     FetchTest,
     FetchTestImport,
     type Test,
-    type Tests,
   } from "../lib/contracts/test";
   import CreateDialog from "./CreateDialog.svelte";
   import CreateTestForm from "./CreateTestForm.svelte";
@@ -24,39 +21,15 @@
   import Importer from "./Importer.svelte";
   import { CircleArrowDown } from "@lucide/svelte";
   import Pagination from "./Pagination.svelte";
+  import { CreatePagedQuery } from "../lib/layoututils/createPagedQuery.svelte";
 
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
-  let pageSize = $derived(fit.pageSize);
-  let page = $state(1);
 
-  let statusMessage = $state("");
-  let loading = $state(true);
-  let listTests: Tests = $state(null as never);
-
-  let trig = $state(0);
-  let time: number;
-  $effect(() => {
-    const p = page;
-    const ps = pageSize;
-    trig;
-    const ready = fit.ready;
-    if (!ready) return;
-    loading = true;
-
-    clearTimeout(time);
-
-    time = setTimeout(async () => {
-      statusMessage = await FetchAllTests(p - 1, ps)
-        .andTee((r) => {
-          listTests = r;
-        })
-        .match(
-          () => "",
-          (err: JSONError) => err.error,
-        );
-
-      loading = false;
-    });
+  const q = CreatePagedQuery({
+    pageSize: () => fit.pageSize,
+    enabled: () => fit.ready,
+    params: () => ({}),
+    fetcher: (page, size, p) => FetchAllTests(page, size),
   });
 
   let focused = $state("");
@@ -67,132 +40,107 @@
   class="grid gap-4 w-full place-items-center h-full overflow-auto"
   use:fit.measure
 >
-  {#if loading}
+  {#if q.loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
+  {:else if q.error}
+    <div>{q.error}</div>
+  {:else if !q.data || q.data.total === 0}
+    <CreateDialog name="Create your first test" title="Create your first test"
+      ><CreateTestForm callback={q.refresh} /></CreateDialog
+    >
   {:else}
-    {#if statusMessage !== ""}
-      <div>{statusMessage}</div>
-    {:else}
-      {#if listTests?.total === 0}
-        <CreateDialog
-          name="Create your first test"
-          title="Create your first test"
-          ><CreateTestForm
-            callback={() => {
-              trig++;
-            }}
-          /></CreateDialog
+    <table class="table table-auto self-start">
+      <thead>
+        <tr class="text-surface-100-900 flex" style="height:20px">
+          <th class="w-1/3">Test</th>
+          <th class="w-1/3">Quiz count</th>
+          <th class="w-1/3"></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {#each q.data.tests as test}
+          <tr
+            onmouseenter={() => (focused = test.uuid)}
+            onmouseleave={() => (focused = "")}
+            style="height:20px"
+            class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
+          >
+            <td class="w-1/3">{test.name}</td>
+            <td class="w-1/3">{test.quizzes?.length ?? 0}</td>
+            <td class="w-1/3">
+              {#if test.uuid === focused || test.uuid === clickFocused}
+                <div class="flex flex-row-reverse">
+                  <DeleteDialogSquare
+                    title="Quiz deleter"
+                    callback={() => (clickFocused = test.uuid)}
+                  >
+                    <DeleteTestForm
+                      name={test.name}
+                      UUID={test.uuid}
+                      callback={q.refresh}
+                    />
+                  </DeleteDialogSquare>
+                  <ChangeDialogSqare
+                    callback={() => (clickFocused = test.uuid)}
+                    title="Test changer"
+                    contentGetter={() => test}
+                  >
+                    {#snippet children({ content }: { content: Test })}
+                      <ChangeTestForm
+                        UUID={test.uuid}
+                        name={test.name}
+                        callback={q.refresh}
+                        response={content}
+                      />
+                    {/snippet}</ChangeDialogSqare
+                  >
+
+                  <PeekDialogSquare
+                    callback={() => (clickFocused = test.uuid)}
+                    title="Test peeker"
+                    contentGetter={() => test}
+                  >
+                    {#snippet children({ content }: { content: Test })}
+                      <TestPeek {content} />
+                    {/snippet}
+                  </PeekDialogSquare>
+                </div>
+              {/if}
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+
+    <div class="flex justify-between items-center gap-4 w-full self-end">
+      <Pagination
+        bind:page={q.page}
+        pageSize={fit.pageSize}
+        total={q.data?.total ?? 0}
+      />
+
+      <div class="flex ms-auto gap-2">
+        <SmallBookCreateDialog title="Test maker"
+          ><CreateTestForm callback={q.refresh} /></SmallBookCreateDialog
         >
-      {:else}
-        <table class="table table-auto self-start">
-          <thead>
-            <tr class="text-surface-100-900 flex" style="height:20px">
-              <th class="w-1/3">Test</th>
-              <th class="w-1/3">Quiz count</th>
-              <th class="w-1/3"></th>
-            </tr>
-          </thead>
 
-          <tbody>
-            {#each listTests.tests as test}
-              <tr
-                onmouseenter={() => (focused = test.uuid)}
-                onmouseleave={() => (focused = "")}
-                style="height:20px"
-                class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
-              >
-                <td class="w-1/3">{test.name}</td>
-                <!-- 10.5 rem = 168px -->
-                <td class="w-1/3">{test.quizzes?.length ?? 0}</td>
-                <td class="w-1/3">
-                  {#if test.uuid === focused || test.uuid === clickFocused}
-                    <div class="flex flex-row-reverse">
-                      <DeleteDialogSquare
-                        title="Quiz deleter"
-                        callback={() => (clickFocused = test.uuid)}
-                      >
-                        <DeleteTestForm
-                          name={test.name}
-                          UUID={test.uuid}
-                          callback={() => {
-                            trig++;
-                          }}
-                        />
-                      </DeleteDialogSquare>
-                      <ChangeDialogSqare
-                        callback={() => (clickFocused = test.uuid)}
-                        title="Test changer"
-                        contentGetter={async () => {
-                          return await FetchTest(test.uuid);
-                        }}
-                      >
-                        {#snippet children({ content }: { content: Test })}
-                          <ChangeTestForm
-                            UUID={test.uuid}
-                            name={test.name}
-                            callback={() => {
-                              trig++;
-                            }}
-                            response={content}
-                          />
-                        {/snippet}</ChangeDialogSqare
-                      >
+        <PeekDialogue title="Test importing">
+          {#snippet trigger()}
+            <Dialog.Trigger class="btn preset-filled-warning-500">
+              <CircleArrowDown></CircleArrowDown>
+            </Dialog.Trigger>
+          {/snippet}
 
-                      <PeekDialogSquare
-                        callback={() => (clickFocused = test.uuid)}
-                        title="Test peeker"
-                        contentGetter={() => {
-                          return FetchTest(test.uuid);
-                        }}
-                      >
-                        {#snippet children({
-                          content,
-                        }: {
-                          content: Test | JSONError;
-                        })}
-                          <TestPeek {content} />
-                        {/snippet}
-                      </PeekDialogSquare>
-                    </div>
-                  {/if}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-
-        <div class="flex justify-between items-center gap-4 w-full self-end">
-          <Pagination bind:page {pageSize} total={listTests.total} />
-
-          <div class="flex ms-auto gap-2">
-            <SmallBookCreateDialog title="Test maker"
-              ><CreateTestForm
-                callback={() => {
-                  trig++;
-                }}
-              /></SmallBookCreateDialog
-            >
-
-            <PeekDialogue title="Test importing">
-              {#snippet trigger()}
-                <Dialog.Trigger class="btn preset-filled-warning-500">
-                  <CircleArrowDown></CircleArrowDown>
-                </Dialog.Trigger>
-              {/snippet}
-
-              <Importer
-                callback={() => {
-                  trig++;
-                }}
-                importName="test import"
-                fetcher={(file: File) => FetchTestImport(file)}
-              />
-            </PeekDialogue>
-          </div>
-        </div>
-      {/if}
-    {/if}
+          <Importer
+            callback={q.refresh}
+            importName="test import"
+            fetcher={(file: File) => FetchTestImport(file)}
+          />
+        </PeekDialogue>
+      </div>
+    </div>
   {/if}
 </div>
