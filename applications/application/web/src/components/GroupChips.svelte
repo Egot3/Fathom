@@ -22,10 +22,10 @@
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
 
   const q = CreatePagedQuery({
-    pageSize: () => fit.pageSize,
-    enabled: () => fit.ready,
+    pageSize: () => 5,
+    enabled: () => true,
     params: () => ({}),
-    fetcher: (page, size, p) => FetchGroups(page, size),
+    fetcher: FetchGroups,
   });
 
   let existingGroupUUIDs = $derived(
@@ -62,10 +62,7 @@
     {/each}
 
     <div class="flex justify-between items-center gap-4 w-full self-end">
-      <Pagination
-        pageSize={fit.pageSize}
-        bind:page={q.page}
-        total={q.data?.total ?? 0}
+      <Pagination pageSize={5} bind:page={q.page} total={q.data?.total ?? 0}
       ></Pagination>
     </div>
   {/if}

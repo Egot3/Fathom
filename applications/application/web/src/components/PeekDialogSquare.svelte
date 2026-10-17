@@ -1,7 +1,10 @@
-<script lang="ts">
-  import { Eye, EyeClosed, X } from "@lucide/svelte";
+<script lang="ts" generics="T">
+  import { Eye, EyeClosed } from "@lucide/svelte";
   import { Dialog } from "@skeletonlabs/skeleton-svelte";
   import PeekDialogue from "./PeekDialogue.svelte";
+  import type { ResultAsync } from "neverthrow";
+  import type { JSONError } from "../lib/statuses/jsonerror";
+  import type { Snippet } from "svelte";
 
   const {
     title,
@@ -10,13 +13,13 @@
     contentGetter,
   }: {
     title: string;
-    children: any;
+    children: Snippet<[{ content: T }]>;
     callback?: () => void;
-    contentGetter: () => Promise<unknown>;
+    contentGetter: () => ResultAsync<T, JSONError> | T;
   } = $props();
 
   let moused = $state(false);
-  let ct = $state<Promise<unknown>>(new Promise(() => {}));
+  let ct: ResultAsync<T, JSONError> | T | null = $state(null);
 </script>
 
 <PeekDialogue content={ct} {title} {children}>
