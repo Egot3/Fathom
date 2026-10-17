@@ -1,7 +1,10 @@
-<script lang="ts">
+<script lang="ts" generics="T">
   import { Pencil, X } from "@lucide/svelte";
   import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
-  import { IsJSONError } from "../lib/statuses/jsonerror";
+  import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
+  import type { Snippet } from "svelte";
+  import type { ResultAsync } from "neverthrow";
+  import { IsResultAsync } from "../lib/apiutils/isResultAsync";
 
   const {
     title,
@@ -11,12 +14,24 @@
   }: {
     title: string;
     callback: () => void;
-    children: any;
-    contentGetter: () => Record<string, any> | Promise<Record<string, any>>;
+    children: Snippet<[{ content: T }]>;
+    contentGetter: () => ResultAsync<T, JSONError> | T;
   } = $props();
 
-  let content: Record<string, any> | Promise<Record<string, any>> | null =
-    $state(null);
+  let error = $state("");
+  let content = $derived(contentGetter());
+  async function getContent(): Promise<T | null | undefined> {
+    if (!IsResultAsync(content)) {
+      return content;
+    }
+
+    return await content
+      .orTee((r) => (error = r.error))
+      .match(
+        (r) => r,
+        (_) => undefined,
+      );
+  }
 </script>
 
 <Dialog>
@@ -45,17 +60,15 @@
           >
         </header>
 
-        {#if content !== null}
-          {#await content}
-            <div>loading...</div>
-          {:then content}
-            {#if IsJSONError(content)}
-              <div>{content.error}</div>
-            {:else}
-              {@render children({ content })}
-            {/if}
-          {/await}
-        {/if}
+        {#await getContent()}
+          <div>loading</div>
+        {:then content}
+          {#if error}
+            {error}
+          {:else if content}
+            {@render children?.({ content })}
+          {/if}
+        {/await}
       </Dialog.Content>
     </Dialog.Positioner>
   </Portal>
