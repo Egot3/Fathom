@@ -4,8 +4,8 @@
   import Quizzes from "../components/Quizzes.svelte";
   import Registered from "../components/Registered.svelte";
   import TeacherCurrentlyRunning from "../components/TeacherCurrentlyRunning.svelte";
-  import TestingResults from "../components/TestingResults.svelte";
   import Tests from "../components/Tests.svelte";
+  import TotalsTable from "../components/TotalsTable.svelte";
 </script>
 
 <BentoContainer>
@@ -23,7 +23,7 @@
   >
     <h2 class="self-center text-2xl font-bold">Testing results</h2>
     <hr class="hr mt-5 mb-5" />
-    <TestingResults />
+    <TotalsTable />
   </div>
   <div
     id="registered"

@@ -1,14 +1,10 @@
 <script lang="ts">
-  import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
-  import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
-  import {
-    FetchAllQuizzes,
-    type Quiz,
-    type Quizzes,
-  } from "../lib/contracts/quiz";
+  import { FetchAllQuizzes, type Quiz } from "../lib/contracts/quiz";
   import { CheckIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
   import Pagination from "./Pagination.svelte";
+  import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
+  import { CreatePagedQuery } from "../lib/layoututils/createPagedQuery.svelte";
 
   let {
     chosen = $bindable(new SvelteSet<string>()),
@@ -17,40 +13,14 @@
     chosen: SvelteSet<string>;
     existing?: SvelteSet<Quiz>;
   } = $props();
-  $inspect(chosen);
 
-  let height = $state(0);
+  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
 
-  let page = $state(1);
-  let pageSize = $state(5);
-
-  let loading = $state(true);
-  let statusMessage = $state("");
-
-  let paginatedQuizzes: Quizzes = $state(null as never);
-
-  let time: number;
-  $effect(() => {
-    const p = page;
-    const ps = pageSize;
-
-    clearTimeout(time);
-
-    new Promise((resolve) => {
-      time = setTimeout(async () => {
-        statusMessage = await FetchAllQuizzes(p - 1, ps)
-          .andTee((r) => {
-            paginatedQuizzes = r;
-            loading = false;
-          })
-          .match(
-            (_) => "",
-            (err) => err.error,
-          );
-
-        resolve(0);
-      }, 500);
-    });
+  const q = CreatePagedQuery({
+    pageSize: () => 5,
+    enabled: () => true,
+    params: () => ({}),
+    fetcher: FetchAllQuizzes,
   });
 
   let existingQuizUUIDs = $derived(
@@ -59,40 +29,38 @@
 </script>
 
 <div
-  class="grid gap-2 w-full place-items-center h-full overflow-auto"
-  bind:clientHeight={height}
+  class="grid gap-4 m-2 w-full place-items-center h-full overflow-auto"
+  use:fit.measure
 >
-  {#if loading}
+  {#if q.loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
+  {:else if q.error}
+    <div>{q.error}</div>
+  {:else if !q.data || q.data.total === 0}
+    <div>No quizzes</div>
   {:else}
-    {#if statusMessage}
-      <div>{statusMessage}</div>
-    {:else}
-      {#if paginatedQuizzes.total !== 0}
-        {#each paginatedQuizzes.quizzes as quiz (quiz.uuid)}
-          <button
-            type="button"
-            class={`chip capitalize preset-outlined-surface-400-600 ${chosen.has(quiz.uuid) ? "preset-tonal-primary" : ""}`}
-            onclick={() => {
-              if (chosen.has(quiz.uuid)) {
-                chosen.delete(quiz.uuid);
-              } else {
-                chosen.add(quiz.uuid);
-              }
-            }}
-            disabled={existingQuizUUIDs.has(quiz.uuid)}
-          >
-            {#if chosen.has(quiz.uuid)}<CheckIcon size={14} />{/if}
-            <span>{quiz.path.slice(14).slice(0, -3)}</span>
-          </button>
-        {/each}
+    {#each q.data.quizzes as quiz (quiz.uuid)}
+      <button
+        type="button"
+        class={`chip capitalize preset-outlined-surface-400-600 ${chosen.has(quiz.uuid) ? "preset-tonal-primary" : ""}`}
+        onclick={() => {
+          if (chosen.has(quiz.uuid)) {
+            chosen.delete(quiz.uuid);
+          } else {
+            chosen.add(quiz.uuid);
+          }
+        }}
+        disabled={existingQuizUUIDs.has(quiz.uuid)}
+      >
+        {#if chosen.has(quiz.uuid)}<CheckIcon size={14} />{/if}
+        <span>{quiz.path.slice(14).slice(0, -3)}</span>
+      </button>
+    {/each}
 
-        <div class="flex justify-between items-center gap-4 w-full self-end">
-          <Pagination bind:page {pageSize} total={paginatedQuizzes.total} />
-        </div>
-      {/if}
-    {/if}
+    <div class="flex justify-between items-center gap-4 w-full self-end">
+      <Pagination bind:page={q.page} pageSize={5} total={q.data?.total ?? 0} />
+    </div>
   {/if}
 </div>
