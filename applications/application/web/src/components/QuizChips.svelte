@@ -17,7 +17,7 @@
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
 
   const q = CreatePagedQuery({
-    pageSize: () => fit.pageSize,
+    pageSize: () => 5,
     enabled: () => true,
     params: () => ({}),
     fetcher: FetchAllQuizzes,
