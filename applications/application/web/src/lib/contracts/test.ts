@@ -94,69 +94,69 @@ export function FetchCurrentlyRunningTestInfos(): ResultAsync<
   });
 }
 
-export function FetchCurrentlyRunningQuizUUIDs(): ResultAsync<
-  string[],
-  JSONError
-> {
-  const ETagInfo = GetCurrentlyRunningCaching();
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/quizzes`,
-      {
-        headers: ETagInfo
-          ? ETagInfo.ExpiresAt > new Date()
-            ? { "If-None-Match": `"${ETagInfo.ETag}"` }
-            : {}
-          : {},
-      },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't fetch running test: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch running test because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch running test because of unknown error" };
-    },
-  ).andThen((r) => {
-    if (r.status === 304 && ETagInfo) {
-      const cached = GetCurrentlyRunning();
-      if (cached !== null) return okAsync(cached);
-    }
-    if (r.status === 423) {
-      SetCurrentlyRunningCaching({
-        ETag: "",
-        ExpiresAt: new Date(Date.now() - 100), // the Date.now() - x is used because I am pretty sure someone is still living in the 50-s
-      });
-    }
-    if (!r.ok) {
-      return ResultAsync.fromPromise(r.json(), (): JSONError => ({
-        error: "couldn't parse error body",
-      })).andThen((body) => errAsync<string[], JSONError>(body as JSONError));
-    }
+// export function FetchCurrentlyRunningQuizUUIDs(): ResultAsync<
+//   string[],
+//   JSONError
+// > {
+//   const ETagInfo = GetCurrentlyRunningCaching();
+//   return ResultAsync.fromPromise(
+//     TokenizedFetch(
+//       `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/quizzes`,
+//       {
+//         headers: ETagInfo
+//           ? ETagInfo.ExpiresAt > new Date()
+//             ? { "If-None-Match": `"${ETagInfo.ETag}"` }
+//             : {}
+//           : {},
+//       },
+//     ),
+//     (err): JSONError => {
+//       console.log("Couldn't fetch running test: ", err);
+//       if (err instanceof Error) {
+//         return {
+//           error: "couldn't fetch running test because of in-browser error",
+//         };
+//       }
+//       return { error: "couldn't fetch running test because of unknown error" };
+//     },
+//   ).andThen((r) => {
+//     if (r.status === 304 && ETagInfo) {
+//       const cached = GetCurrentlyRunning();
+//       if (cached !== null) return okAsync(cached);
+//     }
+//     if (r.status === 423) {
+//       SetCurrentlyRunningCaching({
+//         ETag: "",
+//         ExpiresAt: new Date(Date.now() - 100), // the Date.now() - x is used because I am pretty sure someone is still living in the 50-s
+//       });
+//     }
+//     if (!r.ok) {
+//       return ResultAsync.fromPromise(r.json(), (): JSONError => ({
+//         error: "couldn't parse error body",
+//       })).andThen((body) => errAsync<string[], JSONError>(body as JSONError));
+//     }
 
-    return ResultAsync.fromPromise(r.json(), (): JSONError => ({
-      error: "couldn't parse response body",
-    })).andThen((r) => {
-      const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
-      const cch = r.headers.get("Cache-Control");
-      const reg = maxAgeRegex.exec(cch);
-      if (reg === null || reg.length < 2) {
-        console.log("couldn't cache the response. Got header: ", cch);
-        return okAsync(r);
-      }
-      const offset = parseInt(reg[1], 10);
+//     return ResultAsync.fromPromise(r.json(), (): JSONError => ({
+//       error: "couldn't parse response body",
+//     })).andThen((r) => {
+//       const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
+//       const cch = r.headers.get("Cache-Control");
+//       const reg = maxAgeRegex.exec(cch);
+//       if (reg === null || reg.length < 2) {
+//         console.log("couldn't cache the response. Got header: ", cch);
+//         return okAsync(r);
+//       }
+//       const offset = parseInt(reg[1], 10);
 
-      SetCurrentlyRunningCaching({
-        ETag: etag,
-        ExpiresAt: new Date(Date.now() + offset * 1000),
-      });
+//       SetCurrentlyRunningCaching({
+//         ETag: etag,
+//         ExpiresAt: new Date(Date.now() + offset * 1000),
+//       });
 
-      return okAsync(r);
-    });
-  });
-}
+//       return okAsync(r);
+//     });
+//   });
+// }
 
 export type Tests = { tests: Test[]; total: number };
 
@@ -563,7 +563,7 @@ export function FetchTestExport(
       }
       return { error: "couldn't fetch list answers because of unknown error" };
     },
-  ).andThen((r) => NormalizeBlob(r));
+  ).andThen(NormalizeBlob);
 }
 
 export function FetchTestImport(file: File): ResultAsync<null, JSONError> {

@@ -25,7 +25,7 @@
     pageSize: () => fit.pageSize,
     enabled: () => fit.ready,
     params: () => ({}),
-    fetcher: (page, size, p) => FetchGroups(page, size),
+    fetcher: FetchGroups,
   });
 
   let existingGroupUUIDs = $derived(

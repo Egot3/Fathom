@@ -1,6 +1,4 @@
 <script lang="ts">
-  import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
-  import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import CreateDialog from "./CreateDialog.svelte";
   import SmallBookCreateDialog from "./SmallBookCreateDialog.svelte";
   import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
@@ -137,9 +135,7 @@
                       <PeekDialogSquare
                         callback={() => (clickFocused = group.uuid)}
                         title="Group peeker"
-                        contentGetter={async () => {
-                          return group;
-                        }}
+                        contentGetter={() => group}
                       >
                         {#snippet children({ content }: { content: Group })}
                           <GroupPeek {content} />

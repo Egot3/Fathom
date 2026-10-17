@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Pencil, X } from "@lucide/svelte";
   import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
-  import { FetchQuiz } from "../lib/contracts/quiz";
   import { IsJSONError } from "../lib/statuses/jsonerror";
 
   const {
