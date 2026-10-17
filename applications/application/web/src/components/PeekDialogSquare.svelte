@@ -12,11 +12,11 @@
     title: string;
     children: any;
     callback?: () => void;
-    contentGetter: () => Promise<unknown>;
+    contentGetter: () => Promise<unknown> | unknown;
   } = $props();
 
   let moused = $state(false);
-  let ct = $state<Promise<unknown>>(new Promise(() => {}));
+  let ct: Promise<unknown> | unknown = $state(new Promise(() => {}));
 </script>
 
 <PeekDialogue content={ct} {title} {children}>
