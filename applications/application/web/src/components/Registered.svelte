@@ -29,7 +29,7 @@
     pageSize: () => fit.pageSize,
     enabled: () => fit.ready,
     params: () => ({}),
-    fetcher: (page, size, p) => FetchUsers(page, size),
+    fetcher: FetchUsers,
   });
 </script>
 
@@ -120,7 +120,7 @@
         total={q.data?.total ?? 0}
       ></Pagination>
 
-      <PeekDialogue title="Quiz importing">
+      <PeekDialogue title="User importing">
         {#snippet trigger()}
           <Dialog.Trigger class="btn preset-filled-warning-500">
             <CircleArrowDown></CircleArrowDown>
@@ -129,7 +129,7 @@
 
         <Importer
           callback={q.refresh}
-          importName="quiz import"
+          importName="user import"
           fetcher={FetchUserImport}
         />
       </PeekDialogue>
