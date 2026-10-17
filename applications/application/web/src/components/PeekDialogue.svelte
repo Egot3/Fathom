@@ -4,6 +4,7 @@
   import { ResultAsync } from "neverthrow";
   import type { JSONError } from "../lib/statuses/jsonerror";
   import type { Snippet } from "svelte";
+  import { IsResultAsync } from "../lib/apiutils/isResultAsync";
 
   const {
     title,
@@ -17,18 +18,9 @@
     content?: ResultAsync<T, JSONError> | T | null;
   } = $props();
 
-  function isResultAsync(
-    value: unknown,
-  ): value is ResultAsync<unknown, JSONError> {
-    return (
-      value instanceof ResultAsync ||
-      (typeof value === "object" && value !== null && "asyncAndThen" in value)
-    );
-  }
-
   let error = $state("");
   async function getContent(): Promise<T | null | undefined> {
-    if (!isResultAsync(content)) {
+    if (!IsResultAsync(content)) {
       return content;
     }
 

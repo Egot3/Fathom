@@ -3,7 +3,6 @@
   import { type JSONError } from "../lib/statuses/jsonerror";
   import {
     FetchAllTests,
-    FetchTest,
     FetchTestImport,
     type Test,
   } from "../lib/contracts/test";

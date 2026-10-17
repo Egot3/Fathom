@@ -350,3 +350,27 @@ export function FetchQuizImport(file: File): ResultAsync<null, JSONError> {
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
+
+type RawQuiz = {
+  meta: Meta;
+  body: string;
+};
+export function FetchRawQuiz(UUID: string): ResultAsync<RawQuiz, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${UUID}`,
+      {
+        method: "GET",
+      },
+    ),
+    (err) => {
+      console.log("Couldn't import: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch import quiz because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch quiz import because of unknown error" };
+    },
+  ).andThen(NormalizeJSON<RawQuiz>);
+}

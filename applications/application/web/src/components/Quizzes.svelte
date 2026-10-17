@@ -6,6 +6,7 @@
     FetchQuizExport,
     FetchQuizImport,
     FetchParsedQuiz,
+    FetchRawQuiz,
   } from "../lib/contracts/quiz";
   import CreateDialog from "./CreateDialog.svelte";
   import CreateQuizForm from "./CreateQuizForm.svelte";
@@ -34,7 +35,7 @@
     pageSize: () => fit.pageSize,
     enabled: () => fit.ready,
     params: () => ({}),
-    fetcher: (page, size, p) => FetchAllQuizzes(page, size),
+    fetcher: FetchAllQuizzes,
   });
 
   let focused = $state("");
@@ -112,7 +113,7 @@
                       <ChangeDialogSqare
                         callback={() => (clickFocused = quiz.uuid)}
                         title="Quiz changer"
-                        contentGetter={() => quiz}
+                        contentGetter={() => FetchRawQuiz(quiz.uuid)}
                       >
                         {#snippet children({ content }: { content: QuizFile })}
                           <ChangeQuizForm

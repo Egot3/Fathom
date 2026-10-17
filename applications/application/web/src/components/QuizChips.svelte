@@ -60,11 +60,7 @@
     {/each}
 
     <div class="flex justify-between items-center gap-4 w-full self-end">
-      <Pagination
-        bind:page={q.page}
-        pageSize={fit.pageSize}
-        total={q.data?.total ?? 0}
-      />
+      <Pagination bind:page={q.page} pageSize={5} total={q.data?.total ?? 0} />
     </div>
   {/if}
 </div>
