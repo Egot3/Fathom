@@ -131,7 +131,7 @@
                         callback={() => (clickFocused = quiz.uuid)}
                         title="Quiz peeker"
                         contentGetter={() =>
-                          FetchParsedQuiz(quiz.uuid).andThen((r) =>
+                          FetchRawQuiz(quiz.uuid).andThen((r) =>
                             okAsync(r.body),
                           )}
                       >
