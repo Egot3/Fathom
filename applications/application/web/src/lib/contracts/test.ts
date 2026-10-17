@@ -15,6 +15,7 @@ import {
   TokenizedFetch,
 } from "./tokenizedFetch";
 import { AcceptTransform, type Accept } from "../apiutils/acceptHeader";
+import type { Result } from "postcss";
 
 export type Test = {
   uuid: string;
@@ -33,29 +34,27 @@ type GetQuizUUIDsResponse = {
 };
 
 // redone
-export async function FetchTest(testUUID: string): Promise<Test | JSONError> {
-  try {
-    const rawRes = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + testUUID,
+export function FetchTest(testUUID: string): ResultAsync<Test, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}`,
       {
         method: "GET",
         headers: {
           Accept: "application/json",
         },
       },
-    );
-
-    if (!rawRes.ok) {
-      return (await rawRes.json()) as JSONError;
-    }
-
-    return ((await rawRes.json()) as GetTestResponse).test;
-  } catch (err) {
-    console.log("couldn't fetch current test info due to unknown error: ", err);
-    return {
-      error: "got network error while fetching current test",
-    } as JSONError;
-  }
+    ),
+    (err) => {
+      console.log("Couldn't fetch test: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch test because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch test because of unknown error" };
+    },
+  ).andThen(NormalizeJSON<Test>);
 }
 
 export type TestInfo = Test & {
@@ -86,27 +85,12 @@ export function FetchCurrentlyRunningTestInfos(): ResultAsync<
       } as JSONError;
     },
   ).andThen((r) => {
-    if (!r.ok) {
-      if (r.status === 423) {
-        return okAsync([]);
-      }
-      return ResultAsync.fromPromise(
-        r.json() as Promise<JSONError>,
-        (err): JSONError => {
-          console.log("couldn't parse error body: ", err);
-          return { error: "couldn't parse error body" };
-        },
-      ).andThen((body) => {
-        return errAsync<TestInfo[], JSONError>(body as JSONError);
-      });
+    if (r.status === 423) {
+      return okAsync([]);
     }
-    return ResultAsync.fromPromise(
-      r.json() as Promise<CurrentlyRunningResponse>,
-      (err): JSONError => {
-        console.log("couldn't parse response body: ", err);
-        return { error: "couldn't parse response body" };
-      },
-    ).andThen((r) => okAsync(r.tests));
+    return NormalizeJSON<CurrentlyRunningResponse>(r).andThen((r) =>
+      okAsync(r.tests),
+    );
   });
 }
 
@@ -206,20 +190,7 @@ export function FetchAllTests(
 
       return { error: "couldn't list tests because of unknown error" };
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      return ResultAsync.fromPromise(
-        r.json() as Promise<JSONError>,
-        (): JSONError => ({
-          error: "couldn't parse error body",
-        }),
-      ).andThen((body) => errAsync(body as JSONError));
-    }
-
-    return ResultAsync.fromPromise(r.json(), (): JSONError => ({
-      error: "couldn't parse response body",
-    })).andThen((body: Tests) => okAsync(body));
-  });
+  ).andThen(NormalizeJSON<Tests>);
 }
 
 type PostTestRequest = {
@@ -227,41 +198,38 @@ type PostTestRequest = {
   quizzes: string[];
 };
 
-export async function FetchTestPost(
+export function FetchTestPost(
   name: string,
   quizzes: string[],
-): Promise<JSONError | null> {
+): ResultAsync<null, JSONError> {
   const body: PostTestRequest = {
     name: name,
     quizzes: quizzes,
   };
   const bodyString = JSON.stringify(body);
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+
+  return ResultAsync.fromPromise(
+    TokenizedFetch("https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
+      body: bodyString,
+    }),
+    (err): JSONError => {
+      console.log("Couldn't post tests: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't post tests because of in-browser error",
+        };
+      }
 
-    if (!response.ok) {
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch test post: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send test post because of in-browser error" };
-    }
-
-    return { error: "couldn't send test post because of unknown error" };
-  }
+      return { error: "couldn't post tests because of unknown error" };
+    },
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 export function FetchTestDelete(UUID: string): ResultAsync<null, JSONError> {
@@ -282,37 +250,27 @@ export function FetchTestDelete(UUID: string): ResultAsync<null, JSONError> {
 
       return { error: "couldn't send test delete because of unknown error" };
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      console.log("response is not ok!");
-      return ResultAsync.fromPromise(
-        r.json() as Promise<JSONError>,
-        (err): JSONError => {
-          console.log("couldn't parse error's body: ", err);
-          return { error: "couldn't parse error's body" };
-        },
-      ).andThen((e: JSONError) => errAsync(e));
-    }
-    return okAsync(null);
-  });
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 type PatchTestRequest = {
   name: string | undefined;
 };
 
-export async function FetchTestPatch(
+export function FetchTestPatch(
   UUID: string,
   name: string | undefined,
-): Promise<JSONError | null> {
+): ResultAsync<null, JSONError> {
   const body: PatchTestRequest = {
     name: name,
   };
 
   const bodyString = JSON.stringify(body);
 
-  try {
-    const response = await TokenizedFetch(
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
       "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + UUID,
       {
         method: "PATCH",
@@ -322,40 +280,38 @@ export async function FetchTestPatch(
         },
         body: bodyString,
       },
-    );
+    ),
+    (err) => {
+      console.log("Couldn't fetch test delete: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send test patch because of in-browser error",
+        };
+      }
 
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch test patch: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send test patch because of in-browser error" };
-    }
-
-    return { error: "couldn't send test patch because of unknown error" };
-  }
+      return { error: "couldn't send test patch because of unknown error" };
+    },
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 type TestBundleRequest = {
   quiz_uuids: string[];
 };
 
-export async function FetchTestBundle(
+export function FetchTestBundle(
   testUUID: string,
   quizUUIDs: string[],
-): Promise<null | JSONError> {
+): ResultAsync<null, JSONError> {
   const body: TestBundleRequest = {
     quiz_uuids: quizUUIDs,
   };
 
   const bodyString = JSON.stringify(body);
 
-  try {
-    const response = await TokenizedFetch(
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
       "https://" +
         import.meta.env.VITE_DOMAIN +
         "/api/v1/test/" +
@@ -369,38 +325,34 @@ export async function FetchTestBundle(
         },
         body: bodyString,
       },
-    );
+    ),
+    (err) => {
+      console.log("Couldn't fetch test bundle: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send test bundle because of in-browser error",
+        };
+      }
 
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch test bundle: ", err);
-    if (err instanceof Error) {
-      return {
-        error: "couldn't send test bundle patch because of in-browser error",
-      };
-    }
-
-    return { error: "couldn't send test bundle because of unknown error" };
-  }
+      return { error: "couldn't send test bundle because of unknown error" };
+    },
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
-export async function FetchTestPrune(
+export function FetchTestPrune(
   testUUID: string,
   quizUUIDs: string[],
-): Promise<null | JSONError> {
+): ResultAsync<null, JSONError> {
   const body: TestBundleRequest = {
     quiz_uuids: quizUUIDs,
   };
 
   const bodyString = JSON.stringify(body);
 
-  try {
-    const response = await TokenizedFetch(
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
       `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/quizzes`,
       {
         method: "DELETE",
@@ -410,22 +362,19 @@ export async function FetchTestPrune(
         },
         body: bodyString,
       },
-    );
-
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch test prune for test: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send test prune because of in-browser error" };
-    }
-
-    return { error: "couldn't send test prune because of unknown error" };
-  }
+    ),
+    (err) => {
+      console.log("Couldn't prune test: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch prune test because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch prune test because of unknown error" };
+    },
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 type TestStartRequest = {
@@ -468,16 +417,9 @@ export function FetchTestStart(
 
       return { error: "couldn't send test start because of unknown error" };
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
-        console.log("couldn't parse error's body: ", err);
-        return { error: "couldn't parse error's body" };
-      }).andThen((e: JSONError) => errAsync(e));
-    }
-
-    return okAsync(null);
-  });
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 export function FetchTestPause(key: string): ResultAsync<null, JSONError> {
@@ -501,16 +443,9 @@ export function FetchTestPause(key: string): ResultAsync<null, JSONError> {
 
       return { error: "couldn't send test pause because of unknown error" };
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
-        console.log("couldn't parse error's body: ", err);
-        return { error: "couldn't parse error's body" };
-      }).andThen((e: JSONError) => errAsync(e));
-    }
-
-    return okAsync(null);
-  });
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 export function FetchTestResume(key: string): ResultAsync<null, JSONError> {
@@ -534,16 +469,9 @@ export function FetchTestResume(key: string): ResultAsync<null, JSONError> {
 
       return { error: "couldn't send test resume because of unknown error" };
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
-        console.log("couldn't parse error's body: ", err);
-        return { error: "couldn't parse error's body" };
-      }).andThen((e: JSONError) => errAsync(e));
-    }
-
-    return okAsync(null);
-  });
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 export function FetchTestStop(key: string): ResultAsync<null, JSONError> {
@@ -567,16 +495,9 @@ export function FetchTestStop(key: string): ResultAsync<null, JSONError> {
 
       return { error: "couldn't send test stop because of unknown error" };
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
-        console.log("couldn't parse error's body: ", err);
-        return { error: "couldn't parse error's body" };
-      }).andThen((e: JSONError) => errAsync(e));
-    }
-
-    return okAsync(null);
-  });
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 type TestExtendRequest = {
@@ -613,16 +534,9 @@ export function FetchTestExtend(
 
       return { error: "couldn't send test extend because of unknown error" };
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      return ResultAsync.fromPromise(r.json(), (err): JSONError => {
-        console.log("couldn't parse error's body: ", err);
-        return { error: "couldn't parse error's body" };
-      }).andThen((e: JSONError) => errAsync(e));
-    }
-
-    return okAsync(null);
-  });
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 export function FetchTestExport(
