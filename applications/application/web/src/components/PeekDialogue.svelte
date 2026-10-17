@@ -1,6 +1,9 @@
-<script lang="ts">
+<script lang="ts" generics="T">
   import { X } from "@lucide/svelte";
   import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
+  import { ResultAsync } from "neverthrow";
+  import type { JSONError } from "../lib/statuses/jsonerror";
+  import type { Snippet } from "svelte";
 
   const {
     title,
@@ -9,10 +12,33 @@
     trigger,
   }: {
     title: string;
-    children: any;
-    trigger: any;
-    content?: Promise<unknown> | unknown;
+    children: Snippet<[{ content: T }]>;
+    trigger: Snippet;
+    content?: ResultAsync<T, JSONError> | T | null;
   } = $props();
+
+  function isResultAsync(
+    value: unknown,
+  ): value is ResultAsync<unknown, JSONError> {
+    return (
+      value instanceof ResultAsync ||
+      (typeof value === "object" && value !== null && "asyncAndThen" in value)
+    );
+  }
+
+  let error = $state("");
+  async function getContent(): Promise<T | null | undefined> {
+    if (!isResultAsync(content)) {
+      return content;
+    }
+
+    return await content
+      .orTee((r) => (error = r.error))
+      .match(
+        (r) => r,
+        (_) => undefined,
+      );
+  }
 </script>
 
 <Dialog>
@@ -34,10 +60,14 @@
           >
         </header>
 
-        {#await content}
+        {#await getContent()}
           <div>loading</div>
         {:then content}
-          {@render children?.({ content })}
+          {#if error}
+            {error}
+          {:else if content}
+            {@render children?.({ content })}
+          {/if}
         {/await}
       </Dialog.Content>
     </Dialog.Positioner>
