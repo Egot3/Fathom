@@ -18,9 +18,9 @@
 
   const q = CreatePagedQuery({
     pageSize: () => fit.pageSize,
-    enabled: () => fit.ready,
+    enabled: () => true,
     params: () => ({}),
-    fetcher: (page, size) => FetchAllQuizzes(page, size),
+    fetcher: FetchAllQuizzes,
   });
 
   let existingQuizUUIDs = $derived(
@@ -28,7 +28,10 @@
   );
 </script>
 
-<div class="grid gap-2 w-full place-items-center h-full overflow-auto">
+<div
+  class="grid gap-4 m-2 w-full place-items-center h-full overflow-auto"
+  use:fit.measure
+>
   {#if q.loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"

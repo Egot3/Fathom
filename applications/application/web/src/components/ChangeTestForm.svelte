@@ -11,6 +11,7 @@
   import QuizChips from "./QuizChips.svelte";
   import { SvelteSet } from "svelte/reactivity";
   import ExistingQuizChips from "./ExistingQuizChips.svelte";
+  import { ok, safeTry } from "neverthrow";
 
   const {
     callback,
@@ -37,38 +38,39 @@
   async function ChangeTest(e: Event) {
     e.preventDefault();
 
-    if (newName !== name && newName) {
-      const patchResponse = await FetchTestPatch(UUID, newName);
-      if (patchResponse !== null) {
-        statusMessage = patchResponse.error;
-        return;
+    const result = await safeTry(async function* () {
+      if (newName && newName !== name) {
+        yield* FetchTestPatch(UUID, newName);
       }
-    }
 
-    const quizzesArr = Array.from(quizzes);
-    const quizzesRemoved = _.difference(response.quizzes, quizzesArr);
-    console.log("quizzes removed+quizzesArr: ", quizzesRemoved, quizzesArr);
-    if (quizzesRemoved.length > 0) {
-      const deleteResponse = await FetchTestPrune(
-        UUID,
-        quizzesRemoved.map((v) => v.uuid),
+      const quizzesRemoved = _.difference(
+        response.quizzes,
+        Array.from(quizzes),
       );
-      if (deleteResponse !== null) {
-        statusMessage = deleteResponse.error;
-        return;
+      if (quizzesRemoved.length > 0) {
+        yield* FetchTestPrune(
+          UUID,
+          quizzesRemoved.map((v) => v.uuid),
+        );
       }
-    }
 
-    const newQuizzesArr = Array.from(newQuizzes);
-    if (newQuizzesArr.length > 0) {
-      const postResponse = await FetchTestBundle(UUID, newQuizzesArr);
-      if (postResponse !== null) {
-        statusMessage = postResponse.error;
-        return;
+      const newQuizzesArr = Array.from(newQuizzes);
+      if (newQuizzesArr.length > 0) {
+        yield* FetchTestBundle(UUID, newQuizzesArr);
       }
-    }
 
-    callback();
+      return ok(undefined); // ok
+    });
+
+    result.match(
+      () => {
+        statusMessage = "";
+        callback();
+      },
+      ({ error }) => {
+        statusMessage = error;
+      },
+    );
   }
 
   const existing = new SvelteSet((() => quizzes)());
@@ -103,9 +105,11 @@
       </label>
     </div>
     <div class="h-full w-1/2">
-      <label class="label">
+      <label class="label h-full">
         <span class="label-text">New quizzes</span>
-        <QuizChips bind:chosen={newQuizzes} {existing} />
+        <div class="h-full">
+          <QuizChips bind:chosen={newQuizzes} {existing} />
+        </div>
       </label>
     </div>
   </div>

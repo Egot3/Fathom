@@ -39,6 +39,7 @@ export function CreatePagedQuery<R, P>(opts: {
     const t = setTimeout(async () => {
       const res = await opts.fetcher(p - 1, size, params);
       if (mine !== ticket) return;
+      console.log("got res", res);
       res.match(
         (r) => {
           data = r;
