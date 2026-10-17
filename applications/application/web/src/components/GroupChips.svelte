@@ -7,6 +7,8 @@
     type ListGroupResponse,
   } from "../lib/contracts/group";
   import Pagination from "./Pagination.svelte";
+  import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
+  import { CreatePagedQuery } from "../lib/layoututils/createPagedQuery.svelte";
 
   let {
     chosen = $bindable(new SvelteSet<string>()),
@@ -17,35 +19,13 @@
   } = $props();
   $inspect(chosen);
 
-  let page = $state(1);
-  let pageSize = $state(5);
+  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
 
-  let paginatedGroups: ListGroupResponse = $state(null as never);
-  let statusMessage = $state("");
-  let loading = $state(true);
-
-  let time: number;
-  $effect(() => {
-    const p = page;
-    const ps = pageSize;
-
-    loading = true;
-    clearTimeout(time);
-
-    new Promise((resolve) => {
-      time = setTimeout(async () => {
-        statusMessage = await FetchGroups(p - 1, ps)
-          .andTee((r) => {
-            paginatedGroups = r;
-            loading = false;
-          })
-          .match(
-            (_) => "",
-            (e) => e.error,
-          );
-        resolve(0);
-      }, 500);
-    });
+  const q = CreatePagedQuery({
+    pageSize: () => 5,
+    enabled: () => true,
+    params: () => ({}),
+    fetcher: FetchGroups,
   });
 
   let existingGroupUUIDs = $derived(
@@ -54,38 +34,36 @@
 </script>
 
 <div class="w-full h-full overflow-auto gap-2">
-  {#if loading}
+  {#if q.loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
+  {:else if q.error}
+    <div>{q.error}</div>
+  {:else if !q.data || q.data.total === 0}
+    <div>No groups</div>
   {:else}
-    {#if statusMessage}
-      <div>{statusMessage}</div>
-    {:else}
-      {#if paginatedGroups.total !== 0}
-        {#each paginatedGroups.groups as group (group.uuid)}
-          <button
-            type="button"
-            class={`chip preset-outlined-surface-400-600 ${chosen.has(group.uuid) ? "preset-tonal-primary" : ""}`}
-            onclick={() => {
-              if (chosen.has(group.uuid)) {
-                chosen.delete(group.uuid);
-              } else {
-                chosen.add(group.uuid);
-              }
-            }}
-            disabled={existingGroupUUIDs.has(group.uuid)}
-          >
-            {#if chosen.has(group.uuid)}<CheckIcon size={14} />{/if}
-            <span>{group.name}</span>
-          </button>
-        {/each}
+    {#each q.data.groups as group (group.uuid)}
+      <button
+        type="button"
+        class={`chip preset-outlined-surface-400-600 ${chosen.has(group.uuid) ? "preset-tonal-primary" : ""}`}
+        onclick={() => {
+          if (chosen.has(group.uuid)) {
+            chosen.delete(group.uuid);
+          } else {
+            chosen.add(group.uuid);
+          }
+        }}
+        disabled={existingGroupUUIDs.has(group.uuid)}
+      >
+        {#if chosen.has(group.uuid)}<CheckIcon size={14} />{/if}
+        <span>{group.name}</span>
+      </button>
+    {/each}
 
-        <div class="flex justify-between items-center gap-4 w-full self-end">
-          <Pagination {pageSize} bind:page total={paginatedGroups.total}
-          ></Pagination>
-        </div>
-      {/if}
-    {/if}
+    <div class="flex justify-between items-center gap-4 w-full self-end">
+      <Pagination pageSize={5} bind:page={q.page} total={q.data?.total ?? 0}
+      ></Pagination>
+    </div>
   {/if}
 </div>
