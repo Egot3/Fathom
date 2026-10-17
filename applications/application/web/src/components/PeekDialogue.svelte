@@ -13,7 +13,7 @@
     trigger,
   }: {
     title: string;
-    children: Snippet<[{ content: T }]>;
+    children: Snippet<[{ content?: T }]>;
     trigger: Snippet;
     content?: ResultAsync<T, JSONError> | T | null;
   } = $props();
@@ -57,7 +57,7 @@
         {:then content}
           {#if error}
             {error}
-          {:else if content}
+          {:else if content !== null}
             {@render children?.({ content })}
           {/if}
         {/await}
