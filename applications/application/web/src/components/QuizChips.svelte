@@ -17,10 +17,10 @@
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
 
   const q = CreatePagedQuery({
-    pageSize: () => fit.pageSize,
-    enabled: () => fit.ready,
+    pageSize: () => 5,
+    enabled: () => true,
     params: () => ({}),
-    fetcher: (page, size) => FetchAllQuizzes(page, size),
+    fetcher: FetchAllQuizzes,
   });
 
   let existingQuizUUIDs = $derived(
@@ -28,7 +28,10 @@
   );
 </script>
 
-<div class="grid gap-2 w-full place-items-center h-full overflow-auto">
+<div
+  class="grid gap-4 m-2 w-full place-items-center h-full overflow-auto"
+  use:fit.measure
+>
   {#if q.loading}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
@@ -57,11 +60,7 @@
     {/each}
 
     <div class="flex justify-between items-center gap-4 w-full self-end">
-      <Pagination
-        bind:page={q.page}
-        pageSize={fit.pageSize}
-        total={q.data?.total ?? 0}
-      />
+      <Pagination bind:page={q.page} pageSize={5} total={q.data?.total ?? 0} />
     </div>
   {/if}
 </div>

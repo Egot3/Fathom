@@ -50,7 +50,7 @@ ${answer}`);
       name = title;
     }
 
-    const postResponse = await FetchQuizPost(
+    statusMessage = await FetchQuizPost(
       {
         all_or_none: allOrNone,
         randomized: randomized,
@@ -59,13 +59,12 @@ ${answer}`);
       } as Meta,
       name,
       content,
-    );
-    if (postResponse !== null) {
-      statusMessage = postResponse.error;
-      return;
-    }
-
-    callback();
+    )
+      .andTee(callback)
+      .match(
+        (_) => "",
+        ({ error }) => error,
+      );
   }
 </script>
 

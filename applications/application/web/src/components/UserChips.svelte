@@ -19,8 +19,8 @@
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
 
   const q = CreatePagedQuery({
-    pageSize: () => fit.pageSize,
-    enabled: () => fit.ready,
+    pageSize: () => 5,
+    enabled: () => true,
     params: () => ({}),
     fetcher: (page, size, p) => FetchUsers(page, size),
   });
@@ -62,11 +62,7 @@
     {/each}
 
     <div class="flex justify-between items-center gap-4 w-full self-end">
-      <Pagination
-        bind:page={q.page}
-        pageSize={fit.pageSize}
-        total={q.data?.total ?? 0}
-      />
+      <Pagination bind:page={q.page} pageSize={5} total={q.data?.total ?? 0} />
     </div>
   {/if}
 </div>
