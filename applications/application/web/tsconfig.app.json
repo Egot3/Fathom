@@ -16,7 +16,6 @@
      * of JS in `.svelte` files.
      */
     "allowJs": false,
-    "checkJs": true,
     "moduleDetection": "force",
   },
   "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
