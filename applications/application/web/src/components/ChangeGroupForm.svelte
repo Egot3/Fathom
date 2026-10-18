@@ -9,9 +9,9 @@
     FetchGroupPrune,
     type Group,
   } from "../lib/contracts/group";
-  import ExistingGroupChips from "./ExistingGroupChips.svelte";
   import ExistingUserChips from "./ExistingUserChips.svelte";
   import UserChips from "./UserChips.svelte";
+  import { ok, safeTry } from "neverthrow";
 
   const {
     callback,
@@ -38,37 +38,37 @@
   async function ChangeGroup(e: Event) {
     e.preventDefault();
 
-    if (newName !== name && newName) {
-      const patchResponse = await FetchGroupPatch(UUID, newName);
-      if (patchResponse !== null) {
-        statusMessage = patchResponse.error;
-        return;
+    const result = await safeTry(async function* () {
+      if (newName !== name && newName) {
+        yield* FetchGroupPatch(UUID, newName);
       }
-    }
 
-    const pupilsArr = Array.from(pupils);
-    const pupilsRemoved = _.difference(response.pupils, pupilsArr);
-    if (pupilsRemoved.length > 0) {
-      const deleteResponse = await FetchGroupPrune(
-        UUID,
-        pupilsRemoved.map((v) => v.uuid),
-      );
-      if (deleteResponse !== null) {
-        statusMessage = deleteResponse.error;
-        return;
+      const pupilsArr = Array.from(pupils);
+      const pupilsRemoved = _.difference(response.pupils, pupilsArr);
+      if (pupilsRemoved.length > 0) {
+        yield* FetchGroupPrune(
+          UUID,
+          pupilsRemoved.map((v) => v.uuid),
+        );
       }
-    }
 
-    const newPupilsArr = Array.from(newPupils);
-    if (newPupilsArr.length > 0) {
-      const postResponse = await FetchGroupAppend(UUID, newPupilsArr);
-      if (postResponse !== null) {
-        statusMessage = postResponse.error;
-        return;
+      const newPupilsArr = Array.from(newPupils);
+      if (newPupilsArr.length > 0) {
+        yield* FetchGroupAppend(UUID, newPupilsArr);
       }
-    }
 
-    callback();
+      return ok(undefined);
+    });
+
+    result.match(
+      () => {
+        statusMessage = "";
+        callback();
+      },
+      ({ error }) => {
+        statusMessage = error;
+      },
+    );
   }
 
   const existing = new SvelteSet((() => pupils)());

@@ -44,23 +44,15 @@ export function FetchTotals(
   groupUUID?: string,
   testUUID?: string,
 ): ResultAsync<Totals, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/${groupUUID ?? "all"}/${userUUID ?? "all"}/${testUUID ?? "all"}?page=${page}&size=${size}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/${groupUUID ?? "all"}/${userUUID ?? "all"}/${testUUID ?? "all"}?page=${page}&size=${size}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
       },
-    ),
-    (err) => {
-      console.log(err);
-      return {
-        error: "network error",
-      } as JSONError;
     },
-  ).andThen((r) => NormalizeJSON<Totals>(r));
+  ).andThen(NormalizeJSON<Totals>);
 }
 
 export type Answers = { answers: Answer[]; total: number };
@@ -72,25 +64,14 @@ export function FetchAnswers(
   page: number,
   size: number,
 ): ResultAsync<Answers, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/${groupUUID}/${userUUID}/${testUUID}/answers?page=${page}&size=${size}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/${groupUUID}/${userUUID}/${testUUID}/answers?page=${page}&size=${size}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-    ),
-    (err) => {
-      console.log("Couldn't list answers: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch list answers because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch list answers because of unknown error" };
     },
-  ).andThen((r) => NormalizeJSON<Answers>(r));
+  ).andThen(NormalizeJSON<Answers>);
 }

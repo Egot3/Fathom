@@ -43,31 +43,30 @@
 
   let registering = $state(false);
 
-  async function SubmitLogin(e: Event) {
+  async function SubmitRegister(e: Event) {
     e.preventDefault();
+
     registering = true;
 
-    const body: RegisterRequest = {
-      nickname: login,
-      password: password,
-    };
-
-    FetchRegister(login, password)
-      .then((r) => {
-        if (IsJSONError(r)) {
-          statusMessage = r.error;
+    (async () => {
+      await FetchRegister(login, password)
+        .andTee((r) => {
+          SetUser({
+            UUID: r.user.uuid,
+            isTeacher: r.user.is_teacher,
+            nickname: r.user.nickname,
+          });
+          window.location.href = "/home";
+        })
+        .orTee((e) => {
+          statusMessage = e.error;
           mainPopover().setOpen(true);
           return;
-        }
-
-        SetUser({
-          UUID: r.user.uuid,
-          isTeacher: r.user.is_teacher,
-          nickname: r.user.nickname,
         });
-        window.location.href = "/home";
-      })
-      .finally(() => (registering = false));
+      registering = false;
+    })();
+
+    return null as never;
   }
 </script>
 
@@ -76,7 +75,7 @@
     class="h-4/5 w-1/2 bg-surface-950-50 rounded-2xl p-2.5 overflow-scroll flex items-center"
   >
     <form
-      onsubmit={SubmitLogin}
+      onsubmit={SubmitRegister}
       class="w-full flex flex-col h-full justify-center"
     >
       <h1 class="self-center text-6xl justify-self-start m-4 font-bold">

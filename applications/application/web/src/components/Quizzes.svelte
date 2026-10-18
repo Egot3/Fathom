@@ -5,7 +5,6 @@
     type QuizFile,
     FetchQuizExport,
     FetchQuizImport,
-    FetchParsedQuiz,
     FetchRawQuiz,
   } from "../lib/contracts/quiz";
   import CreateDialog from "./CreateDialog.svelte";

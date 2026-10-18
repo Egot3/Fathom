@@ -39,22 +39,23 @@
 
     loggingIn = true;
 
-    FetchLogin(login, password)
-      .then((r) => {
-        if (IsJSONError(r)) {
-          statusMessage = r.error;
+    (async () => {
+      await FetchLogin(login, password)
+        .andTee((r) => {
+          SetUser({
+            UUID: r.user.uuid,
+            isTeacher: r.user.is_teacher,
+            nickname: r.user.nickname,
+          });
+          window.location.href = "/home";
+        })
+        .orTee((e) => {
+          statusMessage = e.error;
           mainPopover().setOpen(true);
           return;
-        }
-
-        SetUser({
-          UUID: r.user.uuid,
-          isTeacher: r.user.is_teacher,
-          nickname: r.user.nickname,
         });
-        window.location.href = "/home";
-      })
-      .finally(() => (loggingIn = false));
+      loggingIn = false;
+    })();
 
     return null as never;
   }
