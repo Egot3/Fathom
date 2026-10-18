@@ -993,6 +993,14 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := logging.WithLogger(r.Context(), logger)
 
+	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	if !ok {
+		logger.Error("Failed to retrieve jwt claims")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve jwt's claims"})
+		return
+	}
+
 	runners := c.manager.AllRunners()
 	testUUIDs := make(uuid.UUIDs, 0, len(runners))
 	for _, testUUID := range runners {
@@ -1020,6 +1028,10 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 		test, ok := testsByUUID[testUUID]
 		if !ok {
 			continue // me when I delete test from db mid-run
+		}
+
+		if !claims.IsTeacher {
+			test.Quizzes = nil
 		}
 
 		testInfos = append(testInfos, contracts.RunningInfo{
