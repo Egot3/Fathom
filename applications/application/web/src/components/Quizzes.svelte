@@ -189,7 +189,12 @@
               <Importer
                 callback={q.refresh}
                 importName="quiz import"
-                fetcher={(file: File) => FetchQuizImport(file)}
+                fetcher={FetchQuizImport}
+                accept={{
+                  "application/zip": [".zip"],
+                  "application/gzip": [".gz", ".tgz"],
+                  "application/x-tar": [".tar"],
+                }}
               />
             </PeekDialogue>
           </div>
