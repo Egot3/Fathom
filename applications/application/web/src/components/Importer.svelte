@@ -1,4 +1,4 @@
-<script lang="ts" generics="T">
+<script lang="ts">
   import { ResultAsync } from "neverthrow";
   import type { JSONError } from "../lib/statuses/jsonerror";
   import ErrorPopover from "./ErrorPopover.svelte";
