@@ -3,27 +3,49 @@
   import Status404 from "./pages/Status404.svelte";
   import { GetUser } from "./lib/bgdata/user.svelte";
   import _ from "lodash";
-  import { createToaster, Toast } from "@skeletonlabs/skeleton-svelte";
+  import { Toast } from "@skeletonlabs/skeleton-svelte";
   import { Toaster } from "./lib/apiutils/toaster";
 
-  const regex = /^https?:\/\/[^\/]+\/([^?#]+)/;
-
-  let currentURL = $derived(window.location.href);
-
-  let hier_part = $derived(regex.exec(currentURL)?.[1] ?? "");
-
-  $inspect(hier_part);
   type LazyPage = () => Promise<{ default: Component<any, any, any> }>;
 
-  const pages = new Map<string, LazyPage>([
-    ["login", () => import("./pages/Login.svelte")],
-    ["register", () => import("./pages/Register.svelte")],
-    ["home", () => import("./pages/Home.svelte")],
-    ["teachery", () => import("./pages/Treachery.svelte")],
-  ]);
+  type Route = {
+    path: RegExp;
+    load: LazyPage;
+    public?: boolean;
+    teacher?: boolean;
+  };
 
-  const publicRoutes = new Set(["login", "register"]);
-  const teacherRoutes = new Set(["teachery"]);
+  const routes: Route[] = [
+    {
+      path: /^\/login\/?$/,
+      load: () => import("./pages/Login.svelte"),
+      public: true,
+    },
+    {
+      path: /^\/register\/?$/,
+      load: () => import("./pages/Register.svelte"),
+      public: true,
+    },
+    { path: /^\/home\/?$/, load: () => import("./pages/Home.svelte") },
+    {
+      path: /^\/teachery\/?$/,
+      load: () => import("./pages/Treachery.svelte"),
+      teacher: true,
+    },
+    {
+      path: /^\/(?<runnerKey>\d{1,20})\/?$/,
+      load: () => import("./pages/Running.svelte"),
+    },
+  ];
+
+  function matchRoute(pathname: string) {
+    for (const route of routes) {
+      const m = route.path.exec(pathname);
+      if (m)
+        return { route, params: { ...m.groups } as Record<string, string> };
+    }
+    return null;
+  }
 
   const sendToLogin = () => {
     window.location.href = "/login";
@@ -31,33 +53,21 @@
   const sendToHome = () => {
     window.location.href = "/home";
   };
-  async function resolvePage(key: string) {
-    const loader = pages.get(key);
-    if (!loader) return null;
-    const { default: PageComponent } = await loader();
-    return PageComponent;
-  }
+
+  const match = $derived(matchRoute(window.location.pathname));
+  const requestor = GetUser();
 </script>
 
-{const requestor = GetUser()}
-{#if requestor === null && !publicRoutes.has(hier_part)}
+{#if !match}
+  <Status404 />
+{:else if requestor === null && !match.route.public}
   {sendToLogin()}
+{:else if match.route.teacher && !requestor?.isTeacher}
+  {sendToHome()}
 {:else}
-  {#if !requestor?.isTeacher && teacherRoutes.has(hier_part)}
-    {sendToHome()}
-  {:else}
-    {const ap = resolvePage(hier_part)}
-
-    {#await ap then ActivePage}
-      {#if ActivePage === null}
-        {console.log("is null")}
-        <Status404 />
-      {:else}
-        {console.log("is not null")}
-        <ActivePage />
-      {/if}
-    {/await}
-  {/if}
+  {#await match.route.load() then { default: Page }}
+    <Page {...match.params} />
+  {/await}
 {/if}
 
 <Toast.Group toaster={Toaster}>
