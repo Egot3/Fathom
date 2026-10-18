@@ -110,7 +110,7 @@ func (r *bunUserRepository) IsTeacher(ctx context.Context, uuid uuid.UUID) (bool
 
 func (r *bunUserRepository) User(ctx context.Context, uuid uuid.UUID) (models.User, error) {
 	user := models.User{UUID: uuid}
-	err := r.db.NewSelect().Model(&user).WherePK().WhereAllWithDeleted().Scan(ctx)
+	err := r.db.NewSelect().Model(&user).WherePK().WhereAllWithDeleted().Relation("Groups").Scan(ctx)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -119,12 +119,7 @@ func (r *bunUserRepository) User(ctx context.Context, uuid uuid.UUID) (models.Us
 		return models.User{}, carefulness.ErrGone
 	}
 
-	return models.User{
-		Nickname:     user.Nickname,
-		UUID:         user.UUID,
-		IsTeacher:    user.IsTeacher,
-		PasswordHash: nil, //safety
-	}, nil
+	return user, nil
 }
 
 func (r *bunUserRepository) UpdateUser(ctx context.Context, patchedUser models.PatchUser) error {

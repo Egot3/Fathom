@@ -9,7 +9,7 @@ import (
 
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
-type Claims struct { //Метаморфоз https://purpleschool.ru/knowledge-base/article/work-with-jwt
+type Claims struct {
 	UserID    uuid.UUID `json:"user_uuid"`
 	IsTeacher bool      `json:"is_teacher"`
 	jwt.RegisteredClaims
