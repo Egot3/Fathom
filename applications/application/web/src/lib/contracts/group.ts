@@ -1,6 +1,10 @@
 import { err, errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
-import { NormalizeJSON, TokenizedFetch } from "./tokenizedFetch";
+import {
+  NormalizeJSON,
+  NormalizeResponse,
+  TokenizedFetch,
+} from "./tokenizedFetch";
 import type { User } from "./user";
 
 export type Group = {
@@ -21,25 +25,15 @@ export function FetchGroups(
   page: number,
   size: number,
 ): ResultAsync<ListGroupResponse, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/group?page=${page}&size=${size}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/group?page=${page}&size=${size}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
       },
-    ),
-    (err) => {
-      console.log("Couldn't fetch groups: ", err);
-      if (err instanceof Error) {
-        return { error: "couldn't fetch groups because of in-browser error" };
-      }
-
-      return { error: "couldn't fetch groups because of unknown error" };
     },
-  ).andThen((r) => NormalizeJSON<ListGroupResponse>(r));
+  ).andThen(NormalizeJSON<ListGroupResponse>);
 }
 
 type PostGroupRequest = {
@@ -47,201 +41,124 @@ type PostGroupRequest = {
   appendants?: string[];
 };
 
-export async function FetchGroupPost(
+export function FetchGroupPost(
   name: string,
   appendants?: string[],
-): Promise<null | JSONError> {
+): ResultAsync<null, JSONError> {
   const body: PostGroupRequest = {
     name: name,
     appendants: appendants,
   };
   const bodyString = JSON.stringify(body);
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/group/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+  return TokenizedFetch(
+    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/group/",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
-
-    if (!response.ok) {
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch group post: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send group post because of in-browser error" };
-    }
-
-    return { error: "couldn't send group post because of unknown error" };
-  }
+      body: bodyString,
+    },
+  )
+    .andThen(NormalizeResponse)
+    .map((_) => null);
 }
 
 export function FetchGroupDelete(UUID: string): ResultAsync<null, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${UUID}`,
-      {
-        method: "DELETE",
-      },
-    ),
-    (err) => {
-      console.log("Couldn't fetch group delete: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send group delete because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send group delete because of unknown error" };
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${UUID}`,
+    {
+      method: "DELETE",
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      console.log("response is not ok!");
-      return ResultAsync.fromPromise(
-        r.json() as Promise<JSONError>,
-        (err): JSONError => {
-          console.log("couldn't parse error's body: ", err);
-          return { error: "couldn't parse error's body" };
-        },
-      ).andThen((e: JSONError) => errAsync(e));
-    }
-    return okAsync(null);
-  });
+  )
+    .andThen(NormalizeResponse)
+    .map((_) => null);
 }
 
 type PatchGroupRequest = {
   name: string | undefined;
 };
 
-export async function FetchGroupPatch(
+export function FetchGroupPatch(
   UUID: string,
   name: string | undefined,
-): Promise<JSONError | null> {
+): ResultAsync<null, JSONError> {
   const body: PatchGroupRequest = {
     name: name,
   };
 
   const bodyString = JSON.stringify(body);
 
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/group/" + UUID,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+  return TokenizedFetch(
+    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/group/" + UUID,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
-
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch group patch: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send group patch because of in-browser error" };
-    }
-
-    return { error: "couldn't send group patch because of unknown error" };
-  }
+      body: bodyString,
+    },
+  )
+    .andThen(NormalizeResponse)
+    .map((_) => null);
 }
 
 type PruneGroupRequest = {
   removants: string[];
 };
 
-export async function FetchGroupPrune(
+export function FetchGroupPrune(
   groupUUID: string,
   userUUIDs: string[],
-): Promise<null | JSONError> {
+): ResultAsync<null, JSONError> {
   const body: PruneGroupRequest = {
     removants: userUUIDs,
   };
 
   const bodyString = JSON.stringify(body);
 
-  try {
-    const response = await TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${groupUUID}/user`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${groupUUID}/user`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
-
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch group prune: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send group prune because of in-browser error" };
-    }
-
-    return { error: "couldn't send group prune because of unknown error" };
-  }
+      body: bodyString,
+    },
+  )
+    .andThen(NormalizeResponse)
+    .map((_) => null);
 }
 
 type AppendGroupRequest = {
   appendants: string[];
 };
 
-export async function FetchGroupAppend(
+export function FetchGroupAppend(
   groupUUID: string,
   userUUIDs: string[],
-): Promise<null | JSONError> {
+): ResultAsync<null, JSONError> {
   const body: AppendGroupRequest = {
     appendants: userUUIDs,
   };
 
   const bodyString = JSON.stringify(body);
 
-  try {
-    const response = await TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${groupUUID}/user`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${groupUUID}/user`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
-
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch remove user from group: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't remove user because of in-browser error" };
-    }
-
-    return { error: "couldn't remove user because of unknown error" };
-  }
+      body: bodyString,
+    },
+  )
+    .andThen(NormalizeResponse)
+    .map((_) => null);
 }

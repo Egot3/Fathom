@@ -68,11 +68,11 @@
     }
 
     if (!_.isEmpty(patched)) {
-      const patchResponse = await FetchUserPatch(UUID, patched);
-      if (patchResponse !== null) {
-        statusMessage = patchResponse.error;
-        return;
-      }
+      statusMessage = await FetchUserPatch(UUID, patched).match(
+        (r) => "",
+        ({ error }) => error,
+      );
+      return;
     }
 
     callback();

@@ -32,82 +32,48 @@ type RegisterResponse = {
   user: User;
 };
 
-type LoginResponseOrJSONError = LoginResponse | JSONError;
-
-export async function FetchLogin(
+export function FetchLogin(
   nickname: string,
   password: string,
-): Promise<LoginResponseOrJSONError> {
+): ResultAsync<LoginResponse, JSONError> {
   const body: LoginRequest = {
     nickname: nickname,
     password: password,
   };
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/login",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(body),
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/login`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      true,
-    );
-
-    if (!response.ok) {
-      return (await response.json()) as JSONError;
-    }
-
-    return (await response.json()) as LoginResponse;
-  } catch (err) {
-    console.log("Couldn't fetch login for user: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send login because of in-browser error" };
-    }
-
-    return { error: "couldn't send login because of unknown error" };
-  }
+      body: JSON.stringify(body),
+    },
+    true,
+  ).andThen(NormalizeJSON<LoginResponse>);
 }
 
-type RegisterResponseOrJSONError = RegisterResponse | JSONError;
-
-export async function FetchRegister(
+export function FetchRegister(
   nickname: string,
   password: string,
-): Promise<RegisterResponseOrJSONError> {
+): ResultAsync<RegisterResponse, JSONError> {
   const body: LoginRequest = {
     nickname: nickname,
     password: password,
   };
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/register",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(body),
+  return TokenizedFetch(
+    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/register",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      true,
-    );
-
-    if (!response.ok) {
-      return (await response.json()) as JSONError;
-    }
-
-    return (await response.json()) as RegisterResponse;
-  } catch (err) {
-    console.log("Couldn't fetch register for user: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send register because of in-browser error" };
-    }
-
-    return { error: "couldn't send register because of unknown error" };
-  }
+      body: JSON.stringify(body),
+    },
+    true,
+  ).andThen(NormalizeJSON<RegisterResponse>);
 }
 
 export type {
@@ -129,58 +95,26 @@ export function FetchUsers(
   page: number,
   size: number,
 ): ResultAsync<ListUsersResponse, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/?page=${page}&size=${size}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/?page=${page}&size=${size}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
       },
-    ),
-    (err) => {
-      console.log("Couldn't fetch users: ", err);
-      if (err instanceof Error) {
-        return { error: "couldn't fetch users because of in-browser error" };
-      }
-
-      return { error: "couldn't fetch users because of unknown error" };
     },
-  ).andThen((r) => NormalizeJSON<ListUsersResponse>(r));
+  ).andThen(NormalizeJSON<ListUsersResponse>);
 }
 
 export function FetchUserDelete(UUID: string): ResultAsync<null, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/${UUID}`,
-      {
-        method: "DELETE",
-      },
-    ),
-    (err) => {
-      console.log("Couldn't fetch user delete: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send user delete because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send user delete because of unknown error" };
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/${UUID}`,
+    {
+      method: "DELETE",
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      console.log("response is not ok!");
-      return ResultAsync.fromPromise(
-        r.json() as Promise<JSONError>,
-        (err): JSONError => {
-          console.log("couldn't parse error's body: ", err);
-          return { error: "couldn't parse error's body" };
-        },
-      ).andThen((e: JSONError) => errAsync(e));
-    }
-    return okAsync(null);
-  });
+  )
+    .andThen(NormalizeResponse)
+    .map((_) => null);
 }
 
 type PatchUserRequest = {
@@ -195,10 +129,10 @@ export type PatchUserStruct = {
   IsTeacher?: boolean;
 };
 
-export async function FetchUserPatch(
+export function FetchUserPatch(
   UUID: string,
   { Name, Password, IsTeacher }: PatchUserStruct,
-): Promise<null | JSONError> {
+): ResultAsync<null, JSONError> {
   const body: PatchUserRequest = {
     name: Name,
     password: Password,
@@ -207,33 +141,19 @@ export async function FetchUserPatch(
 
   const bodyString = JSON.stringify(body);
 
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/" + UUID,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+  return TokenizedFetch(
+    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/" + UUID,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
-
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch user patch: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send user patch because of in-browser error" };
-    }
-
-    return { error: "couldn't send user patch because of unknown error" };
-  }
+      body: bodyString,
+    },
+  )
+    .andThen(NormalizeResponse)
+    .map((_) => null);
 }
 
 export function FetchUserImport(file: File): ResultAsync<null, JSONError> {
@@ -241,24 +161,13 @@ export function FetchUserImport(file: File): ResultAsync<null, JSONError> {
 
   formData.append("imported", file, file.name);
 
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/import`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    ),
-    (err) => {
-      console.log("Couldn't import: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch import user because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch user import because of unknown error" };
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/import`,
+    {
+      method: "POST",
+      body: formData,
     },
   )
     .andThen(NormalizeResponse)
-    .andThen((_) => okAsync(null));
+    .map((_) => null);
 }

@@ -2,7 +2,6 @@ import { errAsync, fromPromise, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
 import type { Quiz } from "./quiz";
 import {
-  maxAgeRegex,
   NormalizeBlob,
   NormalizeJSON,
   NormalizeResponse,
@@ -19,34 +18,15 @@ export type Test = {
   quizzes: Quiz[];
 };
 
-type GetTestResponse = {
-  test: Test;
-};
-
-type GetQuizUUIDsResponse = {
-  quiz_uuids: string[];
-};
-
 // redone
 export function FetchTest(testUUID: string): ResultAsync<Test, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
       },
-    ),
-    (err) => {
-      console.log("Couldn't fetch test: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch test because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch test because of unknown error" };
     },
   ).andThen(NormalizeJSON<Test>);
 }
@@ -65,19 +45,8 @@ export function FetchCurrentlyRunningTestInfos(): ResultAsync<
   TestInfo[],
   JSONError
 > {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/all`,
-    ),
-    (err): JSONError => {
-      console.log(
-        "couldn't fetch current test info due to unknown error: ",
-        err,
-      );
-      return {
-        error: "got network error while fetching current test",
-      } as JSONError;
-    },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/all`,
   ).andThen((r) => {
     if (r.status === 423) {
       return okAsync([]);
@@ -94,31 +63,19 @@ export function FetchAllTests(
   page: number,
   size: number,
 ): ResultAsync<Tests, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      "https://" +
-        import.meta.env.VITE_DOMAIN +
-        "/api/v1/test/" +
-        "?page=" +
-        page +
-        "&size=" +
-        size,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+  return TokenizedFetch(
+    "https://" +
+      import.meta.env.VITE_DOMAIN +
+      "/api/v1/test/" +
+      "?page=" +
+      page +
+      "&size=" +
+      size,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
       },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't list tests: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't list tests because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't list tests because of unknown error" };
     },
   ).andThen(NormalizeJSON<Tests>);
 }
@@ -138,24 +95,15 @@ export function FetchTestPost(
   };
   const bodyString = JSON.stringify(body);
 
-  return ResultAsync.fromPromise(
-    TokenizedFetch("https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/", {
+  return TokenizedFetch(
+    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/",
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
       body: bodyString,
-    }),
-    (err): JSONError => {
-      console.log("Couldn't post tests: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't post tests because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't post tests because of unknown error" };
     },
   )
     .andThen(NormalizeResponse)
@@ -163,22 +111,10 @@ export function FetchTestPost(
 }
 
 export function FetchTestDelete(UUID: string): ResultAsync<null, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${UUID}`,
-      {
-        method: "DELETE",
-      },
-    ),
-    (err) => {
-      console.log("Couldn't fetch test delete: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send test delete because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send test delete because of unknown error" };
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${UUID}`,
+    {
+      method: "DELETE",
     },
   )
     .andThen(NormalizeResponse)
@@ -199,27 +135,15 @@ export function FetchTestPatch(
 
   const bodyString = JSON.stringify(body);
 
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + UUID,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+  return TokenizedFetch(
+    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + UUID,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    ),
-    (err) => {
-      console.log("Couldn't fetch test delete: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send test patch because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send test patch because of unknown error" };
+      body: bodyString,
     },
   )
     .andThen(NormalizeResponse)
@@ -240,31 +164,19 @@ export function FetchTestBundle(
 
   const bodyString = JSON.stringify(body);
 
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      "https://" +
-        import.meta.env.VITE_DOMAIN +
-        "/api/v1/test/" +
-        testUUID +
-        "/quizzes",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+  return TokenizedFetch(
+    "https://" +
+      import.meta.env.VITE_DOMAIN +
+      "/api/v1/test/" +
+      testUUID +
+      "/quizzes",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    ),
-    (err) => {
-      console.log("Couldn't fetch test bundle: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send test bundle because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send test bundle because of unknown error" };
+      body: bodyString,
     },
   )
     .andThen(NormalizeResponse)
@@ -281,26 +193,15 @@ export function FetchTestPrune(
 
   const bodyString = JSON.stringify(body);
 
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/quizzes`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/quizzes`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    ),
-    (err) => {
-      console.log("Couldn't prune test: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch prune test because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch prune test because of unknown error" };
+      body: bodyString,
     },
   )
     .andThen(NormalizeResponse)
@@ -325,27 +226,15 @@ export function FetchTestStart(
     duration: duration,
     group_uuids: groupUUIDs,
   } as TestStartRequest);
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/start`,
-      {
-        method: "POST",
-        body: body,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "*/*;q=0", //those who nose
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/start`,
+    {
+      method: "POST",
+      body: body,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "*/*;q=0", //those who nose
       },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't fetch test start: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send test start because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send test start because of unknown error" };
     },
   )
     .andThen(NormalizeResponse)
@@ -353,25 +242,13 @@ export function FetchTestStart(
 }
 
 export function FetchTestPause(key: string): ResultAsync<null, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/pause`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "*/*;q=0", //those who nose
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/pause`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "*/*;q=0", //those who nose
       },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't fetch test pause: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send test pause because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send test pause because of unknown error" };
     },
   )
     .andThen(NormalizeResponse)
@@ -379,25 +256,13 @@ export function FetchTestPause(key: string): ResultAsync<null, JSONError> {
 }
 
 export function FetchTestResume(key: string): ResultAsync<null, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/resume`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "*/*;q=0", //those who nose
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/resume`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "*/*;q=0", //those who nose
       },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't fetch test resume for quiz: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send test resume because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send test resume because of unknown error" };
     },
   )
     .andThen(NormalizeResponse)
@@ -405,25 +270,13 @@ export function FetchTestResume(key: string): ResultAsync<null, JSONError> {
 }
 
 export function FetchTestStop(key: string): ResultAsync<null, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/stop`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "*/*;q=0",
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/stop`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "*/*;q=0",
       },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't fetch test stop for quiz: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send test stop because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send test stop because of unknown error" };
     },
   )
     .andThen(NormalizeResponse)
@@ -443,26 +296,14 @@ export function FetchTestExtend(
   };
 
   const bodyString = JSON.stringify(body);
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/extend`,
-      {
-        method: "POST",
-        body: bodyString,
-        headers: {
-          Accept: "*/*;q=0",
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/extend`,
+    {
+      method: "POST",
+      body: bodyString,
+      headers: {
+        Accept: "*/*;q=0",
       },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't fetch test extend for quiz: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send test extend because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send test extend because of unknown error" };
     },
   )
     .andThen(NormalizeResponse)
@@ -473,25 +314,14 @@ export function FetchTestExport(
   testUUID: string,
   accepts: Accept[],
 ): ResultAsync<Blob, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/export`,
-      {
-        method: "GET",
-        headers: {
-          Accept: AcceptTransform(accepts),
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/export`,
+    {
+      method: "GET",
+      headers: {
+        Accept: AcceptTransform(accepts),
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-    ),
-    (err) => {
-      console.log("Couldn't list answers: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch list answers because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch list answers because of unknown error" };
     },
   ).andThen(NormalizeBlob);
 }
@@ -501,22 +331,11 @@ export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
 
   formData.append("imported", file, file.name);
 
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/import`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    ),
-    (err) => {
-      console.log("Couldn't import: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch import test because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch test import because of unknown error" };
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/import`,
+    {
+      method: "POST",
+      body: formData,
     },
   )
     .andThen(NormalizeResponse)

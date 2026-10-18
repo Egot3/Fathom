@@ -2,16 +2,16 @@ import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import { Toaster } from "../apiutils/toaster";
 import { GetTokenExpiration, SetTokenExpiration } from "../bgdata/user.svelte";
 import { ERR_UNAUTHORIZED } from "../carefulness/unauthorized";
-import type { JSONError } from "../statuses/jsonerror";
+import { type JSONError } from "../statuses/jsonerror";
 import { untrack } from "svelte";
 
 export const maxAgeRegex = /max-age=(\d+)/;
 
-export async function TokenizedFetch(
+export function TokenizedFetch(
   url: RequestInfo | URL,
   opts?: RequestInit,
   loggedout?: boolean,
-): Promise<Response> {
+): ResultAsync<Response, JSONError> {
   if (!loggedout || loggedout === undefined) {
     const exp = untrack(GetTokenExpiration);
     console.log("got token exp: ", exp);
@@ -23,29 +23,40 @@ export async function TokenizedFetch(
         title: "Session expired!",
         description: "login again",
       });
-      throw ERR_UNAUTHORIZED;
+      return errAsync({ error: ERR_UNAUTHORIZED.message } as JSONError);
     }
   }
 
-  const res = await fetch(url, { ...opts, credentials: "include" });
-
-  switch (res.status) {
-    case 401:
-      untrack(() => SetTokenExpiration(new Date(Date.now() - 1)));
-    default:
-      const sessionControl = res.headers.get("Session-Control");
-      if (sessionControl !== null) {
-        const reg = maxAgeRegex.exec(sessionControl);
-        if (reg === null || reg.length < 2) {
-          return res;
-        }
-        const maxAge = parseInt(reg[1], 10);
-
-        untrack(() => SetTokenExpiration(new Date(Date.now() + maxAge * 1000)));
+  return ResultAsync.fromPromise(
+    fetch(url, { ...opts, credentials: "include" }),
+    (err) => {
+      console.log(`Couldn't fetch url(${url}), because of error: ${err}`);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch test because of in-browser error",
+        };
       }
-  }
+      return { error: "couldn't fetch test because of unknown error" };
+    },
+  ).andTee((res) => {
+    switch (res.status) {
+      case 401:
+        untrack(() => SetTokenExpiration(new Date(Date.now() - 1)));
+      default:
+        const sessionControl = res.headers.get("Session-Control");
+        if (sessionControl !== null) {
+          const reg = maxAgeRegex.exec(sessionControl);
+          if (reg === null || reg.length < 2) {
+            return res;
+          }
+          const maxAge = parseInt(reg[1], 10);
 
-  return res;
+          untrack(() =>
+            SetTokenExpiration(new Date(Date.now() + maxAge * 1000)),
+          );
+        }
+    }
+  });
 }
 
 export function NormalizeResponse(
