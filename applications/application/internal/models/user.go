@@ -16,6 +16,8 @@ type User struct {
 	PasswordHash []byte    `bun:"password_hash,notnull" json:"-"`
 	IsTeacher    bool      `bun:"is_teacher,default:false,type:boolean" json:"is_teacher"`
 
+	Groups []Group `bun:"m2m:groups_users,join:User=Group" json:"groups"`
+
 	DeletedAt *time.Time `bun:"deleted_at,soft_delete"`
 	CreatedAt time.Time  `bun:"created_at" json:"created_at"`
 	UpdatedAt time.Time  `bun:"updated_at" json:"updated_at"`

@@ -112,51 +112,87 @@ func TestUser_User(t *testing.T) {
 
 	i := NewInjectorWithUserRepo(t)
 
-	r := do.MustInvoke[user.UserRepository](i)
-	db := do.MustInvoke[*bun.DB](i)
+	t.Run("Valid", func(t *testing.T) {
+		i := i.Scope(t.Name())
+		r := do.MustInvoke[user.UserRepository](i)
+		db := do.MustInvoke[*bun.DB](i)
 
-	passwordHash := []byte(rand.Text())
-	name := rand.Text()
+		passwordHash := []byte(rand.Text())
+		name := rand.Text()
 
-	user := models.User{Nickname: name, PasswordHash: passwordHash}
-	err := db.NewInsert().
-		Model(&user).
-		Scan(t.Context())
-	require.NoError(t, err)
+		user := models.User{Nickname: name, PasswordHash: passwordHash}
+		err := db.NewInsert().
+			Model(&user).
+			Scan(t.Context())
+		require.NoError(t, err)
 
-	testCases := []struct {
-		desc           string
-		uuid           uuid.UUID
-		ExpectNotFound bool
-	}{
-		{
-			desc:           "Valid user",
-			uuid:           user.UUID,
-			ExpectNotFound: false,
-		},
-		{
-			desc:           "No user",
-			uuid:           uuid.Nil,
-			ExpectNotFound: true,
-		},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
+		userR, err := r.User(t.Context(), user.UUID)
+		require.NoError(t, err)
 
-			userR, err := r.User(t.Context(), tC.uuid)
-
-			if tC.ExpectNotFound {
-				require.True(t, errors.Is(err, sql.ErrNoRows))
-			} else {
-				require.Equal(t, models.User{
-					Nickname:     user.Nickname,
-					UUID:         user.UUID,
-					IsTeacher:    user.IsTeacher,
-					PasswordHash: nil, //safety
-				}, userR)
-			}
+		require.Equal(t, models.User{
+			UUID:      user.UUID,
+			Nickname:  name,
+			IsTeacher: user.IsTeacher,
+			Groups:    nil,
+		}, models.User{
+			UUID:      userR.UUID,
+			Nickname:  userR.Nickname,
+			IsTeacher: userR.IsTeacher,
+			Groups:    userR.Groups,
 		})
-	}
+
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		i := i.Scope(t.Name())
+		r := do.MustInvoke[user.UserRepository](i)
+		db := do.MustInvoke[*bun.DB](i)
+
+		passwordHash := []byte(rand.Text())
+		name := rand.Text()
+
+		user := models.User{Nickname: name, PasswordHash: passwordHash}
+		err := db.NewInsert().
+			Model(&user).
+			Scan(t.Context())
+		require.NoError(t, err)
+
+		_, err = r.User(t.Context(), uuid.Nil)
+
+		require.ErrorIs(t, err, sql.ErrNoRows)
+	})
+
+	t.Run("Group relation", func(t *testing.T) {
+		i := i.Scope(t.Name())
+		r := do.MustInvoke[user.UserRepository](i)
+		db := do.MustInvoke[*bun.DB](i)
+
+		passwordHash := []byte(rand.Text())
+		name := rand.Text()
+
+		user := models.User{Nickname: name, PasswordHash: passwordHash}
+		err := db.NewInsert().
+			Model(&user).
+			Scan(t.Context())
+		require.NoError(t, err)
+
+		group := models.Group{Name: rand.Text()}
+		_, err = db.NewInsert().
+			Model(&group).
+			Exec(t.Context())
+		require.NoError(t, err)
+
+		gu := models.GroupsUsers{UserUUID: user.UUID, GroupUUID: group.UUID}
+		err = db.NewInsert().
+			Model(&gu).Returning("*").
+			Scan(t.Context())
+		require.NoError(t, err)
+
+		userR, err := r.User(t.Context(), user.UUID)
+		require.NoError(t, err)
+
+		require.Contains(t, userR.Groups, group)
+	})
 }
 
 func TestUser_Exists(t *testing.T) { // usage: JWT

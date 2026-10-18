@@ -996,15 +996,34 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
 	if !ok {
 		logger.Error("Failed to retrieve jwt claims")
+		carefulness.JSONError{Err: "Unable to retrieve jwt's claims", Status: http.StatusInternalServerError}.Encode(w)
+		return
+	}
+
+	user, err := c.userRepo.User(ctx, claims.UserID)
+	if err != nil {
+		logger.Error("Failed to get user info", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve jwt's claims"})
+		carefulness.JSONError{Err: "Failed to get user info", Status: http.StatusInternalServerError}.Encode(w)
 		return
 	}
 
 	runners := c.manager.AllRunners()
 	testUUIDs := make(uuid.UUIDs, 0, len(runners))
-	for _, testUUID := range runners {
-		testUUIDs = append(testUUIDs, testUUID)
+	for key, testUUID := range runners {
+		test, ok := c.manager.Get(key)
+		if !ok {
+			continue
+		}
+		if claims.IsTeacher {
+			testUUIDs = append(testUUIDs, testUUID)
+		} else {
+			if lo.SomeBy(user.Groups, func(g models.Group) bool {
+				return lo.Contains(test.Groups(), g.UUID)
+			}) {
+				testUUIDs = append(testUUIDs, testUUID)
+			}
+		}
 	}
 
 	tests, err := c.testRepo.Tests(ctx, testUUIDs)
