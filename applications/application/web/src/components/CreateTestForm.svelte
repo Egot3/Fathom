@@ -12,13 +12,12 @@
 
   async function PostTest(e: Event) {
     e.preventDefault();
-    const postResponse = await FetchTestPost(name, Array.from(quizzes));
-    if (postResponse !== null) {
-      statusMessage = postResponse.error;
-      return;
-    }
-
-    callback();
+    statusMessage = await FetchTestPost(name, Array.from(quizzes))
+      .andTee(callback)
+      .match(
+        (_) => "",
+        ({ error }) => error,
+      );
   }
 
   $inspect(name);

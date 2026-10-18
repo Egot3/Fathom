@@ -152,11 +152,11 @@ type PostQuizRequest = {
   body: string;
 };
 
-export async function FetchQuizPost(
+export function FetchQuizPost(
   meta: Meta,
   path: string,
   contents: string,
-): Promise<null | JSONError> {
+): ResultAsync<null, JSONError> {
   const body: PostQuizRequest = {
     meta: meta,
     body: contents,
@@ -165,33 +165,28 @@ export async function FetchQuizPost(
 
   const bodyString = JSON.stringify(body);
 
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: bodyString,
+  return ResultAsync.fromPromise(
+    TokenizedFetch("https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
+      body: bodyString,
+    }),
+    (err) => {
+      console.log("Couldn't fetch test delete: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't send test delete because of in-browser error",
+        };
+      }
 
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return null;
-  } catch (err) {
-    console.log("Couldn't fetch quiz post: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send quiz post because of in-browser error" };
-    }
-
-    return { error: "couldn't send quiz post because of unknown error" };
-  }
+      return { error: "couldn't send test delete because of unknown error" };
+    },
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 type PatchQuizRequest = {
@@ -226,44 +221,9 @@ export function FetchQuizPatch(
 
       return { error: "couldn't send quiz patch because of unknown error" };
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      return ResultAsync.fromPromise(r.json(), (): JSONError => ({
-        error: "couldn't parse error body",
-      })).andThen((body) => errAsync<null, JSONError>(body as JSONError));
-    }
-
-    return okAsync(null);
-  });
-}
-
-type QuizFileOrError = QuizFile | JSONError;
-export async function FetchQuiz(UUID: string): Promise<QuizFileOrError> {
-  try {
-    const response = await TokenizedFetch(
-      "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/" + UUID,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      console.log("response is not ok!");
-      return (await response.json()) as JSONError;
-    }
-
-    return await response.json();
-  } catch (err) {
-    console.log("Couldn't fetch quiz patch for quiz: ", err);
-    if (err instanceof Error) {
-      return { error: "couldn't send quiz patch because of in-browser error" };
-    }
-
-    return { error: "couldn't send quiz patch because of unknown error" };
-  }
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 export function FetchQuizDelete(UUID: string): ResultAsync<null, JSONError> {
@@ -284,19 +244,9 @@ export function FetchQuizDelete(UUID: string): ResultAsync<null, JSONError> {
 
       return { error: "couldn't send quiz delete because of unknown error" };
     },
-  ).andThen((r) => {
-    if (!r.ok) {
-      console.log("response is not ok!");
-      return ResultAsync.fromPromise(
-        r.json() as Promise<JSONError>,
-        (err): JSONError => {
-          console.log("couldn't parse error's body: ", err);
-          return { error: "couldn't parse error's body" };
-        },
-      ).andThen((e: JSONError) => errAsync(e));
-    }
-    return okAsync(null);
-  });
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
 }
 
 type ParsedQuizResponse = { quiz: ParsedQuiz };
@@ -399,4 +349,28 @@ export function FetchQuizImport(file: File): ResultAsync<null, JSONError> {
   )
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
+}
+
+type RawQuiz = {
+  meta: Meta;
+  body: string;
+};
+export function FetchRawQuiz(UUID: string): ResultAsync<RawQuiz, JSONError> {
+  return ResultAsync.fromPromise(
+    TokenizedFetch(
+      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${UUID}`,
+      {
+        method: "GET",
+      },
+    ),
+    (err) => {
+      console.log("Couldn't import: ", err);
+      if (err instanceof Error) {
+        return {
+          error: "couldn't fetch import quiz because of in-browser error",
+        };
+      }
+      return { error: "couldn't fetch quiz import because of unknown error" };
+    },
+  ).andThen(NormalizeJSON<RawQuiz>);
 }
