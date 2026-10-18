@@ -1,105 +1,121 @@
 <script lang="ts">
-  import { RotateCw } from "@lucide/svelte";
-  import { GetCurrentlyRunning } from "../lib/bgdata/currentlyrunning.svelte";
-  import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
+  import { onMount } from "svelte";
+  import { Dialog } from "@skeletonlabs/skeleton-svelte";
+  import { GetUser } from "../lib/bgdata/user.svelte";
+  import { CreateRunningTests } from "../lib/bgdata/runningTests.svelte";
+  import ChipSelector from "./ChipSelector.svelte";
+  import PeekDialogue from "./PeekDialogue.svelte";
+  import PeekLink from "./PeekLink.svelte";
+  import ReloadButton from "./ReloadButton.svelte";
+  import RunningControls from "./RunningControls.svelte";
+  import TestEnder from "./TestEnder.svelte";
+  import TestExtender from "./TestExtender.svelte";
+  import TestStarter from "./TestStarter.svelte";
 
-  let currentlyRunningPromise = $state(GetCurrentlyRunning());
+  const { inTeachery }: { inTeachery?: boolean } = $props();
 
-  function updateCurrentlyRunning() {
-    currentlyRunningPromise = GetCurrentlyRunning();
-  }
+  const isTeacher = $derived((GetUser()?.isTeacher ?? false) && inTeachery);
+  const tests = CreateRunningTests();
 
-  let reload: HTMLButtonElement | null = $state(null);
+  let selectedKey: string | null = $state(null);
+  const chosen = $derived(
+    selectedKey === null
+      ? (tests.data.find((t) => t.key === selectedKey) ?? tests.data[0])
+      : tests.data[0],
+  ); // something malicious is brewing
+  const chosenIdx = $derived(Math.max(0, tests.data.indexOf(chosen)));
+  const deadline = $derived(
+    chosen?.deadline ? new Date(chosen.deadline).toLocaleString() : "",
+  );
 
-  let time: number;
-  let accumClicks: number = 0;
-  /*
-		- What does this do?
-		- Tailwind Shenanigans(TS for short)
-	*/
-  let isAnimating = $state(false);
-  let duration = $state("0s");
-  let iterations = $state("0");
-
-  function handleClick() {
-    if (!reload) return;
-
-    accumClicks++;
-    clearTimeout(time);
-
-    time = setTimeout(() => {
-      const capturedAccum = accumClicks;
-      accumClicks = 0;
-
-      duration = `${capturedAccum * 0.6}s`;
-      iterations = `${capturedAccum}`;
-      isAnimating = true;
-      console.log(
-        `accumulated ${duration} duration and ${iterations} iterations`,
-      );
-
-      updateCurrentlyRunning();
-
-      setTimeout(
-        () => {
-          isAnimating = false;
-        },
-        capturedAccum * 600 + 100,
-      );
-    }, 300);
-  }
+  onMount(() => tests.refresh());
 </script>
 
-<div class="card preset-filled-surface-700-300 max-w-md overflow-hidden">
-  <article class="space-y-4 p-4">
-    <div class="flex gap-2 items-center">
-      <h2 class="self-center text-2xl font-bold">Currently running</h2>
-      <button
-        bind:this={reload}
-        class="ml-auto mt-1"
-        class:animate-custom-spin={isAnimating}
-        style="--spin-duration: {duration}; --spin-iterations: {iterations};"
-        onclick={handleClick}
-      >
-        <RotateCw />
-      </button>
-    </div>
-    {#await currentlyRunningPromise}
-      <div
-        class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
-      ></div>
-    {:then currentlyRunning}
-      {#if currentlyRunning === null}
-        <div>NOTHING</div>
-      {:else}
-        {#if IsJSONError(currentlyRunning)}
-          <div>{currentlyRunning.error}</div>
-        {:else}
-          <p>Test {currentlyRunning.Name}</p>
-          <a class="mb-auto btn preset-filled-primary-500" href="/participate"
-            >Join?</a
-          >
-        {/if}
+<article class="flex flex-col h-full space-y-5">
+  <div class="flex justify-end">
+    <ReloadButton onreload={() => tests.refresh()} />
+  </div>
+
+  {#if tests.loading}
+    <div
+      class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
+    ></div>
+  {:else if tests.error}
+    <div>{tests.error}</div>
+    <button
+      class="btn preset-filled-warning-500"
+      onclick={() => tests.refresh()}>Reload?</button
+    >
+  {:else if !chosen}
+    <div>NOTHING</div>
+  {:else}
+    {#if tests.data.length > 1}
+      <span>
+        <ChipSelector
+          options={tests.data.map((t) => t.name)}
+          bind:selected={
+            () => chosenIdx, (i) => (selectedKey = tests.data[i]?.key ?? null)
+          }
+        />
+      </span>
+    {/if}
+
+    <p>Test {chosen.name}</p>
+
+    <div class="flex space-x-1">
+      Deadline: {deadline}
+      {#if isTeacher}
+        <PeekDialogue title="Test extender">
+          {#snippet trigger()}
+            <Dialog.Trigger class="chip preset-outlined-primary-500 ml-auto"
+              >Extend</Dialog.Trigger
+            >
+          {/snippet}
+          <TestExtender callback={() => tests.refresh(true)} key={chosen.key} />
+        </PeekDialogue>
       {/if}
-    {/await}
-  </article>
-</div>
+    </div>
 
-<style>
-  @keyframes custom-spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
+    {#if isTeacher}
+      <RunningControls test={chosen} onchanged={() => tests.refresh(true)} />
+      <PeekLink key={chosen.key} />
+    {:else if chosen.is_paused}
+      <div class="badge preset-tonal-warning w-fit">Paused</div>
+    {:else}
+      <a class="mb-auto btn preset-filled-primary-500" href={`/${chosen.key}`}
+        >Join?</a
+      >
+    {/if}
+  {/if}
 
-  .animate-custom-spin {
-    animation-name: custom-spin;
-    animation-duration: calc(0.8s / var(--spin-iterations));
-    animation-iteration-count: var(--spin-iterations, 1);
+  {#if isTeacher}
+    <div
+      class="mt-auto flex flex-col lg:flex-row space-x-0 lg:space-x-1 space-y-1 lg:space-y-0"
+    >
+      <PeekDialogue title="Test starter">
+        {#snippet trigger()}
+          <Dialog.Trigger class="btn preset-filled-primary-500"
+            >Start new</Dialog.Trigger
+          >
+        {/snippet}
+        <TestStarter callback={() => tests.refresh(true)} />
+      </PeekDialogue>
 
-    animation-timing-function: linear(0, 0.1, 0.2, 0.5, 0.9, 1.03, 0.98, 1);
-  }
-</style>
+      <PeekDialogue title="Test ender">
+        {#snippet trigger()}
+          <Dialog.Trigger
+            class="btn preset-outlined-error-500"
+            disabled={tests.loading || !chosen}
+          >
+            End now
+          </Dialog.Trigger>
+        {/snippet}
+        <TestEnder
+          key={chosen?.key}
+          name={chosen?.name}
+          callback={() => tests.refresh(true)}
+        />
+      </PeekDialogue>
+    </div>
+  {/if}
+</article>
