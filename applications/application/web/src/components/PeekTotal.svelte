@@ -1,6 +1,10 @@
 <script lang="ts">
-    import type { QuizAnswer } from "../lib/contracts/quiz";
-  import { FetchAnswers, type Answer, type Answers } from "../lib/contracts/totals";
+  import { FetchParsedQuiz, type QuizAnswer } from "../lib/contracts/quiz";
+  import {
+    FetchAnswers,
+    type Answer,
+    type Answers,
+  } from "../lib/contracts/totals";
   import ParsedQuiz from "./ParsedQuiz.svelte";
 
   const {
@@ -12,8 +16,6 @@
     groupUUID: string;
     testUUID: string;
   } = $props();
-
-  let height = $state(0);
 
   let page = $state(1);
   let pageSize = $state(5);
@@ -40,9 +42,9 @@
 
   let chosenUUID: string = $state("");
   let answerValue: QuizAnswer = $state(null as never);
-  $effect(()=>{
-    answerValue = answers?.answers?.[0]?.chosen ?? null as never
-  })
+  $effect(() => {
+    answerValue = answers?.answers?.[0]?.chosen ?? (null as never);
+  });
 </script>
 
 <div class="flex flex-col h-23/25">
@@ -55,7 +57,8 @@
       <div class="grid grid-cols-12 w-full h-full mt-2">
         <div class="col-start-1 col-end-9 p-3">
           <ParsedQuiz
-              answeredValue={answerValue}
+            answeredValue={answerValue}
+            quizGetter={FetchParsedQuiz}
             UUID={chosenUUID || answers.answers[0].quiz_uuid}
           />
         </div>

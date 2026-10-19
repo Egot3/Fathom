@@ -208,7 +208,7 @@ export function FetchQuizDelete(UUID: string): ResultAsync<null, JSONError> {
     .andThen((_) => okAsync(null));
 }
 
-type ParsedQuizResponse = { quiz: ParsedQuiz };
+export type ParsedQuizResponse = { quiz: ParsedQuiz };
 
 // may not throw
 export function FetchParsedQuiz(
