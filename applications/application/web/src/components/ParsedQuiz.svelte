@@ -1,18 +1,22 @@
 <script lang="ts">
+  import type { ResultAsync } from "neverthrow";
   import {
-    FetchParsedQuiz,
     Kind,
+    type ParsedQuiz,
     type QuizAnswer,
     type QuizOptions,
   } from "../lib/contracts/quiz";
   import AnsweredQuiz from "./AnsweredQuiz.svelte";
+  import type { JSONError } from "../lib/statuses/jsonerror";
 
   const {
     UUID,
     answeredValue,
+    quizGetter,
   }: {
     UUID: string;
     answeredValue: QuizAnswer;
+    quizGetter: (UUID: string) => ResultAsync<ParsedQuiz, JSONError>;
   } = $props();
 
   let loading: boolean = $state(false);
@@ -31,9 +35,9 @@
     loading = true;
     const quizUUID: string = UUID;
 
-    clearTimeout(time)
+    clearTimeout(time);
     time = setTimeout(async () => {
-      statusMessage = await FetchParsedQuiz(quizUUID).match(
+      statusMessage = await quizGetter(quizUUID).match(
         (r) => {
           console.log(r);
 
@@ -55,30 +59,26 @@
   });
 </script>
 
-{#if loading }
-    <div
-      class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
-    ></div>
+{#if loading}
+  <div class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"></div>
 {:else}
-{#if statusMessage!==""}
- <span class="justify-self-start">{statusMessage}</span>
-{:else}
-<div class="space-y-1 mt-4">
-  <h2 class="text-5xl font-bold">{title}</h2>
+  {#if statusMessage !== ""}
+    <span class="justify-self-start">{statusMessage}</span>
+  {:else}
+    <div class="space-y-1 mt-4">
+      <h2 class="text-5xl font-bold">{title}</h2>
 
-  <p class="text-2xl">{body}</p>
+      <p class="text-2xl">{body}</p>
 
-  {#if options !== null && kind !== null}
-    <AnsweredQuiz
-      disabled={true}
-      {kind}
-      {options}
-      answers={answeredValue}
-      correct={answers}
-    ></AnsweredQuiz>
+      {#if options !== null && kind !== null}
+        <AnsweredQuiz
+          disabled={true}
+          {kind}
+          {options}
+          answers={answeredValue}
+          correct={answers}
+        ></AnsweredQuiz>
+      {/if}
+    </div>
   {/if}
-</div>
-
-{/if}
-
 {/if}

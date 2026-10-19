@@ -1,6 +1,6 @@
 import { errAsync, fromPromise, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
-import type { Quiz } from "./quiz";
+import type { ParsedQuiz, ParsedQuizResponse, Quiz } from "./quiz";
 import {
   NormalizeBlob,
   NormalizeJSON,
@@ -9,6 +9,12 @@ import {
 } from "./tokenizedFetch";
 import { AcceptTransform, type Accept } from "../apiutils/acceptHeader";
 import type { Result } from "postcss";
+import {
+  EvictQuiz,
+  GetCachedQuiz,
+  ReadManifest,
+  SetCachedQuiz,
+} from "../apiutils/quizManifest";
 
 export type Test = {
   uuid: string;
@@ -18,7 +24,7 @@ export type Test = {
   quizzes: Quiz[];
 };
 
-// redone
+// re-re-redone
 export function FetchTest(testUUID: string): ResultAsync<Test, JSONError> {
   return TokenizedFetch(
     `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}`,
@@ -340,4 +346,51 @@ export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
   )
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
+}
+
+type GetQuizzesUUIDsResponse = {
+  quiz_uuids: string[];
+};
+
+export function FetchCurrentyRunningTestQuizzes(
+  key: string,
+): ResultAsync<string[], JSONError> {
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/quizzes`,
+  )
+    .andThen(NormalizeJSON<GetQuizzesUUIDsResponse>)
+    .andThen(({ quiz_uuids }) => okAsync(quiz_uuids));
+}
+
+export function FetchCurrentlyRunningTestQuiz(
+  key: string,
+  UUID: string,
+): ResultAsync<ParsedQuiz, JSONError> {
+  const manifest = ReadManifest();
+  const known = manifest[UUID];
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/${UUID}`,
+    {
+      headers: known ? { "If-None-Match": `"${known.checksum}"` } : {},
+    },
+  ).andThen((r) => {
+    if (r.status === 304 && known) {
+      const cached = GetCachedQuiz<ParsedQuiz>(UUID, known.checksum);
+      if (cached !== null) return okAsync(cached);
+    }
+    if (r.status === 404) {
+      EvictQuiz(UUID);
+      return errAsync<ParsedQuiz, JSONError>({
+        error: `Quiz ${UUID} not found`,
+      });
+    }
+
+    return NormalizeJSON<ParsedQuizResponse>(r)
+      .andTee((body: ParsedQuizResponse) => {
+        const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
+        console.log("ETag:", etag);
+        SetCachedQuiz(UUID, etag, body.quiz);
+      })
+      .andThen(({ quiz }) => okAsync(quiz));
+  });
 }
