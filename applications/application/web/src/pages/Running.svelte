@@ -1,15 +1,13 @@
 <script lang="ts">
-  import ParsedQuiz from "../components/ParsedQuiz.svelte";
-  import type { QuizAnswer } from "../lib/contracts/quiz";
-  import {
-    FetchCurrentlyRunningTestQuiz,
-    FetchCurrentyRunningTestQuizzes,
-  } from "../lib/contracts/test";
+  import QuizView from "../components/QuizView.svelte";
+  import { FetchAnswerPost, type QuizAnswer } from "../lib/contracts/quiz";
+  import { FetchRunningTestQuizzes } from "../lib/contracts/test";
+  import { GetUserOrRedirect } from "../lib/bgdata/user.svelte";
 
   const { runnerKey }: { runnerKey: string } = $props();
 
   let quizUUIDs: string[] = $state([]);
-  let chosenUUID: string = $state(null as never);
+  let current: string = $state(null as never);
 
   let statusMessage: string = $state("");
   let loading: boolean = $state(true);
@@ -17,10 +15,10 @@
   $effect(() => {
     (async () => {
       loading = true;
-      statusMessage = await FetchCurrentyRunningTestQuizzes(runnerKey)
+      statusMessage = await FetchRunningTestQuizzes(runnerKey)
         .andTee((r) => {
           quizUUIDs = r;
-          if (chosenUUID === null) chosenUUID = quizUUIDs[0];
+          if (current === null) current = quizUUIDs[0];
         })
         .match(
           (_) => "",
@@ -29,6 +27,11 @@
       loading = false;
     })();
   });
+
+  let answers = $state<Record<string, QuizAnswer>>({});
+
+  let me = $derived(GetUserOrRedirect());
+  let groupUUID = ""; //placeboo
 </script>
 
 <div>
@@ -39,12 +42,12 @@
   {:else if statusMessage}
     <div>{statusMessage}</div>
   {:else}
-    <ParsedQuiz
-      UUID={chosenUUID}
-      quizGetter={(UUID) => FetchCurrentlyRunningTestQuiz(runnerKey, UUID)}
-      answeredValue={{
-        input: { input: "1" },
-      } as QuizAnswer}
+    <QuizView
+      UUID={current}
+      {runnerKey}
+      bind:chosen={answers[current]}
+      onanswer={(a) =>
+        FetchAnswerPost(groupUUID, me.UUID, runnerKey, current, a)}
     />
   {/if}
 </div>

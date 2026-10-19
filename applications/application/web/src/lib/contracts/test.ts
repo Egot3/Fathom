@@ -352,7 +352,7 @@ type GetQuizzesUUIDsResponse = {
   quiz_uuids: string[];
 };
 
-export function FetchCurrentyRunningTestQuizzes(
+export function FetchRunningTestQuizzes(
   key: string,
 ): ResultAsync<string[], JSONError> {
   return TokenizedFetch(
@@ -360,37 +360,4 @@ export function FetchCurrentyRunningTestQuizzes(
   )
     .andThen(NormalizeJSON<GetQuizzesUUIDsResponse>)
     .andThen(({ quiz_uuids }) => okAsync(quiz_uuids));
-}
-
-export function FetchCurrentlyRunningTestQuiz(
-  key: string,
-  UUID: string,
-): ResultAsync<ParsedQuiz, JSONError> {
-  const manifest = ReadManifest();
-  const known = manifest[UUID];
-  return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/${UUID}`,
-    {
-      headers: known ? { "If-None-Match": `"${known.checksum}"` } : {},
-    },
-  ).andThen((r) => {
-    if (r.status === 304 && known) {
-      const cached = GetCachedQuiz<ParsedQuiz>(UUID, known.checksum);
-      if (cached !== null) return okAsync(cached);
-    }
-    if (r.status === 404) {
-      EvictQuiz(UUID);
-      return errAsync<ParsedQuiz, JSONError>({
-        error: `Quiz ${UUID} not found`,
-      });
-    }
-
-    return NormalizeJSON<ParsedQuizResponse>(r)
-      .andTee((body: ParsedQuizResponse) => {
-        const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
-        console.log("ETag:", etag);
-        SetCachedQuiz(UUID, etag, body.quiz);
-      })
-      .andThen(({ quiz }) => okAsync(quiz));
-  });
 }
