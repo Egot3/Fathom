@@ -5,7 +5,7 @@
     type Answer,
     type Answers,
   } from "../lib/contracts/totals";
-  import ParsedQuiz from "./ParsedQuiz.svelte";
+  import QuizView from "./QuizView.svelte";
 
   const {
     userUUID,
@@ -41,10 +41,11 @@
   });
 
   let chosenUUID: string = $state("");
-  let answerValue: QuizAnswer = $state(null as never);
-  $effect(() => {
-    answerValue = answers?.answers?.[0]?.chosen ?? (null as never);
-  });
+
+  const currentUUID = $derived(chosenUUID || answers?.answers?.[0]?.quiz_uuid); // huh?
+  const current = $derived(
+    answers?.answers?.find((a) => a.quiz_uuid === currentUUID),
+  );
 </script>
 
 <div class="flex flex-col h-23/25">
@@ -56,23 +57,17 @@
     {:else}
       <div class="grid grid-cols-12 w-full h-full mt-2">
         <div class="col-start-1 col-end-9 p-3">
-          <ParsedQuiz
-            answeredValue={answerValue}
-            quizGetter={FetchParsedQuiz}
-            UUID={chosenUUID || answers.answers[0].quiz_uuid}
+          <QuizView
+            UUID={currentUUID}
+            chosen={current?.chosen}
+            correct={current?.correct}
           />
         </div>
         <div
           class="col-start-9 col-end-13 bg-surface-600-400 rounded-[0.25rem] p-1"
         >
           {#each answers.answers as answer}
-            <button
-              class="btn preset-filled-error-50-950 w-full text-xl h-fit"
-              onclick={() => {
-                answerValue = answer.chosen;
-                chosenUUID = answer.quiz_uuid;
-              }}
-            >
+            <button class="btn preset-filled-error-50-950 w-full text-xl h-fit">
               <div>
                 {answer.quiz_name.slice(14).slice(0, -3)}
               </div>
