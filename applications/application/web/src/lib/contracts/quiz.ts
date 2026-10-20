@@ -1,9 +1,10 @@
-import { errAsync, okAsync, ResultAsync } from "neverthrow";
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow";
 import {
   EvictQuiz,
   GetCachedQuiz,
   SetCachedQuiz,
   ReadManifest,
+  type Manifest,
 } from "../apiutils/quizManifest";
 import { type JSONError } from "../statuses/jsonerror";
 import {
@@ -214,33 +215,43 @@ export type ParsedQuizResponse = { quiz: ParsedQuiz };
 export function FetchParsedQuiz(
   quizUUID: string,
 ): ResultAsync<ParsedQuiz, JSONError> {
-  const manifest = ReadManifest();
-  const known = manifest[quizUUID];
-  return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${quizUUID}/parsed`,
-    {
-      headers: known ? { "If-None-Match": `"${known.checksum}"` } : {},
-    },
-  ).andThen((r) => {
-    if (r.status === 304 && known) {
-      const cached = GetCachedQuiz<ParsedQuiz>(quizUUID, known.checksum);
-      if (cached !== null) return okAsync(cached);
-    }
-    if (r.status === 404) {
-      EvictQuiz(quizUUID);
-      return errAsync<ParsedQuiz, JSONError>({
-        error: `Quiz ${quizUUID} not found`,
-      });
-    }
+  const url = `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${quizUUID}/parsed`;
+  const notFound: JSONError = {
+    error: "Quiz with this uuid wasn't found on server",
+  };
 
-    return NormalizeJSON<ParsedQuizResponse>(r)
-      .andTee((body: ParsedQuizResponse) => {
-        const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
-        console.log("ETag:", etag);
-        SetCachedQuiz(quizUUID, etag, body.quiz);
-      })
-      .andThen((r) => okAsync(r.quiz));
-  });
+  return ReadManifest()
+    .orElse((e) => {
+      console.warn("couldn't read manifest", e);
+      return ok<Manifest, never>({});
+    })
+    .asyncAndThen((manifest) => {
+      const known = manifest[quizUUID];
+
+      return TokenizedFetch(url, {
+        headers: known ? { "If-None-Match": `"${known.checksum}"` } : {},
+      }).andThen((res): ResultAsync<ParsedQuiz, JSONError> => {
+        if (res.status === 304 && known) {
+          return GetCachedQuiz<ParsedQuiz>(
+            quizUUID,
+            known.checksum,
+          ).asyncAndThen((quiz) => okAsync(quiz));
+        }
+
+        if (res.status === 404 || res.status === 410) {
+          return EvictQuiz(quizUUID)
+            .orElse(() => ok(undefined))
+            .asyncAndThen(() => errAsync(notFound));
+        }
+
+        return NormalizeJSON<ParsedQuizResponse>(res)
+          .andTee(({ quiz }) => {
+            const etag = res.headers.get("ETag")?.replace(/"/g, "");
+            if (etag) SetCachedQuiz(quizUUID, etag, quiz);
+          })
+          .map(({ quiz }) => quiz);
+      });
+    });
 }
 
 export function FetchQuizExport(
@@ -324,8 +335,7 @@ export function FetchRunningQuiz(
     if (r.status === 304 && known) {
       const cached = GetCachedQuiz<ParsedQuiz>(UUID, known.checksum);
       if (cached !== null) return okAsync(cached);
-    }
-    if (r.status === 404) {
+    } else if (r.status === 404) {
       EvictQuiz(UUID);
       return errAsync<ParsedQuiz, JSONError>({
         error: `Quiz ${UUID} not found`,
