@@ -996,7 +996,7 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
 	if !ok {
 		logger.Error("Failed to retrieve jwt claims")
-		carefulness.JSONError{Err: "Unable to retrieve jwt's claims", Status: http.StatusInternalServerError}.Encode(w)
+		(&carefulness.JSONError{Err: "Unable to retrieve jwt's claims", Status: http.StatusInternalServerError}).Encode(w)
 		return
 	}
 
@@ -1004,7 +1004,7 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("Failed to get user info", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		carefulness.JSONError{Err: "Failed to get user info", Status: http.StatusInternalServerError}.Encode(w)
+		(&carefulness.JSONError{Err: "Failed to get user info", Status: http.StatusInternalServerError}).Encode(w)
 		return
 	}
 
