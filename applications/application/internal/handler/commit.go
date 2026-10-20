@@ -76,7 +76,7 @@ func (c *chiService) commitTestImport(
 				}
 				logger.Info("resolved quiz as existing")
 			default:
-				return carefulness.Conflict{Conflictor: relPath}
+				return &carefulness.Conflict{Conflictor: relPath}
 			}
 		} // multiple round-trips. The code has fallen
 
@@ -158,7 +158,7 @@ func (c *chiService) commitImport(ctx context.Context, staged []importutils.Stag
 				logger.Info("added found matching quiz in db")
 				continue
 			default:
-				return carefulness.Conflict{Conflictor: relPath}
+				return &carefulness.Conflict{Conflictor: relPath}
 			}
 		}
 
@@ -196,7 +196,7 @@ func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, for
 			logger.Error("unable to find quiz's path",
 				slog.String("Error", err.Error()),
 			)
-			return carefulness.JSONError{Err: "couldn't find quiz's path", Status: http.StatusNotFound}
+			return &carefulness.JSONError{Err: "couldn't find quiz's path", Status: http.StatusNotFound}
 		}
 
 		err = c.quizRepo.DeallocateQuiz(ctx, quizUUID, tx)
@@ -205,9 +205,9 @@ func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, for
 				slog.String("Error", err.Error()),
 			)
 			if errors.Is(err, sql.ErrNoRows) {
-				return carefulness.JSONError{Err: "Quiz not found", Status: http.StatusNotFound}
+				return &carefulness.JSONError{Err: "Quiz not found", Status: http.StatusNotFound}
 			}
-			return carefulness.JSONError{Err: "couldn't deallocate quiz", Status: http.StatusInternalServerError}
+			return &carefulness.JSONError{Err: "couldn't deallocate quiz", Status: http.StatusInternalServerError}
 		}
 
 		if forceDelete {
@@ -218,7 +218,7 @@ func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, for
 					slog.String("Error", err.Error()),
 				)
 
-				return carefulness.JSONError{Err: "unable to delete quiz", Status: http.StatusInternalServerError}
+				return &carefulness.JSONError{Err: "unable to delete quiz", Status: http.StatusInternalServerError}
 			}
 			return nil
 		}
@@ -227,28 +227,28 @@ func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, for
 		if err != nil {
 			logger.Error("couldn't turn old path to rel", slog.String("Error", err.Error()))
 
-			return carefulness.JSONError{Err: "couldn't get old file's rel path", Status: http.StatusInternalServerError}
+			return &carefulness.JSONError{Err: "couldn't get old file's rel path", Status: http.StatusInternalServerError}
 		}
 
 		deleteDir, err := c.cfg.TurnToAbs("/.deleted")
 		if err != nil {
 			logger.Error("couldn't turn delete directory to abs", slog.String("Error", err.Error()))
 
-			return carefulness.JSONError{Err: "couldn't ensure delete directory exists", Status: http.StatusInternalServerError}
+			return &carefulness.JSONError{Err: "couldn't ensure delete directory exists", Status: http.StatusInternalServerError}
 		}
 		newAbs := filepath.Join(deleteDir, oldRel)
 
 		if err := os.MkdirAll(filepath.Dir(newAbs), 0o755); err != nil {
 			logger.Error("couldn't ensure delete directory exists", slog.String("Error", err.Error()))
 
-			return carefulness.JSONError{Err: "couldn't ensure delete directory exists", Status: http.StatusInternalServerError}
+			return &carefulness.JSONError{Err: "couldn't ensure delete directory exists", Status: http.StatusInternalServerError}
 		}
 
 		err = os.Rename(quizPath, newAbs)
 		if err != nil {
 			logger.Error("couldn't get rename to abs name", slog.String("Error", err.Error()))
 
-			return carefulness.JSONError{Err: err.Error(), Status: http.StatusInternalServerError}
+			return &carefulness.JSONError{Err: err.Error(), Status: http.StatusInternalServerError}
 
 		}
 
@@ -273,7 +273,7 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 
 	if first, err := reader.Read(); err == nil {
 		if !slices.Equal(first, []string{"name", "password"}) {
-			return carefulness.JSONError{Err: `wrong header(want: name,password)`, Status: http.StatusUnprocessableEntity}
+			return &carefulness.JSONError{Err: `wrong header(want: name,password)`, Status: http.StatusUnprocessableEntity}
 		}
 	}
 
@@ -288,7 +288,7 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 				return err
 			}
 			if len(raw) != 2 {
-				return carefulness.JSONError{Err: "row length is not 2", Status: http.StatusUnprocessableEntity}
+				return &carefulness.JSONError{Err: "row length is not 2", Status: http.StatusUnprocessableEntity}
 			}
 
 			err = passwordutils.CheckPasswordSafety(raw[1])
@@ -297,7 +297,7 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 					slog.String("password", raw[1]),
 					slog.String("because", err.Error()),
 				)
-				return carefulness.JSONError{Err: err.Error(), Status: http.StatusBadRequest}
+				return &carefulness.JSONError{Err: err.Error(), Status: http.StatusBadRequest}
 			}
 
 			passwordHash, err := bcrypt.GenerateFromPassword([]byte(raw[1]), bcrypt.DefaultCost)
@@ -306,7 +306,7 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 					slog.String("error", err.Error()),
 				)
 
-				return carefulness.JSONError{Err: "Hashing error", Status: http.StatusInternalServerError}
+				return &carefulness.JSONError{Err: "Hashing error", Status: http.StatusInternalServerError}
 			}
 
 			var existing models.User
@@ -325,7 +325,7 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 			case bytes.Equal(existing.PasswordHash, passwordHash):
 				logger.Info("resolved user as existing")
 			default:
-				return carefulness.Conflict{Conflictor: raw[0]}
+				return &carefulness.Conflict{Conflictor: raw[0]}
 			}
 		}
 

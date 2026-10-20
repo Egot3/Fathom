@@ -136,7 +136,7 @@ func (r *bunTestRepository) UpdateTest(ctx context.Context, UUID uuid.UUID, name
 		return err
 	}
 	if e {
-		return carefulness.Conflict{Conflictor: "name"}
+		return &carefulness.Conflict{Conflictor: "name"}
 	}
 
 	res, err := r.db.NewUpdate().Model(&models.Test{UUID: UUID, Name: name}).WherePK().Exec(ctx)

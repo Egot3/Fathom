@@ -26,7 +26,7 @@ func (r *bunGroupRepository) NewGroup(ctx context.Context, name string) (models.
 	err := r.db.NewInsert().Model(&group).Ignore().Returning("uuid").Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.Group{}, carefulness.Conflict{Conflictor: "group name"}
+			return models.Group{}, &carefulness.Conflict{Conflictor: "group name"}
 		}
 		return models.Group{}, err
 	}
@@ -68,7 +68,7 @@ func (r *bunGroupRepository) UpdateGroup(ctx context.Context, uuid uuid.UUID, na
 		return err
 	}
 	if e {
-		return carefulness.Conflict{Conflictor: "name"}
+		return &carefulness.Conflict{Conflictor: "name"}
 	}
 
 	res, err := r.db.NewUpdate().Model(&models.Group{UUID: uuid, Name: name}).WherePK().Exec(ctx)
@@ -106,7 +106,7 @@ func (r *bunGroupRepository) AppendUsers(ctx context.Context, groupUUID uuid.UUI
 			return sql.ErrNoRows
 		}
 		if int(c) < len(userUUIDs) {
-			return carefulness.PartialSuccess{
+			return &carefulness.PartialSuccess{
 				Target:      "users",
 				ActualCount: int(c),
 				WantCount:   len(userUUIDs),

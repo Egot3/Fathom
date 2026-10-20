@@ -39,7 +39,7 @@ func reconcile(quizzes []StagedQuiz, m *exportutils.Manifest, turnToAbs func(str
 		}
 		abs, err := turnToAbs(strings.TrimSuffix(cleanName(mq.Path), ".md"))
 		if err != nil {
-			return nil, StagedTest{}, carefulness.JSONError{
+			return nil, StagedTest{}, &carefulness.JSONError{
 				Err: "couldn't resolve quiz path", Status: http.StatusUnprocessableEntity,
 			}
 		}
@@ -50,7 +50,7 @@ func reconcile(quizzes []StagedQuiz, m *exportutils.Manifest, turnToAbs func(str
 			continue
 		}
 		if got := quizzes[i].Quiz.Checksum.String(); got != mq.Checksum {
-			return nil, StagedTest{}, carefulness.JSONError{
+			return nil, StagedTest{}, &carefulness.JSONError{
 				Err:    fmt.Sprintf("checksum mismatch for %s", mq.Path),
 				Status: http.StatusUnprocessableEntity,
 			}

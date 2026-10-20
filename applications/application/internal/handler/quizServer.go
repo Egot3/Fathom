@@ -42,7 +42,7 @@ func (c *chiService) DeleteQuiz(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 
@@ -72,7 +72,7 @@ func (c *chiService) GetQuiz(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 
@@ -87,7 +87,7 @@ func (c *chiService) GetQuiz(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Quiz not found"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Quiz not found"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -135,7 +135,7 @@ func (c *chiService) ListQuizzes(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Failed to parse form data"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Failed to parse form data"})
 		return
 	}
 
@@ -154,10 +154,10 @@ func (c *chiService) ListQuizzes(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Quizzes not found"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Quizzes not found"})
 			return
 		}
-		if gone, ok := errors.AsType[carefulness.Gone](err); ok {
+		if gone, ok := errors.AsType[*carefulness.Gone](err); ok {
 			gone.Encode(w)
 			return
 		}
@@ -205,7 +205,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't turn filepath to abs", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to get absolute path of quiz"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to get absolute path of quiz"})
 		return
 	}
 
@@ -213,13 +213,13 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't check if quiz is registered", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't check if quiz is registered"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't check if quiz is registered"})
 		return
 	}
 	if does {
 		logger.Warn("quiz already exists")
 		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(carefulness.Conflict{Conflictor: "Path"})
+		json.NewEncoder(w).Encode(&carefulness.Conflict{Conflictor: "Path"})
 		return
 	}
 
@@ -245,7 +245,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't parse quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: err.Error()})
 		return
 	}
 
@@ -265,7 +265,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		logger.Error("couldn't ensure quiz directory exists", slog.String("Error", err.Error()))
 
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't ensure quiz directory exists"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't ensure quiz directory exists"})
 		return
 	}
 	err = os.WriteFile(abs, []byte(sb.String()), 0644)
@@ -275,19 +275,19 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 		)
 		w.WriteHeader(http.StatusMultiStatus)
 
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to write file"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to write file"})
 		return
 	}
 
 	err = c.quizRepo.RegisterQuiz(ctx, abs, checksum, quiz.Meta.Score, answer)
 	if err != nil {
 		logger.Error("couldn't register quiz", slog.String("Error", err.Error()))
-		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
+		if conflict, ok := errors.AsType[*carefulness.Conflict](err); ok {
 			conflict.Encode(w)
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't register quiz"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't register quiz"})
 		return
 	}
 
@@ -304,7 +304,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("quizUUID", quizUUID.String()))
@@ -348,7 +348,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't open file to start reading"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't open file to start reading"})
 			return
 		}
 		defer f.Close()
@@ -360,7 +360,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't parse frontmatter for quiz"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't parse frontmatter for quiz"})
 			return
 		}
 
@@ -381,7 +381,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to process frontmatter"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to process frontmatter"})
 
 			return
 		}
@@ -421,7 +421,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.Error("couldn't parse quiz", slog.String("Error", err.Error()), slog.String("Quiz", buf.String()))
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: err.Error()})
 			return
 		}
 
@@ -434,7 +434,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't open file to start merging"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't open file to start merging"})
 			return
 		}
 		defer f.Close()
@@ -447,7 +447,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to write file"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to write file"})
 			return
 		}
 
@@ -457,7 +457,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't to flush buffer to file"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't to flush buffer to file"})
 			return
 		}
 	}
@@ -469,7 +469,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 			logger.Error("couldn't get new abs name", slog.String("Error", err.Error()))
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to turn give path to abs"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to turn give path to abs"})
 			return
 		}
 	}
@@ -479,7 +479,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 			logger.Error("couldn't ensure quiz directory exists", slog.String("Error", err.Error()))
 
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: err.Error()})
 			return
 		}
 		err := os.Rename(abs, *newAbs)
@@ -487,7 +487,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 			logger.Error("couldn't get rename to abs name", slog.String("Error", err.Error()))
 
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: err.Error()})
 			return
 		}
 	}
@@ -496,7 +496,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't update quiz", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't register quiz"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't register quiz"})
 		return
 	}
 
@@ -536,7 +536,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 		)
 
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't select uuid+pathes of quizzes"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't select uuid+pathes of quizzes"})
 		return
 	}
 
@@ -573,7 +573,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't export quiz bank", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "error while writing to archive"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "error while writing to archive"})
 		return
 	}
 	w.Header().Set("Content-Type", accept)
@@ -591,7 +591,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(8 << 20); err != nil {
 		logger.Error("archive is too big", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "archive is too big!"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "archive is too big!"})
 		return
 	}
 
@@ -599,7 +599,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't get file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to parse file"})
 		return
 	}
 	defer archiveParts.Close()
@@ -624,7 +624,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't create temp dir for new quiz bank"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't create temp dir for new quiz bank"})
 		return
 	}
 	defer os.RemoveAll(tmpDir)
@@ -638,7 +638,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	case httputils.GZip:
 		importer = importutils.NewGzipImporter()
 	default:
-		carefulness.UnsupportedMediaType{Mime: contentType}.Encode(w)
+		(&carefulness.UnsupportedMediaType{Mime: contentType}).Encode(w)
 		return
 	}
 	staged, _, jerr := importer.Import(ctx, archiveParts, handler.Size, tmpDir, c.cfg.TurnToAbs)
@@ -652,7 +652,7 @@ func (c *chiService) ImportQuizBank(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't commit the import", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't commit the import"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't commit the import"})
 		return
 	}
 
@@ -671,7 +671,7 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("Bad uuid", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Bad UUID"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Bad UUID"})
 		return
 	}
 
@@ -686,7 +686,7 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Quiz not found"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Quiz not found"})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)

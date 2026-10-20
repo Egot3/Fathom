@@ -31,7 +31,7 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 	zipReader, err := zip.NewReader(r, size)
 	if err != nil {
 		logger.Error("couldn't create new zip-reader", slog.String("Error", err.Error()))
-		return nil, StagedTest{}, carefulness.JSONError{Err: "failed to start reading zip", Status: http.StatusUnprocessableEntity}
+		return nil, StagedTest{}, &carefulness.JSONError{Err: "failed to start reading zip", Status: http.StatusUnprocessableEntity}
 	}
 
 	staged := make([]StagedQuiz, 0, len(zipReader.File))
@@ -42,7 +42,7 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 		absPath, err := turnToAbs(strings.TrimSuffix(relPath, ".md"))
 		if err != nil {
 			logger.Error("couldn't get abs path", slog.String("Error", err.Error()))
-			return nil, StagedTest{}, carefulness.JSONError{Err: "couldn't define writing path", Status: http.StatusInternalServerError}
+			return nil, StagedTest{}, &carefulness.JSONError{Err: "couldn't define writing path", Status: http.StatusInternalServerError}
 		}
 		if !strings.HasPrefix(stagePath, filepath.Clean(stageDir)+string(os.PathSeparator)) {
 			logger.Error("real zip-slip")
@@ -56,7 +56,7 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 		rc, err := f.Open()
 		if err != nil {
 			logger.Error("couldn't create reader for file from zip reader", slog.String("Error", err.Error()))
-			return nil, StagedTest{}, carefulness.JSONError{Err: "can't read individual file", Status: http.StatusUnprocessableEntity}
+			return nil, StagedTest{}, &carefulness.JSONError{Err: "can't read individual file", Status: http.StatusUnprocessableEntity}
 		}
 		defer rc.Close()
 
@@ -78,15 +78,15 @@ func (z zipImporter) Import(ctx context.Context, r multipart.File, size int64, s
 				if errors.Is(err, io.EOF) {
 					return nil, StagedTest{}, carefulness.ErrLimitExceeded
 				}
-				return nil, StagedTest{}, carefulness.JSONError{Err: "badly formatted test", Status: http.StatusUnprocessableEntity}
+				return nil, StagedTest{}, &carefulness.JSONError{Err: "badly formatted test", Status: http.StatusUnprocessableEntity}
 			}
 			if manifest != nil {
-				return nil, StagedTest{}, carefulness.JSONError{Err: "multiple manifests in archive", Status: http.StatusUnprocessableEntity}
+				return nil, StagedTest{}, &carefulness.JSONError{Err: "multiple manifests in archive", Status: http.StatusUnprocessableEntity}
 			}
 
 			err := m.Validate()
 			if err != nil {
-				return nil, StagedTest{}, carefulness.JSONError{Err: "badly formatted manifest", Status: http.StatusUnprocessableEntity}
+				return nil, StagedTest{}, &carefulness.JSONError{Err: "badly formatted manifest", Status: http.StatusUnprocessableEntity}
 			}
 
 			manifest = &m

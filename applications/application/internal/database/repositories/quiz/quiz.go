@@ -47,7 +47,7 @@ func (r *bunQuizRepository) RegisterQuiz(ctx context.Context, path string, check
 		Scan(ctx)
 	if err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
-			return carefulness.Conflict{Conflictor: "Path"}
+			return &carefulness.Conflict{Conflictor: "Path"}
 		}
 		return err
 	}

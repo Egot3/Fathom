@@ -32,7 +32,7 @@ func (r *bunUserRepository) Register(ctx context.Context, name string, passwordH
 	err := r.db.NewInsert().Ignore().Model(&user).Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.User{}, carefulness.Conflict{Conflictor: name}
+			return models.User{}, &carefulness.Conflict{Conflictor: name}
 		}
 		return models.User{}, err
 	}
@@ -135,7 +135,7 @@ func (r *bunUserRepository) UpdateUser(ctx context.Context, patchedUser models.P
 				return fmt.Errorf("Error while checking for unique: %w", err)
 			}
 			if e {
-				return carefulness.Conflict{Conflictor: "nickname"}
+				return &carefulness.Conflict{Conflictor: "nickname"}
 			}
 			query = query.Set("nickname = ?", patchedUser.Nickname)
 		}

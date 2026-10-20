@@ -28,7 +28,7 @@ func (z gzipImporter) Import(ctx context.Context, r multipart.File, size int64, 
 		logger.Error("couldn't create gzip reader",
 			slog.String("Error", err.Error()),
 		)
-		return nil, StagedTest{}, carefulness.JSONError{Err: "failed to start reading gzip", Status: http.StatusUnprocessableEntity}
+		return nil, StagedTest{}, &carefulness.JSONError{Err: "failed to start reading gzip", Status: http.StatusUnprocessableEntity}
 	}
 	tarReader := tar.NewReader(gzipReader)
 

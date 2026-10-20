@@ -28,7 +28,7 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
@@ -46,7 +46,7 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 
 	if len(req.Appendants) == 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Can't proccess adding 0 users"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Can't proccess adding 0 users"})
 		return
 	}
 
@@ -55,12 +55,12 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Failed to append new users to group",
 			slog.String("Error", err.Error()),
 		)
-		if partial, ok := errors.AsType[carefulness.PartialSuccess](err); ok {
+		if partial, ok := errors.AsType[*carefulness.PartialSuccess](err); ok {
 			partial.Encode(w)
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "couldn't insert new users to group"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't insert new users to group"})
 		return
 	}
 
@@ -78,7 +78,7 @@ func (c *chiService) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
@@ -91,7 +91,7 @@ func (c *chiService) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Requested group not found"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Requested group not found"})
 			return
 		}
 
@@ -113,7 +113,7 @@ func (c *chiService) GetGroup(w http.ResponseWriter, r *http.Request) {
 	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
@@ -126,7 +126,7 @@ func (c *chiService) GetGroup(w http.ResponseWriter, r *http.Request) {
 		)
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Requested group not found"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Requested group not found"})
 			return
 		}
 
@@ -151,7 +151,7 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
@@ -174,12 +174,12 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 
 	if len(*req.Name) > 256 {
 		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "group name is too long, must be <256"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "group name is too long, must be <256"})
 		return
 	}
 	if len(*req.Name) < 4 {
 		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "group name is too short, must be <4"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "group name is too short, must be <4"})
 		return
 	}
 
@@ -188,13 +188,13 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Failed to patch group",
 			slog.String("Error", err.Error()),
 		)
-		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
+		if conflict, ok := errors.AsType[*carefulness.Conflict](err); ok {
 			conflict.Encode(w)
 			return
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Requested group wasn't found"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Requested group wasn't found"})
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -228,7 +228,7 @@ func (c *chiService) PostGroup(w http.ResponseWriter, r *http.Request) {
 			slog.String("group_name", req.Name),
 		)
 		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "group name is too short"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "group name is too short"})
 		return
 	}
 	if len(req.Name) > 255 {
@@ -236,7 +236,7 @@ func (c *chiService) PostGroup(w http.ResponseWriter, r *http.Request) {
 			slog.String("group_name", req.Name),
 		)
 		w.WriteHeader(422)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "group name is too big"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "group name is too big"})
 		return
 	}
 
@@ -245,7 +245,7 @@ func (c *chiService) PostGroup(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Failed to create new group",
 			slog.String("Error", err.Error()),
 		)
-		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
+		if conflict, ok := errors.AsType[*carefulness.Conflict](err); ok {
 			conflict.Encode(w)
 			return
 		}
@@ -280,7 +280,7 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 	logger = logger.With(slog.String("group_uuid", groupUUID.String()))
@@ -299,7 +299,7 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 
 	if len(req.Removants) == 0 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Can't proccess adding 0 users"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Can't proccess adding 0 users"})
 		return
 	}
 
@@ -308,7 +308,7 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Failed to delete users from group",
 			slog.String("Error", err.Error()),
 		)
-		if partial, ok := errors.AsType[carefulness.PartialSuccess](err); ok {
+		if partial, ok := errors.AsType[*carefulness.PartialSuccess](err); ok {
 			partial.Encode(w)
 			return
 		}
@@ -329,7 +329,7 @@ func (c *chiService) ListGroups(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Failed to parse form data"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Failed to parse form data"})
 		return
 	}
 
