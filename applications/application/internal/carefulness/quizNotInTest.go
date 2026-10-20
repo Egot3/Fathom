@@ -20,10 +20,10 @@ func (e *NotInTestError) Is(target error) bool {
 	return target == ErrQuizNotInTest
 }
 
-func (e *NotInTestError) JSONError() JSONError {
-	return JSONError{Err: e.Error(), Status: http.StatusNotFound}
+func (e *NotInTestError) JSONError() *JSONError {
+	return &JSONError{Err: e.Error(), Status: http.StatusNotFound}
 }
 
-func (e NotInTestError) Encode(w http.ResponseWriter) {
+func (e *NotInTestError) Encode(w http.ResponseWriter) {
 	e.JSONError().Encode(w)
 }

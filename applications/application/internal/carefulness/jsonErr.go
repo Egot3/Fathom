@@ -12,19 +12,21 @@ type JSONError struct {
 
 type JSONErrorable interface {
 	error
-	JSONError() JSONError
+	JSONError() *JSONError
 	Encode(http.ResponseWriter)
 }
 
-func (e JSONError) Encode(w http.ResponseWriter) {
+func (e *JSONError) Encode(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+
 	w.WriteHeader(e.Status)
 	json.NewEncoder(w).Encode(e)
 }
 
-func (e JSONError) Error() string {
+func (e *JSONError) Error() string {
 	return e.Err
 }
 
-func (e JSONError) JSONError() JSONError {
+func (e *JSONError) JSONError() *JSONError {
 	return e // this looks whicked
 }

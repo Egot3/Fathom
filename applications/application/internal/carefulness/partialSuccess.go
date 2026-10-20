@@ -14,18 +14,18 @@ type PartialSuccess struct {
 
 var ErrPartialSuccess = errors.New("Conflict")
 
-func (e PartialSuccess) Error() string {
+func (e *PartialSuccess) Error() string {
 	return fmt.Sprintf("partial success on %v: %v/%v", e.Target, e.ActualCount, e.WantCount)
 }
 
-func (e PartialSuccess) JSONError() JSONError {
-	return JSONError{Err: e.Error(), Status: http.StatusMultiStatus}
+func (e *PartialSuccess) JSONError() *JSONError {
+	return &JSONError{Err: e.Error(), Status: http.StatusMultiStatus}
 }
 
-func (e PartialSuccess) Is(target error) bool {
+func (e *PartialSuccess) Is(target error) bool {
 	return ErrConflict == target
 }
 
-func (e PartialSuccess) Encode(w http.ResponseWriter) {
+func (e *PartialSuccess) Encode(w http.ResponseWriter) {
 	e.JSONError().Encode(w)
 }

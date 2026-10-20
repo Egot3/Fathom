@@ -33,7 +33,7 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 			logger.Error("unable to get next tar entry",
 				slog.String("Error", err.Error()),
 			)
-			return nil, StagedTest{}, carefulness.JSONError{Err: "couldn't continue reading archive", Status: http.StatusUnprocessableEntity}
+			return nil, StagedTest{}, &carefulness.JSONError{Err: "couldn't continue reading archive", Status: http.StatusUnprocessableEntity}
 		}
 
 		relPath := f.Name
@@ -41,7 +41,7 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 		absPath, err := turnToAbs(strings.TrimSuffix(relPath, ".md"))
 		if err != nil {
 			logger.Error("couldn't get abs path", slog.String("Error", err.Error()))
-			return nil, StagedTest{}, carefulness.JSONError{Err: "couldn't define writing path", Status: http.StatusInternalServerError}
+			return nil, StagedTest{}, &carefulness.JSONError{Err: "couldn't define writing path", Status: http.StatusInternalServerError}
 		}
 		if !strings.HasPrefix(stagePath, filepath.Clean(stageDir)+string(os.PathSeparator)) {
 			logger.Error("real gzip-slip")
@@ -70,15 +70,15 @@ func importTar(tarReader *tar.Reader, ctx context.Context, stageDir string, turn
 				if errors.Is(err, io.EOF) {
 					return nil, StagedTest{}, carefulness.ErrLimitExceeded
 				}
-				return nil, StagedTest{}, carefulness.JSONError{Err: "badly formatted test", Status: http.StatusUnprocessableEntity}
+				return nil, StagedTest{}, &carefulness.JSONError{Err: "badly formatted test", Status: http.StatusUnprocessableEntity}
 			}
 			if manifest != nil {
-				return nil, StagedTest{}, carefulness.JSONError{Err: "multiple manifests in archive", Status: http.StatusUnprocessableEntity}
+				return nil, StagedTest{}, &carefulness.JSONError{Err: "multiple manifests in archive", Status: http.StatusUnprocessableEntity}
 			}
 
 			err := m.Validate()
 			if err != nil {
-				return nil, StagedTest{}, carefulness.JSONError{Err: "badly formatted manifest", Status: http.StatusUnprocessableEntity}
+				return nil, StagedTest{}, &carefulness.JSONError{Err: "badly formatted manifest", Status: http.StatusUnprocessableEntity}
 			}
 
 			manifest = &m

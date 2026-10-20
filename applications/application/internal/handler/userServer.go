@@ -37,7 +37,7 @@ func (c *chiService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 
@@ -51,7 +51,7 @@ func (c *chiService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, sql.ErrNoRows) {
 			logger.Error("Delete user found no rows")
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "User not found"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "User not found"})
 
 			return
 		}
@@ -77,7 +77,7 @@ func (c *chiService) GetUser(w http.ResponseWriter, r *http.Request) {
 	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 
@@ -88,10 +88,10 @@ func (c *chiService) GetUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "User not found"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "User not found"})
 			return
 		}
-		if gone, ok := errors.AsType[carefulness.Gone](err); ok {
+		if gone, ok := errors.AsType[*carefulness.Gone](err); ok {
 			gone.Encode(w)
 			return
 		}
@@ -127,7 +127,7 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 
 	if req.Nickname == "" || len(req.Password) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Nickname or password are empty"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Nickname or password are empty"})
 		return
 	}
 
@@ -141,7 +141,7 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "No active user with this username"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "No active user with this username"})
 			return
 		}
 		logger.Error("unexpected login db error",
@@ -164,7 +164,7 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 			Secure:   true,
 		}
 		http.SetCookie(w, cookie)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Bad token"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Bad token"})
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -197,7 +197,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
 		return
 	}
 
@@ -226,7 +226,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: err.Error()})
 			return
 		}
 		passwordHash, err = bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
@@ -235,7 +235,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Hashing error"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Hashing error"})
 			return
 		}
 	}
@@ -248,7 +248,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 				slog.String("Error", err.Error()),
 			)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Unable to authorize given user"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to authorize given user"})
 			return
 		}
 		if !is {
@@ -267,7 +267,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Error while updating user",
 			slog.String("Error", err.Error()),
 		)
-		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
+		if conflict, ok := errors.AsType[*carefulness.Conflict](err); ok {
 			conflict.Encode(w)
 			return
 		}
@@ -314,7 +314,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 			slog.String("because", err.Error()),
 		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: err.Error()})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: err.Error()})
 		return
 	}
 
@@ -325,7 +325,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		)
 
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Hashing error"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Hashing error"})
 		return
 	}
 
@@ -334,7 +334,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		logger.Error("couldn't register user",
 			slog.String("error", err.Error()),
 		)
-		if conflict, ok := errors.AsType[carefulness.Conflict](err); ok {
+		if conflict, ok := errors.AsType[*carefulness.Conflict](err); ok {
 			conflict.Encode(w)
 			return
 		}
@@ -349,7 +349,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		)
 		w.WriteHeader(http.StatusInternalServerError)
 
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Couldn't generate token"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Couldn't generate token"})
 		return
 	}
 
@@ -384,7 +384,7 @@ func (c *chiService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "Failed to parse form data"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Failed to parse form data"})
 		return
 	}
 
@@ -403,10 +403,10 @@ func (c *chiService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "User not found"})
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "User not found"})
 			return
 		}
-		if gone, ok := errors.AsType[carefulness.Gone](err); ok {
+		if gone, ok := errors.AsType[*carefulness.Gone](err); ok {
 			gone.Encode(w)
 			return
 		}
@@ -434,7 +434,7 @@ func (c *chiService) ImportUser(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(8 << 20); err != nil {
 		logger.Error("archive is too big", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "archive is too big!"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "archive is too big!"})
 		return
 	}
 
@@ -442,7 +442,7 @@ func (c *chiService) ImportUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't get file", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to parse file"})
 		return
 	}
 	defer archiveParts.Close()
@@ -451,7 +451,7 @@ func (c *chiService) ImportUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("couldn't get file's mime", slog.String("Error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(carefulness.JSONError{Err: "unable to parse file's mime"})
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to parse file's mime"})
 		return
 	}
 
@@ -472,7 +472,7 @@ func (c *chiService) ImportUser(w http.ResponseWriter, r *http.Request) {
 			logger.Error("couldn't create gzip reader",
 				slog.String("Error", err.Error()),
 			)
-			carefulness.JSONError{Err: "malformed gzip", Status: http.StatusUnprocessableEntity}.Encode(w)
+			(&carefulness.JSONError{Err: "malformed gzip", Status: http.StatusUnprocessableEntity}).Encode(w)
 			return
 		}
 
@@ -481,7 +481,7 @@ func (c *chiService) ImportUser(w http.ResponseWriter, r *http.Request) {
 		csvReader = csv.NewReader(archiveParts)
 		csvReader.Comma = '\t'
 	default:
-		carefulness.UnsupportedMediaType{Mime: contentType}.Encode(w)
+		(&carefulness.UnsupportedMediaType{Mime: contentType}).Encode(w)
 		return
 	}
 
