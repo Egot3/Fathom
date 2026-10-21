@@ -50,7 +50,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text())),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 
 		rec := httptest.NewRecorder()
 
@@ -91,7 +91,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, name)),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -132,7 +132,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q, "appendants": [%q]}`, rand.Text(), user.UUID)),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -174,7 +174,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text()[0:1])),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -209,7 +209,7 @@ func TestGroupHandler_Post(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, strings.Repeat(rand.Text(), 100))),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -253,7 +253,7 @@ func TestGroupHandler_Delete(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -297,7 +297,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text())),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -338,7 +338,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text())),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -381,7 +381,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 				strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text()[0:1])),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			testutils.AddTeacherCookie(t, req)
+			testutils.AddTeacherCookie(t, req, uuid.Nil)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -422,7 +422,7 @@ func TestGroupHandler_Patch(t *testing.T) {
 				strings.NewReader(fmt.Sprintf(`{"name": %q}`, strings.Repeat(rand.Text(), 100))),
 			)
 			req.Header.Set("Content-Type", "application/json")
-			testutils.AddTeacherCookie(t, req)
+			testutils.AddTeacherCookie(t, req, uuid.Nil)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -468,7 +468,7 @@ func TestGroupHandler_Get(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -511,7 +511,7 @@ func TestGroupHandler_Get(t *testing.T) {
 			strings.NewReader(fmt.Sprintf(`{"name": %q}`, rand.Text())),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -581,7 +581,7 @@ func TestGroupHandler_List(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)

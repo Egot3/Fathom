@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func AddTeacherCookie(t *testing.T, req *http.Request) {
+func AddTeacherCookie(t *testing.T, req *http.Request, UUID uuid.UUID) {
 	t.Helper()
 
-	token, err := jwtutils.GenerateToken(uuid.Nil, true)
+	token, err := jwtutils.GenerateToken(UUID, true)
 	require.NoError(t, err)
 
 	req.AddCookie(&http.Cookie{

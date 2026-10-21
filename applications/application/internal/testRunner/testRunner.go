@@ -107,6 +107,7 @@ func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration,
 	}
 
 	tr.testUUID = testUUID
+	tr.groupUUIDs = groupUUIDs
 
 	tr.checksum = hashutils.HashHashes(ultimateChecksum)
 	tr.quizzes = quizzes

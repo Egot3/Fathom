@@ -19,4 +19,5 @@ type GroupRepository interface {
 
 	GroupsExist(ctx context.Context, groupUUIDs uuid.UUIDs) (bool, error)
 	IsInAny(ctx context.Context, groupUUIDs uuid.UUIDs, userUUID uuid.UUID) (bool, error)
+	UserGroupsIn(ctx context.Context, userUUID uuid.UUID, groupUUIDs uuid.UUIDs) (uuid.UUIDs, error)
 }

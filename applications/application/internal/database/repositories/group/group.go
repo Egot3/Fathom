@@ -190,3 +190,14 @@ func (r *bunGroupRepository) IsInAny(ctx context.Context, groupUUIDs uuid.UUIDs,
 
 	return is, nil
 }
+
+func (r *bunGroupRepository) UserGroupsIn(ctx context.Context, userUUID uuid.UUID, groupUUIDs uuid.UUIDs) (uuid.UUIDs, error) {
+	var out uuid.UUIDs
+	err := r.db.NewSelect().Model((*models.GroupsUsers)(nil)).
+		Column("group_uuid").
+		Where("user_uuid = ?", userUUID).
+		Where("group_uuid IN (?)", bun.List(groupUUIDs)).
+		OrderExpr("group_uuid").
+		Scan(ctx, &out)
+	return out, err
+}

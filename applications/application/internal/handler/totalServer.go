@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/httputils"
@@ -136,28 +137,51 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 
 	quizUUID, err := uuid.Parse(chi.URLParam(r, "quiz_uuid"))
 	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
+		logger.Error("couldn't parse quizUUID in url",
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	groupUUID, err := uuid.Parse(chi.URLParam(r, "group_uuid"))
+	runnerKeyStr := chi.URLParam(r, "runnerKey")
+	if runnerKeyStr == "" {
+		logger.Error("couldn't get valid runnerkey")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	runnerKey, err := strconv.ParseUint(runnerKeyStr, 10, 64)
 	if err != nil {
-		logger.Error("couldn't parse testUUID in url",
+		logger.Error("couldn't parse runnerKey",
 			slog.String("Error", err.Error()),
 		)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	userUUID, err := uuid.Parse(chi.URLParam(r, "user_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse groupUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
+	logger = logger.With(slog.Uint64("runner_key", runnerKey))
+
+	claims, ok := r.Context().Value("claims").(jwtutils.Claims)
+	if !ok {
+		logger.Error("couldn't retrieve claims from context")
+		(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusUnauthorized}).Encode(w)
 		return
 	}
+
+	tr, ok := c.manager.Get(runnerKey)
+	if !ok {
+		logger.Error("couldn't retrieve runner from manager")
+		(&carefulness.JSONError{Err: "runner not found", Status: http.StatusNotFound}).Encode(w)
+		return
+	}
+
+	userUUID := claims.UserID
+	groups, err := c.groupRepo.UserGroupsIn(ctx, userUUID, tr.Groups())
+	if err != nil || len(groups) == 0 {
+		logger.Error("user has no intersections in groups with test")
+		(&carefulness.JSONError{Err: "user has no intersections in groups test", Status: http.StatusForbidden}).Encode(w)
+		return
+	}
+	groupUUID := groups[0]
 
 	logger = logger.With(
 		slog.String("quiz_uuid", quizUUID.String()),
@@ -171,21 +195,6 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 			slog.String("Error", jerr.Error()),
 		)
 		jerr.Encode(w)
-		return
-	}
-
-	runnerKey, err := strconv.ParseUint(chi.URLParam(r, "runnerKey"), 10, 64)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest)
-		return
-	}
-	logger = logger.With(slog.Uint64("runner_key", runnerKey))
-
-	tr, ok := c.manager.Get(runnerKey)
-	if !ok {
-		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()})
 		return
 	}
 
@@ -244,37 +253,50 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, err := uuid.Parse(chi.URLParam(r, "group_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse groupUUID in url",
-			slog.String("Error", err.Error()),
-		)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	userUUID, err := uuid.Parse(chi.URLParam(r, "user_uuid"))
-	if err != nil {
-		logger.Error("couldn't parse userUUID in url",
-			slog.String("Error", err.Error()),
-		)
+	runnerKeyStr := chi.URLParam(r, "runnerKey")
+	if runnerKeyStr == "" {
+		logger.Error("couldn't get valid runnerkey")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	runnerKey, err := strconv.ParseUint(chi.URLParam(r, "runnerKey"), 10, 64)
+	runnerKey, err := strconv.ParseUint(runnerKeyStr, 10, 64)
 	if err != nil {
+		logger.Error("couldn't parse runnerKey",
+			slog.String("Error", err.Error()),
+		)
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest)
 		return
 	}
 	logger = logger.With(slog.Uint64("runner_key", runnerKey))
 
-	tr, ok := c.manager.Get(runnerKey)
+	claims, ok := r.Context().Value("claims").(jwtutils.Claims)
 	if !ok {
-		w.WriteHeader(http.StatusLocked)
-		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: testrunner.ErrRunnerInactive.Error()})
+		logger.Error("couldn't retrieve claims from context")
+		(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusUnauthorized}).Encode(w)
 		return
 	}
+
+	tr, ok := c.manager.Get(runnerKey)
+	if !ok {
+		logger.Error("couldn't retrieve runner from manager")
+		(&carefulness.JSONError{Err: "runner not found", Status: http.StatusNotFound}).Encode(w)
+		return
+	}
+
+	userUUID := claims.UserID
+	groups, err := c.groupRepo.UserGroupsIn(ctx, userUUID, tr.Groups())
+	if err != nil {
+		logger.Error("couldn't check if has any intersections with groups in test", slog.String("Error", err.Error()))
+		(&carefulness.JSONError{Err: "couldn't check if user has intersections with test's groups", Status: http.StatusInternalServerError}).Encode(w)
+		return
+	}
+	if len(groups) == 0 {
+		logger.Error("user has no intersections with groups from test")
+		(&carefulness.JSONError{Err: "user has no intersections with test's groups", Status: http.StatusForbidden}).Encode(w)
+		return
+	}
+	groupUUID := groups[0]
 
 	currentTestUUID := tr.Test()
 	logger = logger.With(

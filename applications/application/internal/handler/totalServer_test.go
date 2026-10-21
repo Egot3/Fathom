@@ -165,7 +165,7 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, userUUID)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -287,7 +287,7 @@ func TestTotalHandler_GetAnswer(t *testing.T) {
 					nil,
 				)
 				req.Header.Set("Content-Type", "application/json")
-				testutils.AddTeacherCookie(t, req)
+				testutils.AddTeacherCookie(t, req, userUUID)
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -367,7 +367,7 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, userUUID)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -467,7 +467,7 @@ func TestTotalHandler_GetGroupTotals(t *testing.T) {
 					nil,
 				)
 				req.Header.Set("Content-Type", "application/json")
-				testutils.AddTeacherCookie(t, req)
+				testutils.AddTeacherCookie(t, req, userUUID)
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -546,7 +546,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, userUUID)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -633,7 +633,7 @@ func TestTotalHandler_GetTestTotals(t *testing.T) {
 					nil,
 				)
 				req.Header.Set("Content-Type", "application/json")
-				testutils.AddTeacherCookie(t, req)
+				testutils.AddTeacherCookie(t, req, userUUID)
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -714,7 +714,7 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, userUUID)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -832,7 +832,7 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 					nil,
 				)
 				req.Header.Set("Content-Type", "application/json")
-				testutils.AddTeacherCookie(t, req)
+				testutils.AddTeacherCookie(t, req, userUUID)
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
@@ -911,7 +911,7 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, userUUID)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -990,7 +990,7 @@ func TestTotalHandler_GetUserTotals(t *testing.T) {
 				nil,
 			)
 			req.Header.Set("Content-Type", "application/json")
-			testutils.AddTeacherCookie(t, req)
+			testutils.AddTeacherCookie(t, req, userUUID)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -1060,14 +1060,13 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 
 		req := httptest.NewRequest(
 			http.MethodPost,
-			fmt.Sprintf("/api/v1/total/%v/%v/running/%d/%v",
-				groupUUID, userUUID,
+			fmt.Sprintf("/api/v1/total/running/%d/%v",
 				key, quizUUID,
 			),
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, userUUID)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1124,14 +1123,13 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 
 		req := httptest.NewRequest(
 			http.MethodPost,
-			fmt.Sprintf("/api/v1/total/%v/%v/running/%d/%v",
-				groupUUID, userUUID,
+			fmt.Sprintf("/api/v1/total/running/%d/%v",
 				mrand.Uint64(), quizUUID,
 			),
 			bytes.NewReader(reqJSON),
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, userUUID)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1182,34 +1180,22 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 		require.NoError(t, err)
 
 		testCases := []struct {
-			desc      string
-			groupUUID uuid.UUID
-			userUUID  uuid.UUID
-			quizUUID  uuid.UUID
+			desc     string
+			userUUID uuid.UUID
+			quizUUID uuid.UUID
+			code     int
 		}{
 			{
-				desc:      "No group",
-				groupUUID: uuid.Max,
-				userUUID:  userUUID,
-				quizUUID:  quizUUID,
+				desc:     "No group and user",
+				userUUID: uuid.Max,
+				quizUUID: quizUUID,
+				code:     http.StatusForbidden,
 			},
 			{
-				desc:      "No user",
-				groupUUID: groupUUID,
-				userUUID:  uuid.Max,
-				quizUUID:  quizUUID,
-			},
-			{
-				desc:      "No group and user",
-				groupUUID: uuid.Max,
-				userUUID:  uuid.Max,
-				quizUUID:  quizUUID,
-			},
-			{
-				desc:      "No quiz",
-				groupUUID: groupUUID,
-				userUUID:  userUUID,
-				quizUUID:  uuid.Max,
+				desc:     "No quiz",
+				userUUID: userUUID,
+				quizUUID: uuid.Max,
+				code:     http.StatusNotFound,
 			},
 		}
 		for _, tC := range testCases {
@@ -1225,19 +1211,18 @@ func TestTotalHandler_PostAnswer(t *testing.T) {
 
 				req := httptest.NewRequest(
 					http.MethodPost,
-					fmt.Sprintf("/api/v1/total/%v/%v/running/%d/%v",
-						tC.groupUUID, tC.userUUID,
+					fmt.Sprintf("/api/v1/total/running/%d/%v",
 						key, tC.quizUUID,
 					),
 					bytes.NewReader(reqJSON),
 				)
 				req.Header.Set("Content-Type", "application/json")
-				testutils.AddTeacherCookie(t, req)
+				testutils.AddTeacherCookie(t, req, tC.userUUID)
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
 
-				require.Equal(t, http.StatusNotFound, rec.Code, rec.Body.String())
+				require.Equal(t, tC.code, rec.Code, rec.Body.String())
 			})
 		}
 	})
@@ -1273,6 +1258,7 @@ func TestTotalHandler_Totalize(t *testing.T) {
 			UserUUID:  userUUID,
 		}).Exec(t.Context())
 		require.NoError(t, err)
+		t.Logf("bound %v and %v", userUUID, groupUUID)
 
 		_, err = db.NewInsert().Model(&models.Answer{
 			GroupUUID: groupUUID,
@@ -1300,13 +1286,13 @@ func TestTotalHandler_Totalize(t *testing.T) {
 
 		req := httptest.NewRequest(
 			http.MethodPost,
-			fmt.Sprintf("/api/v1/total/%v/%v/running/%d",
-				groupUUID, userUUID, key,
+			fmt.Sprintf("/api/v1/total/running/%d",
+				key,
 			),
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, userUUID)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1354,13 +1340,13 @@ func TestTotalHandler_Totalize(t *testing.T) {
 
 		req := httptest.NewRequest(
 			http.MethodPost,
-			fmt.Sprintf("/api/v1/total/%v/%v/running/%d",
-				groupUUID, userUUID, mrand.Uint64(),
+			fmt.Sprintf("/api/v1/total/running/%d",
+				mrand.Uint64(),
 			),
 			nil,
 		)
 		req.Header.Set("Content-Type", "application/json")
-		testutils.AddTeacherCookie(t, req)
+		testutils.AddTeacherCookie(t, req, userUUID)
 		rec := httptest.NewRecorder()
 
 		router.ServeHTTP(rec, req)
@@ -1449,13 +1435,13 @@ func TestTotalHandler_Totalize(t *testing.T) {
 
 				req := httptest.NewRequest(
 					http.MethodPost,
-					fmt.Sprintf("/api/v1/total/%v/%v/running/%d",
-						tC.groupUUID, tC.userUUID, key,
+					fmt.Sprintf("/api/v1/total/running/%d",
+						key,
 					),
 					bytes.NewReader(reqJSON),
 				)
 				req.Header.Set("Content-Type", "application/json")
-				testutils.AddTeacherCookie(t, req)
+				testutils.AddTeacherCookie(t, req, userUUID)
 				rec := httptest.NewRecorder()
 
 				router.ServeHTTP(rec, req)
