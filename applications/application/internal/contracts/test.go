@@ -56,9 +56,10 @@ type GetQuizzesUUIDs struct {
 
 type RunningInfo struct {
 	models.Test
-	Key      uint64    `json:"key,string"`
-	Deadline time.Time `json:"deadline"`
-	IsPaused bool      `json:"is_paused"`
+	Key        uint64     `json:"key,string"`
+	Deadline   time.Time  `json:"deadline"`
+	IsPaused   bool       `json:"is_paused"`
+	GroupUUIDs uuid.UUIDs `json:"group_uuids"`
 }
 
 type RunningInfoResponse struct {
