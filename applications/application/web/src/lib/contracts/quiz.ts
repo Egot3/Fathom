@@ -211,11 +211,10 @@ export function FetchQuizDelete(UUID: string): ResultAsync<null, JSONError> {
 
 export type ParsedQuizResponse = { quiz: ParsedQuiz };
 
-// may not throw
-export function FetchParsedQuiz(
+function getWithCache(
+  url: string,
   quizUUID: string,
 ): ResultAsync<ParsedQuiz, JSONError> {
-  const url = `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${quizUUID}/parsed`;
   const notFound: JSONError = {
     error: "Quiz with this uuid wasn't found on server",
   };
@@ -252,6 +251,14 @@ export function FetchParsedQuiz(
           .map(({ quiz }) => quiz);
       });
     });
+}
+
+// may not throw
+export function FetchParsedQuiz(
+  quizUUID: string,
+): ResultAsync<ParsedQuiz, JSONError> {
+  const url = `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${quizUUID}/parsed`;
+  return getWithCache(url, quizUUID);
 }
 
 export function FetchQuizExport(
@@ -324,30 +331,6 @@ export function FetchRunningQuiz(
   key: string,
   UUID: string,
 ): ResultAsync<ParsedQuiz, JSONError> {
-  const manifest = ReadManifest();
-  const known = manifest[UUID];
-  return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/${UUID}`,
-    {
-      headers: known ? { "If-None-Match": `"${known.checksum}"` } : {},
-    },
-  ).andThen((r) => {
-    if (r.status === 304 && known) {
-      const cached = GetCachedQuiz<ParsedQuiz>(UUID, known.checksum);
-      if (cached !== null) return okAsync(cached);
-    } else if (r.status === 404) {
-      EvictQuiz(UUID);
-      return errAsync<ParsedQuiz, JSONError>({
-        error: `Quiz ${UUID} not found`,
-      });
-    }
-
-    return NormalizeJSON<ParsedQuizResponse>(r)
-      .andTee((body: ParsedQuizResponse) => {
-        const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
-        console.log("ETag:", etag);
-        SetCachedQuiz(UUID, etag, body.quiz);
-      })
-      .andThen(({ quiz }) => okAsync(quiz));
-  });
+  const url = `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/${UUID}`;
+  return getWithCache(url, UUID);
 }
