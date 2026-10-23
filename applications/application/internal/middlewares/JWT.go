@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"net/http"
 	"time"
 
 	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
+	"github.com/egot3/fathom/internal/httputils"
 )
 
 func JWT(next http.Handler) http.Handler {
@@ -24,16 +24,7 @@ func JWT(next http.Handler) http.Handler {
 		claims, err := jwtutils.ValidateToken(authorization.Value)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			cookie := &http.Cookie{
-				Name:     "jwt_token",
-				Value:    "",
-				Path:     "/",
-				Expires:  time.Unix(0, 0),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			}
-			http.SetCookie(w, cookie)
+			http.SetCookie(w, httputils.ResetCookie)
 			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Bad token"})
 			return
 		}
@@ -44,33 +35,24 @@ func JWT(next http.Handler) http.Handler {
 		newToken, err := jwtutils.RemintToken(authorization.Value)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			cookie := &http.Cookie{
-				Name:     "jwt_token",
-				Value:    "",
-				Path:     "/",
-				Expires:  time.Unix(0, 0),
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				Secure:   true,
-			}
-			http.SetCookie(w, cookie)
+			http.SetCookie(w, httputils.ResetCookie)
 			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Bad token"})
 			return
 		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name:     "jwt_token",
-			Value:    newToken,
-			Path:     "/",
-			Expires:  time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		})
+		cookie := &http.Cookie{
+			Name:        "jwt_token",
+			Value:       newToken,
+			Path:        "/",
+			Expires:     time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly:    true,
+			SameSite:    http.SameSiteNoneMode,
+			Secure:      true,
+			Partitioned: true,
+		}
+		http.SetCookie(w, cookie)
 
-		mAge := int(math.Trunc(jwtutils.JWTTTL.Seconds()))
-
-		w.Header().Set("Session-Control", fmt.Sprintf("max-age=%d", mAge))
+		w.Header().Set("Session-Control", fmt.Sprintf("max-age=%d", cookie.MaxAge))
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 
