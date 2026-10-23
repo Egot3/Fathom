@@ -8,12 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
 	"mime"
 	"net/http"
-	"time"
 
-	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/httputils"
@@ -151,37 +148,18 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newToken, err := jwtutils.GenerateToken(user.UUID, user.IsTeacher)
+	cookie, err := httputils.NewAuthCookie(user.UUID, user.IsTeacher)
+	http.SetCookie(w, cookie)
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		cookie := &http.Cookie{
-			Name:     "jwt_token",
-			Value:    "",
-			Path:     "/",
-			Expires:  time.Unix(0, 0),
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-			Secure:   true,
-		}
-		http.SetCookie(w, cookie)
-		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Bad token"})
+		logger.Error("unable to create login token", slog.String("Error", err.Error()))
+		(&carefulness.JSONError{Err: "Unable to create login token", Status: http.StatusInternalServerError}).Encode(w)
+		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt_token",
-		Value:    newToken,
-		Path:     "/",
-		Expires:  time.Now().Add(jwtutils.JWTTTL),
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-		Secure:   true,
-	})
-
-	mAge := int(math.Trunc(jwtutils.JWTTTL.Seconds()))
-	w.Header().Set("Session-Control", fmt.Sprintf("max-age=%d", mAge))
+	w.Header().Set("Session-Control", fmt.Sprintf("max-age=%d", cookie.MaxAge))
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.RegisterResponse{
+	json.NewEncoder(w).Encode(contracts.LoginResponse{
 		User: user,
 	})
 }
@@ -342,29 +320,15 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newToken, err := jwtutils.GenerateToken(user.UUID, user.IsTeacher)
+	cookie, err := httputils.NewAuthCookie(user.UUID, user.IsTeacher)
+	http.SetCookie(w, cookie)
 	if err != nil {
-		logger.Error("couldn't generate token",
-			slog.String("error", err.Error()),
-		)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Couldn't generate token"})
+		logger.Error("unable to create login token", slog.String("Error", err.Error()))
+		(&carefulness.JSONError{Err: "Unable to create login token", Status: http.StatusInternalServerError}).Encode(w)
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt_token",
-		Value:    newToken,
-		Path:     "/",
-		Expires:  time.Now().Add(jwtutils.JWTTTL),
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-		Secure:   true,
-	})
-
-	mAge := int(math.Trunc(jwtutils.JWTTTL.Seconds()))
-	w.Header().Set("Session-Control", fmt.Sprintf("max-age=%d", mAge))
+	w.Header().Set("Session-Control", fmt.Sprintf("max-age=%d", cookie.MaxAge))
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(contracts.RegisterResponse{
