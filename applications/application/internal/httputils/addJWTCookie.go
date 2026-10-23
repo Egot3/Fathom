@@ -9,14 +9,13 @@ import (
 )
 
 var ResetCookie = &http.Cookie{
-	Name:        "jwt_token",
-	Value:       "",
-	Path:        "/",
-	Expires:     time.Unix(0, 0),
-	HttpOnly:    true,
-	SameSite:    http.SameSiteNoneMode,
-	Secure:      true,
-	Partitioned: true,
+	Name:     "jwt_token",
+	Value:    "",
+	Path:     "/",
+	Expires:  time.Unix(0, 0),
+	HttpOnly: true,
+	SameSite: http.SameSiteNoneMode,
+	Secure:   true,
 }
 
 func NewAuthCookie(userUUID uuid.UUID, isTeacher bool) (*http.Cookie, error) {
@@ -26,14 +25,13 @@ func NewAuthCookie(userUUID uuid.UUID, isTeacher bool) (*http.Cookie, error) {
 	}
 
 	cookie := &http.Cookie{
-		Name:        "jwt_token",
-		Value:       newToken,
-		Path:        "/",
-		Expires:     time.Now().Add(jwtutils.JWTTTL),
-		HttpOnly:    true,
-		SameSite:    http.SameSiteNoneMode,
-		Secure:      true,
-		Partitioned: true,
+		Name:     "jwt_token",
+		Value:    newToken,
+		Path:     "/",
+		Expires:  time.Now().Add(jwtutils.JWTTTL),
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
 	}
 	if err := cookie.Valid(); err != nil {
 		return ResetCookie, err

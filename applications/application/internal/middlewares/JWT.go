@@ -41,14 +41,13 @@ func JWT(next http.Handler) http.Handler {
 		}
 
 		cookie := &http.Cookie{
-			Name:        "jwt_token",
-			Value:       newToken,
-			Path:        "/",
-			Expires:     time.Now().Add(jwtutils.JWTTTL),
-			HttpOnly:    true,
-			SameSite:    http.SameSiteNoneMode,
-			Secure:      true,
-			Partitioned: true,
+			Name:     "jwt_token",
+			Value:    newToken,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 		}
 		http.SetCookie(w, cookie)
 
