@@ -32,6 +32,7 @@ func NewAuthCookie(userUUID uuid.UUID, isTeacher bool) (*http.Cookie, error) {
 		HttpOnly: true,
 		SameSite: http.SameSiteNoneMode,
 		Secure:   true,
+		MaxAge:   int(jwtutils.JWTTTL),
 	}
 	if err := cookie.Valid(); err != nil {
 		return ResetCookie, err
