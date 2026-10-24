@@ -7,14 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
-var JWTTTL = 3600 * time.Second
+const JWTTTL = 3600 * time.Second
 
 func GenerateToken(userID uuid.UUID, isTeacher bool) (string, error) {
 	now := time.Now()
 	expirationDate := now.Add(JWTTTL)
 
 	claims := &Claims{
-		UserID:    userID, //неожидано
+		UserID:    userID,
 		IsTeacher: isTeacher,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
