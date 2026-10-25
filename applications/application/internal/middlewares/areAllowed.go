@@ -35,7 +35,8 @@ func (c *userCache) currentGeneration(testUUID uuid.UUID) *generation {
 		if g != nil && g.testUUID == testUUID {
 			return g
 		}
-		newGen := &generation{testUUID: testUUID}
+
+		newGen := &generation{testUUID: testUUID, allowed: make(map[uuid.UUID]bool)}
 		if c.gen.CompareAndSwap(g, newGen) {
 			return newGen
 		}
