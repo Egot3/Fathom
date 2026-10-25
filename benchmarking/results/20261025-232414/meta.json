@@ -1,0 +1,12 @@
+{
+  "t0": 1792959869,
+  "t1": 1792960199,
+  "k6_exit": 0,
+  "k6_version": "k6 v2.3.0 (commit/devel, go1.27.0-X:nodwarf5, linux/amd64)",
+  "client_host": "",
+  "base_url": "https://fathom.etsevilcorp.com",
+  "users": "20",
+  "quizzes": "10",
+  "think": "2",
+  "duration": "5m"
+}
