@@ -28,7 +28,7 @@ func InitDB(i do.Injector) (*bun.DB, error) {
 		sqldb = sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(cfg.PostgresURL)))
 		DB = bun.NewDB(sqldb, pgdialect.New())
 	default:
-		sqldb, err = sql.Open(sqliteshim.ShimName, fmt.Sprintf("file:%v", cfg.SqlitePath))
+		sqldb, err = sql.Open(sqliteshim.ShimName, fmt.Sprintf("file:%v?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=synchronous(NORMAL)", cfg.SqlitePath))
 		if err != nil {
 			return nil, err
 		}
