@@ -364,9 +364,8 @@ func TestAnswer_Totalization(t *testing.T) {
 }
 
 func TestAnswer_Totals(t *testing.T) {
-	i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 	t.Run("Single", func(t *testing.T) {
-		i := i.Scope(t.Name())
+		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 		r := do.MustInvoke[total.TotalRepository](i)
 		db := do.MustInvoke[*bun.DB](i)
 
@@ -413,14 +412,14 @@ func TestAnswer_Totals(t *testing.T) {
 		t.Logf("%+v", totals)
 	})
 	t.Run("None", func(t *testing.T) {
-		i := i.Scope(t.Name())
+		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 		r := do.MustInvoke[total.TotalRepository](i)
 
-		_, _, err := r.ListTotals(t.Context(), 0, 5, uuid.Nil, uuid.Nil, uuid.Nil)
-		require.ErrorIs(t, err, sql.ErrNoRows)
+		to, _, err := r.ListTotals(t.Context(), 0, 5, uuid.Nil, uuid.Nil, uuid.Nil)
+		require.ErrorIs(t, err, sql.ErrNoRows, fmt.Sprintf("%+v", to))
 	})
 	t.Run("Multiple", func(t *testing.T) {
-		i := i.Scope(t.Name())
+		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
 		r := do.MustInvoke[total.TotalRepository](i)
 		db := do.MustInvoke[*bun.DB](i)
 
