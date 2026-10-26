@@ -22,7 +22,7 @@ func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 
 	cfg := &config.Config{QuizPath: filepath.Join(tb.TempDir(), "quizzes")}
 
-	dsn := "file::memory:?cache=private"
+	dsn := "file::memory:?cache=private&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=synchronous(NORMAL)&_pragma=foreign_keys(1)"
 
 	sqldb, err := sql.Open(sqliteshim.ShimName, dsn)
 	require.NoError(tb, err)

@@ -177,9 +177,9 @@ func (r *bunTotalRepository) Total(ctx context.Context, userUUID, testUUID, grou
 		Join("JOIN groups AS g").JoinOn("g.uuid = ugt.group_uuid").ColumnExpr("g.name AS group_name").ColumnExpr("g.uuid AS group_uuid").
 		Join("JOIN tests AS t").JoinOn("t.uuid = ugt.test_uuid").ColumnExpr("t.name AS test_name").ColumnExpr("t.uuid AS test_uuid").
 		Join("JOIN users AS u").JoinOn("u.uuid = ugt.user_uuid").ColumnExpr("u.nickname AS user_name").ColumnExpr("u.uuid AS user_uuid").
-		ColumnExpr("ugt.score AS score").
-		ColumnExpr("ugt.finalized_at AS finalized_at").
-		ColumnExpr("COALESCE(SUM(q.score), 0) AS max_score").
+		Join("JOIN tests_quizzes AS tq").JoinOn("tq.test_uuid=ugt.test_uuid").
+		Join("JOIN quizzes AS qa").JoinOn("qa.uuid=tq.quiz_uuid").
+		ColumnExpr("COALESCE(SUM(qa.score), 0) AS max_score").
 		Scan(ctx, &total)
 	if err != nil {
 		return contracts.Total{}, err
@@ -193,14 +193,40 @@ func (r *bunTotalRepository) ListTotals(ctx context.Context,
 ) ([]contracts.Total, int, error) {
 	var totals []contracts.Total
 
-	query := r.db.NewSelect().TableExpr("users_groups_tests AS ugt").
-		ColumnExpr("ugt.score AS score, ugt.test_uuid AS test_uuid, ugt.group_uuid AS group_uuid, ugt.user_uuid AS user_uuid, ugt.finalized_at AS finalized_at").
-		Join("JOIN groups AS g").JoinOn("g.uuid = ugt.group_uuid").ColumnExpr("g.name AS group_name").
-		Join("JOIN tests AS t").JoinOn("t.uuid = ugt.test_uuid").ColumnExpr("t.name AS test_name").
-		Join("JOIN users AS u").JoinOn("u.uuid = ugt.user_uuid").ColumnExpr("u.nickname AS user_name").
-		ColumnExpr("ugt.finalized_at as finalized_at").
-		OrderBy("ugt.finalized_at", bun.OrderDesc).
-		Offset(page * size).Limit(size)
+	query := r.db.NewSelect().
+		TableExpr("users_groups_tests AS ugt").
+		// part that catches known-from-the-start
+		ColumnExpr("ugt.score AS score").
+		ColumnExpr("ugt.test_uuid AS test_uuid").
+		ColumnExpr("ugt.group_uuid AS group_uuid").
+		ColumnExpr("ugt.user_uuid AS user_uuid").
+		ColumnExpr("ugt.finalized_at AS finalized_at").
+		// part that does simple joins
+		Join("JOIN groups AS g").JoinOn("g.uuid = ugt.group_uuid").
+		ColumnExpr("g.name AS group_name").
+		Join("JOIN tests AS t").JoinOn("t.uuid = ugt.test_uuid").
+		ColumnExpr("t.name AS test_name").
+		Join("JOIN users AS u").JoinOn("u.uuid = ugt.user_uuid").
+		ColumnExpr("u.nickname AS user_name").
+		// part geting max score
+		Join("JOIN tests_quizzes AS tq").JoinOn("tq.test_uuid=ugt.test_uuid").
+		Join("JOIN quizzes AS q").JoinOn("q.uuid=tq.quiz_uuid").
+		ColumnExpr("COALESCE(SUM(q.score), 0) AS max_score").
+		// part grouping
+		Group(
+			"ugt.score",
+			"ugt.test_uuid",
+			"ugt.group_uuid",
+			"ugt.user_uuid",
+			"ugt.finalized_at",
+			"g.name",
+			"t.name",
+			"u.nickname",
+		).
+		OrderExpr("ugt.finalized_at DESC").
+		Offset(page * size).
+		// part falling
+		Limit(size)
 
 	if userUUID != uuid.Nil {
 		query = query.Where("ugt.user_uuid = ?", userUUID)

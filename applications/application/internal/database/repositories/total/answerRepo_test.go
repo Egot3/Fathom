@@ -374,7 +374,7 @@ func TestAnswer_Totals(t *testing.T) {
 		err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
-		var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: 1}
+		var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: mrand.IntN(32)}
 		err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 		require.NoError(t, err)
 
@@ -409,6 +409,8 @@ func TestAnswer_Totals(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, totalN)
 		require.Len(t, totals, 1)
+
+		t.Logf("%+v", totals)
 	})
 	t.Run("None", func(t *testing.T) {
 		i := i.Scope(t.Name())
@@ -430,7 +432,7 @@ func TestAnswer_Totals(t *testing.T) {
 			err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
 			require.NoError(t, err)
 
-			var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: 1}
+			var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: mrand.Int() + 1}
 			err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
 			require.NoError(t, err)
 
