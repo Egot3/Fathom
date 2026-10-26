@@ -46,6 +46,7 @@
   const current = $derived(
     answers?.answers?.find((a) => a.quiz_uuid === currentUUID),
   );
+  let chosen = $derived(current?.chosen);
 </script>
 
 <div class="flex flex-col h-23/25">
@@ -57,17 +58,18 @@
     {:else}
       <div class="grid grid-cols-12 w-full h-full mt-2">
         <div class="col-start-1 col-end-9 p-3">
-          <QuizView
-            UUID={currentUUID}
-            chosen={current?.chosen}
-            correct={current?.correct}
-          />
+          <QuizView UUID={currentUUID} {chosen} correct={current?.correct} />
         </div>
         <div
           class="col-start-9 col-end-13 bg-surface-600-400 rounded-[0.25rem] p-1"
         >
           {#each answers.answers as answer}
-            <button class="btn preset-filled-error-50-950 w-full text-xl h-fit">
+            <button
+              class="btn preset-filled-error-50-950 w-full text-xl h-fit"
+              onclick={() => {
+                chosenUUID = answer.quiz_uuid;
+              }}
+            >
               <div>
                 {answer.quiz_name.slice(14).slice(0, -3)}
               </div>

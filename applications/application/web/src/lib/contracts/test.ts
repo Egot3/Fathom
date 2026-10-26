@@ -9,12 +9,6 @@ import {
 } from "./tokenizedFetch";
 import { AcceptTransform, type Accept } from "../apiutils/acceptHeader";
 import type { Result } from "postcss";
-import {
-  EvictQuiz,
-  GetCachedQuiz,
-  ReadManifest,
-  SetCachedQuiz,
-} from "../apiutils/quizManifest";
 
 export type Test = {
   uuid: string;
