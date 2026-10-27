@@ -988,10 +988,13 @@ func (c *chiService) GetRunningQuizzes(w http.ResponseWriter, r *http.Request) {
 			(&carefulness.JSONError{Status: http.StatusFailedDependency, Err: "unable to get all quizzes, terminating test"}).Encode(w)
 			return
 		}
+		logger.Error("couldn't get quizzes from runner", slog.String("Error", err.Error()))
+		(&carefulness.JSONError{Status: http.StatusInternalServerError, Err: "unknown error occured when getting quizzes"}).Encode(w)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.GetQuizzesUUIDs{
+	json.NewEncoder(w).Encode(contracts.GetQuizzes{
 		Quizzes: quizzes,
 	})
 }

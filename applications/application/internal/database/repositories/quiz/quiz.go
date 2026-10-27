@@ -171,7 +171,7 @@ func (r *bunQuizRepository) QuizPathes(ctx context.Context, quizUUIDs uuid.UUIDs
 
 func (r *bunQuizRepository) Quizzes(ctx context.Context, quizUUIDs uuid.UUIDs) ([]models.Quiz, error) {
 	var quizzes []models.Quiz
-	err := r.db.NewSelect().Model(&quizUUIDs).
+	err := r.db.NewSelect().Model(&quizzes).
 		Where("uuid IN (?)", bun.List(quizUUIDs)).
 		Scan(ctx)
 	if err != nil {
