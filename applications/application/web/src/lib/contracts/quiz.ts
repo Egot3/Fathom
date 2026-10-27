@@ -309,14 +309,12 @@ export function FetchRawQuiz(UUID: string): ResultAsync<RawQuiz, JSONError> {
 }
 
 export function FetchAnswerPost(
-  groupUUID: string,
-  userUUID: string,
   runnerKey: string,
   quizUUID: string,
   answer: QuizAnswer,
 ): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/${groupUUID}/${userUUID}/running/${runnerKey}/${quizUUID}`,
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/running/${runnerKey}/${quizUUID}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

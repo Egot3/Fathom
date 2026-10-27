@@ -22,7 +22,7 @@
         })
         .match(
           (_) => "",
-          ({ error }) => (statusMessage = error),
+          ({ error }) => error,
         );
       loading = false;
     })();
@@ -31,7 +31,6 @@
   let answers = $state<Record<string, QuizAnswer>>({});
 
   let me = $derived(GetUserOrRedirect());
-  let groupUUID = ""; //placeboo
 </script>
 
 <div>
@@ -42,12 +41,17 @@
   {:else if statusMessage}
     <div>{statusMessage}</div>
   {:else}
-    <QuizView
-      UUID={current}
-      {runnerKey}
-      bind:chosen={answers[current]}
-      onanswer={(a) =>
-        FetchAnswerPost(groupUUID, me.UUID, runnerKey, current, a)}
-    />
+    <div class="grid grid-cols-12 grid-rows-12 w-screen h-screen p-16">
+      <div
+        class="row-start-3 row-end-11 col-start-1 col-end-10 p-4 rounded-2xl text-surface-50-950 bg-surface-900-100"
+      >
+        <QuizView
+          UUID={current}
+          {runnerKey}
+          bind:chosen={answers[current]}
+          onanswer={(a) => FetchAnswerPost(runnerKey, current, a)}
+        />
+      </div>
+    </div>
   {/if}
 </div>
