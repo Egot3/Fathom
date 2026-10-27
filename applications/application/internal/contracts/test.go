@@ -50,7 +50,7 @@ type ListTestsResponse struct {
 	Tests []models.Test `json:"tests"`
 }
 
-type GetQuizzesUUIDs struct {
+type GetQuizzes struct {
 	Quizzes []models.Quiz `json:"quizzes"`
 }
 

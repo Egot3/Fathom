@@ -1311,3 +1311,135 @@ func TestTestHandler_Start(t *testing.T) {
 		require.WithinDuration(t, tr.Deadline(), time.Now().Add(d), time.Minute)
 	})
 }
+
+func TestTestHandler_RunningQuizzes(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+		)
+
+		do.Provide(i, testrunner.NewManager)
+		do.Provide(i, handler.NewTestService)
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		m := do.MustInvoke[*testrunner.Manager](i)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		test := models.Test{
+			Name: rand.Text(),
+		}
+		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
+		require.NoError(t, err)
+
+		q := testutils.TestQuiz(t)
+		quiz := models.Quiz{
+			Path: q.Name(),
+		}
+		err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
+		require.NoError(t, err)
+
+		group := models.Group{
+			Name: rand.Text(),
+		}
+		err = db.NewInsert().Model(&group).Returning("*").Scan(t.Context())
+		require.NoError(t, err)
+
+		d := mrand.N(5 * time.Hour)
+
+		_, err = m.Start(t.Context(), d, []string{quiz.Path}, uuid.UUIDs{quiz.UUID}, uuid.UUIDs{group.UUID}, test.UUID)
+		require.NoError(t, err)
+
+		all := m.AllRunners()
+		require.Len(t, all, 1)
+		var key uint64
+		for k, _ := range all {
+			key = k
+		}
+
+		req := httptest.NewRequest(
+			http.MethodGet,
+			fmt.Sprintf("/api/v1/test/running/%d/quizzes", key),
+			nil,
+		)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+
+		var resp contracts.GetQuizzes
+		err = json.NewDecoder(rec.Body).Decode(&resp)
+		require.NoError(t, err)
+		require.Len(t, resp.Quizzes, 1)
+		require.Equal(t, quiz.Path, resp.Quizzes[0].Path)
+	})
+
+	t.Run("Deleted half-way-through", func(t *testing.T) {
+
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+		)
+
+		do.Provide(i, testrunner.NewManager)
+		do.Provide(i, handler.NewTestService)
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		m := do.MustInvoke[*testrunner.Manager](i)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		test := models.Test{
+			Name: rand.Text(),
+		}
+		err = db.NewInsert().Model(&test).Returning("*").Scan(t.Context())
+		require.NoError(t, err)
+
+		q := testutils.TestQuiz(t)
+		quiz := models.Quiz{
+			Path: q.Name(),
+		}
+		err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
+		require.NoError(t, err)
+
+		group := models.Group{
+			Name: rand.Text(),
+		}
+		err = db.NewInsert().Model(&group).Returning("*").Scan(t.Context())
+		require.NoError(t, err)
+
+		d := mrand.N(5 * time.Hour)
+
+		_, err = m.Start(t.Context(), d, []string{quiz.Path}, uuid.UUIDs{quiz.UUID}, uuid.UUIDs{group.UUID}, test.UUID)
+		require.NoError(t, err)
+
+		all := m.AllRunners()
+		require.Len(t, all, 1)
+		var key uint64
+		for k, _ := range all {
+			key = k
+		}
+
+		_, err = db.NewDelete().Model(&quiz).WherePK().Exec(t.Context())
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(
+			http.MethodGet,
+			fmt.Sprintf("/api/v1/test/running/%d/quizzes", key),
+			nil,
+		)
+		testutils.AddTeacherCookie(t, req, uuid.Nil)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.NotEqual(t, http.StatusOK, rec.Code)
+		time.Sleep(time.Second)
+
+		require.Len(t, m.GetAll(), 0, rec.Body.String())
+	})
+}
