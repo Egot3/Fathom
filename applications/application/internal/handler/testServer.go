@@ -940,7 +940,7 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (c *chiService) GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Request) {
+func (c *chiService) GetRunningQuizzes(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
@@ -953,6 +953,7 @@ func (c *chiService) GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	logger = logger.With(slog.Uint64("runner_key", runnerKey))
+	ctx := logging.WithLogger(r.Context(), logger)
 
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
@@ -974,15 +975,24 @@ func (c *chiService) GetRunningQuizzesUUIDs(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Cache-Control", fmt.Sprintf("private, max-age=%d, must-revalidate", int(math.Round(time.Until(deadline).Hours()))))
 
 	if match := r.Header.Get("If-None-Match"); match == etag {
-		w.WriteHeader(http.StatusNotModified) // caching goes brrrrr
+		w.WriteHeader(http.StatusNotModified)
 		return
 	}
 
 	uuids := tr.GetAll()
+	quizzes, err := c.quizRepo.Quizzes(ctx, uuids)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			logger.Error("quizzes for test were not found, collapsing!")
+			tr.Stop()
+			(&carefulness.JSONError{Status: http.StatusFailedDependency, Err: "unable to get all quizzes, terminating test"}).Encode(w)
+			return
+		}
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.GetQuizzesUUIDs{
-		UUIDs: uuids,
+		Quizzes: quizzes,
 	})
 }
 
