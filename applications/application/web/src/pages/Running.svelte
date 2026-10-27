@@ -1,13 +1,17 @@
 <script lang="ts">
   import QuizView from "../components/QuizView.svelte";
-  import { FetchAnswerPost, type QuizAnswer } from "../lib/contracts/quiz";
+  import {
+    FetchAnswerPost,
+    type Quiz,
+    type QuizAnswer,
+  } from "../lib/contracts/quiz";
   import { FetchRunningTestQuizzes } from "../lib/contracts/test";
   import { GetUserOrRedirect } from "../lib/bgdata/user.svelte";
 
   const { runnerKey }: { runnerKey: string } = $props();
 
-  let quizUUIDs: string[] = $state([]);
-  let current: string = $state(null as never);
+  let quizzes: Quiz[] = $state([]);
+  let current: Quiz | null = $state(null);
 
   let statusMessage: string = $state("");
   let loading: boolean = $state(true);
@@ -17,8 +21,8 @@
       loading = true;
       statusMessage = await FetchRunningTestQuizzes(runnerKey)
         .andTee((r) => {
-          quizUUIDs = r;
-          if (current === null) current = quizUUIDs[0];
+          quizzes = r;
+          if (current === null) current = quizzes[0];
         })
         .match(
           (_) => "",
@@ -45,12 +49,14 @@
       <div
         class="row-start-3 row-end-11 col-start-1 col-end-10 p-4 rounded-2xl text-surface-50-950 bg-surface-900-100"
       >
-        <QuizView
-          UUID={current}
-          {runnerKey}
-          bind:chosen={answers[current]}
-          onanswer={(a) => FetchAnswerPost(runnerKey, current, a)}
-        />
+        {#if current !== null}
+          <QuizView
+            UUID={current.uuid}
+            {runnerKey}
+            bind:chosen={answers[current.uuid]}
+            onanswer={(a) => FetchAnswerPost(runnerKey, current!.uuid, a)}
+          />
+        {/if}
       </div>
     </div>
   {/if}

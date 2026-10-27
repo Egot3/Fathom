@@ -1,6 +1,6 @@
 import { errAsync, fromPromise, okAsync, ResultAsync } from "neverthrow";
 import type { JSONError } from "../statuses/jsonerror";
-import type { ParsedQuiz, ParsedQuizResponse, Quiz } from "./quiz";
+import type { Quiz } from "./quiz";
 import {
   NormalizeBlob,
   NormalizeJSON,
@@ -342,16 +342,16 @@ export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
     .andThen((_) => okAsync(null));
 }
 
-type GetQuizzesUUIDsResponse = {
-  quiz_uuids: string[];
+type GetQuizzesResponse = {
+  quizzes: Quiz[];
 };
 
 export function FetchRunningTestQuizzes(
   key: string,
-): ResultAsync<string[], JSONError> {
+): ResultAsync<Quiz[], JSONError> {
   return TokenizedFetch(
     `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/quizzes`,
   )
-    .andThen(NormalizeJSON<GetQuizzesUUIDsResponse>)
-    .andThen(({ quiz_uuids }) => okAsync(quiz_uuids));
+    .andThen(NormalizeJSON<GetQuizzesResponse>)
+    .map(({ quizzes }) => quizzes);
 }
