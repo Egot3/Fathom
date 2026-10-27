@@ -51,7 +51,7 @@ type ListTestsResponse struct {
 }
 
 type GetQuizzesUUIDs struct {
-	UUIDs uuid.UUIDs `json:"quiz_uuids"`
+	Quizzes []models.Quiz `json:"quizzes"`
 }
 
 type RunningInfo struct {

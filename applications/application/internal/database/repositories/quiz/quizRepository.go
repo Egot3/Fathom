@@ -24,4 +24,5 @@ type QuizRepository interface {
 	ExistsByUUID(ctx context.Context, quizUUID uuid.UUID) (bool, error)
 	QuizFresh(ctx context.Context, quizUUID uuid.UUID, checksum [8]byte) (bool, error)
 	Quiz(ctx context.Context, quizUUID uuid.UUID) (models.Quiz, error)
+	Quizzes(ctx context.Context, quizUUIDs uuid.UUIDs) ([]models.Quiz, error)
 }

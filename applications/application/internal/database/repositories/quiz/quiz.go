@@ -168,3 +168,18 @@ func (r *bunQuizRepository) QuizPathes(ctx context.Context, quizUUIDs uuid.UUIDs
 
 	return pathUUID, nil
 }
+
+func (r *bunQuizRepository) Quizzes(ctx context.Context, quizUUIDs uuid.UUIDs) ([]models.Quiz, error) {
+	var quizzes []models.Quiz
+	err := r.db.NewSelect().Model(&quizUUIDs).
+		Where("uuid IN (?)", bun.List(quizUUIDs)).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(quizzes) != len(quizUUIDs) {
+		return nil, sql.ErrNoRows
+	}
+
+	return quizzes, nil
+}
