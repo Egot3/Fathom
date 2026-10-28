@@ -946,6 +946,14 @@ func (c *chiService) GetRunningQuizzes(w http.ResponseWriter, r *http.Request) {
 	)
 	w.Header().Set("Content-Type", "application/json")
 
+	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	if !ok {
+		logger.Error("failed to retrieve jwt claims")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to retrieve jwt's claims"})
+		return
+	}
+
 	runnerKey, err := strconv.ParseUint(chi.URLParam(r, "runnerKey"), 10, 64)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -991,6 +999,17 @@ func (c *chiService) GetRunningQuizzes(w http.ResponseWriter, r *http.Request) {
 		logger.Error("couldn't get quizzes from runner", slog.String("Error", err.Error()))
 		(&carefulness.JSONError{Status: http.StatusInternalServerError, Err: "unknown error occured when getting quizzes"}).Encode(w)
 		return
+	}
+
+	if !claims.IsTeacher {
+		quizzes = lo.Map(quizzes, func(q models.Quiz, _ int) models.Quiz {
+			return models.Quiz{
+				UUID:     q.UUID,
+				Path:     q.Path,
+				Checksum: q.Checksum,
+				Score:    q.Score,
+			}
+		})
 	}
 
 	w.WriteHeader(http.StatusOK)

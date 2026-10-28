@@ -15,6 +15,8 @@ import (
 
 func JWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		logger := logging.LoggerFromContext(ctx)
 
 		authorization, err := r.Cookie("jwt_token")
 		if err != nil {
@@ -24,19 +26,20 @@ func JWT(next http.Handler) http.Handler {
 
 		claims, err := jwtutils.ValidateToken(authorization.Value)
 		if err != nil {
+			logger.Warn("got bad token")
 			w.WriteHeader(http.StatusUnauthorized)
 			http.SetCookie(w, httputils.ResetCookie)
 			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Bad token"})
 			return
 		}
 
-		ctx := r.Context()
 		ctx = context.WithValue(ctx, "claims", *claims)
+		ctx = logging.WithLogger(ctx, logger.With(slog.String("user_uuid", claims.UserID.String())))
 
 		cookie, err := httputils.NewAuthCookie(claims.UserID, claims.IsTeacher)
 		http.SetCookie(w, cookie)
 		if err != nil {
-			logging.LoggerFromContext(r.Context()).Error("unable to create login token", slog.String("Error", err.Error()))
+			logger.Error("unable to create login token", slog.String("Error", err.Error()))
 			(&carefulness.JSONError{Err: "Unable to create login token", Status: http.StatusInternalServerError}).Encode(w)
 			return
 		}
