@@ -1,4 +1,3 @@
-<!-- components/TotalsTable.svelte -->
 <script lang="ts">
   import { FetchTotals } from "../lib/contracts/totals";
   import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
@@ -40,6 +39,7 @@
     }),
     fetcher: (page, size, p) =>
       FetchTotals(page, size, p.user, p.group, p.test),
+    debounce: 500,
   });
 
   let focused = $state("");
