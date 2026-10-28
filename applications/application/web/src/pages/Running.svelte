@@ -45,7 +45,7 @@
   {:else if statusMessage}
     <div>{statusMessage}</div>
   {:else}
-    <div class="grid grid-cols-12 grid-rows-12 w-screen h-screen p-16">
+    <div class="grid grid-cols-12 grid-rows-12 w-screen h-screen p-16 gap-4">
       <div
         class="row-start-3 row-end-11 col-start-1 col-end-10 p-4 rounded-2xl text-surface-50-950 bg-surface-900-100"
       >
@@ -57,6 +57,21 @@
             onanswer={(a) => FetchAnswerPost(runnerKey, current!.uuid, a)}
           />
         {/if}
+      </div>
+      <div
+        class="row-start-3 row-end-11 col-start-10 col-end-13 p-4 rounded-2xl flex flex-col gap-1 bg-surface-200-800"
+      >
+        {#each quizzes as quiz (quiz.uuid)}
+          {const quizName = quiz.path.slice(14).slice(0, -3)}
+          <button
+            class="items-center justify-center w-full flex bg-surface-300-700"
+            onclick={() => {
+              current = quiz;
+            }}
+          >
+            {quizName}
+          </button>
+        {/each}
       </div>
     </div>
   {/if}
