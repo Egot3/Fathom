@@ -372,3 +372,14 @@ export function FetchRunningTestQuizzes(
     .andThen(NormalizeJSON<GetQuizzesResponse>)
     .map(({ quizzes }) => quizzes);
 }
+
+export function FetchTestTotalize(key: string): ResultAsync<null, JSONError> {
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/running/${key}/`,
+    {
+      method: "POST",
+    },
+  )
+    .andThen(NormalizeResponse)
+    .andThen((_) => okAsync(null));
+}

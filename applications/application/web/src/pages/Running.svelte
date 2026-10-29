@@ -1,5 +1,10 @@
 <script lang="ts">
+  import { Dialog } from "@skeletonlabs/skeleton-svelte";
+  import Confirm from "../components/Confirm.svelte";
+  import PeekDialogBig from "../components/PeekDialogBig.svelte";
+  import PeekDialogue from "../components/PeekDialogue.svelte";
   import QuizView from "../components/QuizView.svelte";
+  import { Toaster } from "../lib/apiutils/toaster";
   import {
     FetchAnswerPost,
     type Quiz,
@@ -8,6 +13,7 @@
   import {
     FetchRunningTestInfo,
     FetchRunningTestQuizzes,
+    FetchTestTotalize,
     type TestInfo,
   } from "../lib/contracts/test";
 
@@ -89,19 +95,42 @@
         {/if}
       </div>
       <div
-        class="row-start-3 row-end-11 col-start-10 col-end-13 p-4 rounded-2xl flex flex-col gap-1 bg-surface-200-800"
+        class="row-start-3 row-end-11 col-start-10 col-end-13 p-4 rounded-2xl flex flex-col bg-surface-200-800"
       >
-        {#each quizzes as quiz (quiz.uuid)}
-          {const quizName = quiz.path.slice(14).slice(0, -3)}
-          <button
-            class="items-center justify-center w-full flex bg-surface-300-700"
-            onclick={() => {
-              current = quiz;
+        <div class="h-11/12 flex flex-col gap-1">
+          {#each quizzes as quiz (quiz.uuid)}
+            {const quizName = quiz.path.slice(14).slice(0, -3)}
+            <button
+              class="items-center justify-center w-full flex bg-surface-300-700"
+              onclick={() => {
+                current = quiz;
+              }}
+            >
+              {quizName}
+            </button>
+          {/each}
+        </div>
+
+        <PeekDialogue title="Test finisher">
+          <Confirm
+            value="Finish"
+            name="Totalize"
+            key={runnerKey}
+            actor={FetchTestTotalize}
+            callback={() => {
+              Toaster.info({
+                title: "Finished",
+                description: "Your answers were send successfuly",
+              });
+              window.location.href = "/home";
             }}
-          >
-            {quizName}
-          </button>
-        {/each}
+          />
+          {#snippet trigger()}
+            <Dialog.Trigger class="h-1/12 btn preset-filled-brand"
+              >Totalize</Dialog.Trigger
+            >
+          {/snippet}
+        </PeekDialogue>
       </div>
     </div>
   {/if}
