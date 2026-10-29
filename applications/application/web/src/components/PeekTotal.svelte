@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { FetchParsedQuiz, type QuizAnswer } from "../lib/contracts/quiz";
-  import {
-    FetchAnswers,
-    type Answer,
-    type Answers,
-  } from "../lib/contracts/totals";
+  import { FetchAnswers } from "../lib/contracts/totals";
+  import { CreatePagedQuery } from "../lib/layoututils/createPagedQuery.svelte";
+  import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
   import QuizView from "./QuizView.svelte";
+  import Pagination from "./Pagination.svelte";
 
   const {
     userUUID,
@@ -17,69 +15,63 @@
     testUUID: string;
   } = $props();
 
-  let page = $state(1);
-  let pageSize = $state(5);
-
-  let answers: Answers = $state(null as never);
-  let loading = $state(true);
-  let statusMessage = $state("");
-  $effect(() => {
-    loading = true;
-    (async () => {
-      statusMessage = (
-        await FetchAnswers(groupUUID, userUUID, testUUID, page - 1, pageSize)
-      )
-        .andTee((r) => {
-          loading = false;
-          answers = r;
-        })
-        .match(
-          (_) => "",
-          (err) => err.error,
-        );
-    })();
+  const fit = CreateFitRows({ rowHeight: 27, reserve: 1 });
+  const q = CreatePagedQuery({
+    pageSize: () => fit.pageSize,
+    enabled: () => fit.ready,
+    params: () => ({}),
+    fetcher: (page, size) =>
+      FetchAnswers(groupUUID, userUUID, testUUID, page, size),
   });
 
   let chosenUUID: string = $state("");
 
-  const currentUUID = $derived(chosenUUID || answers?.answers?.[0]?.quiz_uuid); // huh?
-  const current = $derived(
-    answers?.answers?.find((a) => a.quiz_uuid === currentUUID),
+  let currentUUID = $derived(chosenUUID || q.data?.answers?.[0]?.quiz_uuid); // huh?
+  let current = $derived(
+    q.data?.answers?.find((a) => a.quiz_uuid === currentUUID),
   );
   let chosen = $derived(current?.chosen);
 </script>
 
-<div class="flex flex-col h-23/25">
-  {#if loading}
-    <div>loading...</div>
-  {:else}
-    {#if statusMessage !== ""}
-      <div>{statusMessage}</div>
+<div class="grid grid-cols-12 w-full flex-1 overflow-scroll">
+  <div class="col-start-1 col-end-9 p-3">
+    <QuizView UUID={currentUUID!} {chosen} correct={current?.correct} />
+  </div>
+  <div
+    class="flex flex-col col-start-9 col-end-13 bg-surface-600-400 rounded-[0.25rem] p-1 gap-2"
+    use:fit.measure
+  >
+    {#if q.loading}
+      <div
+        class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl col-start-1 col-end-13"
+      ></div>
+    {:else if q.error !== ""}
+      <div>{q.error}</div>
+    {:else if q.data === null}
+      <div>no totals to list</div>
     {:else}
-      <div class="grid grid-cols-12 w-full h-full mt-2">
-        <div class="col-start-1 col-end-9 p-3">
-          <QuizView UUID={currentUUID} {chosen} correct={current?.correct} />
-        </div>
-        <div
-          class="col-start-9 col-end-13 bg-surface-600-400 rounded-[0.25rem] p-1"
+      {#each q.data?.answers as answer}
+        <button
+          class="btn text-surface-50-950 bg-surface-900-100 w-full text-xl h-fit"
+          onclick={() => {
+            chosenUUID = answer.quiz_uuid;
+          }}
         >
-          {#each answers.answers as answer}
-            <button
-              class="btn preset-filled-error-50-950 w-full text-xl h-fit"
-              onclick={() => {
-                chosenUUID = answer.quiz_uuid;
-              }}
-            >
-              <div>
-                {answer.quiz_name.slice(14).slice(0, -3)}
-              </div>
-              <div>
-                {answer.score}/{answer.max_score}
-              </div>
-            </button>
-          {/each}
-        </div>
-      </div>
+          <div>
+            {answer.quiz_name.slice(14).slice(0, -3)}
+          </div>
+          <div>
+            {answer.score}/{answer.max_score}
+          </div>
+        </button>
+      {/each}
     {/if}
-  {/if}
+    <footer class="flex justify-between items-center gap-4 w-full mt-auto">
+      <Pagination
+        bind:page={q.page}
+        pageSize={fit.pageSize}
+        total={q.data?.total ?? 0}
+      />
+    </footer>
+  </div>
 </div>
