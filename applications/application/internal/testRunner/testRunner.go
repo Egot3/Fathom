@@ -301,22 +301,20 @@ func (tr *concreteTestRunner) Resume() error {
 	tr.deadline = tr.deadline.Add(sincePause)
 
 	if sincePause <= 0 {
-		tr.giveup <- struct{}{}
-		tr.giveup = nil
+		close(tr.giveup)
 		tr.quizzes = nil
 		tr.isPaused = false
 		return ErrRunnerInactive
 	}
 
 	if time.Until(tr.deadline) <= 0 {
-		tr.giveup <- struct{}{}
-		tr.giveup = nil
+		close(tr.giveup)
 		tr.quizzes = nil
 		tr.isPaused = false
 		return ErrRunnerExpired
 	}
 
-	tr.timer.Reset(sincePause)
+	tr.timer.Reset(time.Until(tr.deadline))
 
 	tr.isPaused = false
 	return nil

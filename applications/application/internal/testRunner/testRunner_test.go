@@ -182,6 +182,22 @@ func TestRunner_Stop(t *testing.T) {
 
 		require.ErrorIs(t, err, testrunner.ErrRunnerInactive)
 	})
+
+	t.Run("Survives resume", func(t *testing.T) {
+		m := do.MustInvoke[*testrunner.Manager](i)
+		r, err := m.Start(t.Context(), 6*time.Second, quizPathes, quizUUIDs, uuid.UUIDs{}, testUUID)
+		require.NoError(t, err)
+
+		require.NoError(t, r.Pause())
+		time.Sleep(1 * time.Second)
+		require.NoError(t, r.Resume())
+		require.WithinDuration(t, time.Now().Add(7*time.Second), r.Deadline(), time.Second+500*time.Millisecond) // time is confusing, alright
+
+		time.Sleep(2 * time.Second)
+		require.Len(t, m.GetAll(), 1)
+		require.NoError(t, r.Pause())
+		require.WithinDuration(t, time.Now().Add(5*time.Second), r.Deadline(), time.Second+500*time.Millisecond)
+	})
 }
 
 // there were 2 test suite for methods which do not longer exist. They will be remembered
