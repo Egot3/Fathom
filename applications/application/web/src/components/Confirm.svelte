@@ -7,18 +7,18 @@
 
   const {
     name,
-    UUID,
+    key,
     value,
 
-    deletor,
+    actor,
     callback = () => {},
   }: {
     name: string;
-    UUID: string;
+    key: string;
     value?: string;
 
-    deletor: (UUID: string) => ResultAsync<null, JSONError>;
-    callback: () => void;
+    actor: (UUID: string) => ResultAsync<null, JSONError>;
+    callback?: () => void;
   } = $props();
 
   let insertedName: string = $state("");
@@ -33,7 +33,7 @@
       return;
     }
 
-    const deleteResponse = await deletor(UUID).match(
+    const deleteResponse = await actor(key).match(
       (r) => r,
       (e) => e,
     );
@@ -42,7 +42,7 @@
       return;
     }
 
-    callback();
+    callback?.();
   }
 </script>
 
@@ -79,7 +79,7 @@
     {/if}
     <Dialog.CloseTrigger class="btn preset-tonal">Cancel</Dialog.CloseTrigger>
     <button type="submit" class="btn preset-filled" disabled={!nameReady}
-      >{value ?? "Delete"}</button
+      >{value ?? "Confirm"}</button
     >
   </footer>
 </form>
