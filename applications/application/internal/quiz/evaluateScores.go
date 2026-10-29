@@ -36,7 +36,7 @@ func evaluateCheck(required, factual *AnswerCheck, score int) float32 {
 }
 
 func evaluateAllOrNoneCheck(required, factual *AnswerCheck, score int) float32 {
-	if len(required.ChoiceIdxs) < len(factual.ChoiceIdxs) {
+	if len(required.ChoiceIdxs) != len(factual.ChoiceIdxs) {
 		return 0
 	}
 
@@ -69,7 +69,7 @@ func evaluateOrder(required, factual *AnswerOrder, score int) float32 {
 }
 
 func evaluateAllOrNoneOrder(required, factual *AnswerOrder, score int) float32 {
-	if len(required.ItemIdxs) < len(factual.ItemIdxs) {
+	if len(required.ItemIdxs) != len(factual.ItemIdxs) {
 		return 0
 	}
 
