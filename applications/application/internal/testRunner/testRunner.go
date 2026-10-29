@@ -258,7 +258,7 @@ func (tr *concreteTestRunner) ExtendTime(duration time.Duration) error {
 	tr.deadline = tr.deadline.Add(duration)
 	if !tr.isPaused {
 		if !tr.timer.Stop() {
-			return ErrRunnerNotPaused
+			return ErrRunnerExpired
 		}
 		tr.timer.Reset(time.Until(tr.deadline))
 	}
