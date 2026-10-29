@@ -55,13 +55,17 @@ type GetQuizzes struct {
 }
 
 type RunningInfo struct {
-	models.Test
 	Key        uint64     `json:"key,string"`
 	Deadline   time.Time  `json:"deadline"`
 	IsPaused   bool       `json:"is_paused"`
 	GroupUUIDs uuid.UUIDs `json:"group_uuids"`
 }
 
-type RunningInfoResponse struct {
-	TestInfos []RunningInfo `json:"tests"`
+type RunningInfoExtended struct {
+	models.Test
+	RunningInfo
+}
+
+type RunningInfosResponse struct {
+	TestInfos []RunningInfoExtended `json:"tests"`
 }
