@@ -121,7 +121,7 @@ export function FetchAllQuizzes(
         Accept: "application/json",
       },
     },
-  ).andThen((r) => NormalizeJSON<Quizzes>(r));
+  ).andThen(NormalizeJSON<Quizzes>);
 }
 
 export enum Kind {
