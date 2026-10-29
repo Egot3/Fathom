@@ -17,13 +17,13 @@
   const isTeacher = $derived((GetUser()?.isTeacher ?? false) && inTeachery);
   const tests = CreateRunningTests();
 
-  let selectedKey: string | null = $state(null);
+  let chosenIdx = $state(0);
+  let selectedKey: string | null = $derived(tests.data[chosenIdx]?.key ?? null);
   const chosen = $derived(
     selectedKey === null
       ? (tests.data.find((t) => t.key === selectedKey) ?? tests.data[0])
       : tests.data[0],
   ); // something malicious is brewing
-  const chosenIdx = $derived(Math.max(0, tests.data.indexOf(chosen)));
   const deadline = $derived(
     chosen?.deadline ? new Date(chosen.deadline).toLocaleString() : "",
   );
@@ -53,9 +53,7 @@
       <span>
         <ChipSelector
           options={tests.data.map((t) => t.name)}
-          bind:selected={
-            () => chosenIdx, (i) => (selectedKey = tests.data[i]?.key ?? null)
-          }
+          bind:selected={chosenIdx}
         />
       </span>
     {/if}

@@ -6,7 +6,6 @@
     type QuizAnswer,
   } from "../lib/contracts/quiz";
   import { FetchRunningTestQuizzes } from "../lib/contracts/test";
-  import { GetUserOrRedirect } from "../lib/bgdata/user.svelte";
 
   const { runnerKey }: { runnerKey: string } = $props();
 
