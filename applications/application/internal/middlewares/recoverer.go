@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
+	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/logging"
 )
 
@@ -20,7 +21,7 @@ func Recoverer(next http.Handler) http.Handler {
 				logger := logging.LoggerFromContext(r.Context())
 				logger.Error("panic!", slog.String("stack", string(debug.Stack())), slog.Any("recover", rvr))
 
-				w.WriteHeader(http.StatusInternalServerError)
+				carefulness.ErrPanic.Encode(w)
 			}
 		}()
 

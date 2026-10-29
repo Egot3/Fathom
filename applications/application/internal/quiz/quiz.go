@@ -34,14 +34,17 @@ type Quiz struct {
 func (q Quiz) EvaluateScore(answer QuizAnswers) float32 {
 	switch q.Meta.Kind {
 	case Input:
-		if q.Answer.Input == nil {
+		if answer.Input == nil {
 			return 0
 		}
 		return evaluateInput(q.Answer.Input, answer.Input, q.Meta.Score)
 	case Radio:
+		if answer.Radio == nil {
+			return 0
+		}
 		return evaluateRadio(q.Answer.Radio, answer.Radio, q.Meta.Score)
 	case Order:
-		if q.Answer.Order == nil {
+		if answer.Order == nil {
 			return 0
 		}
 		if q.Meta.AllOrNone {
@@ -49,7 +52,7 @@ func (q Quiz) EvaluateScore(answer QuizAnswers) float32 {
 		}
 		return evaluateOrder(q.Answer.Order, answer.Order, q.Meta.Score)
 	case Check:
-		if q.Answer.Check == nil {
+		if answer.Check == nil {
 			return 0
 		}
 		if q.Meta.AllOrNone {
@@ -57,7 +60,7 @@ func (q Quiz) EvaluateScore(answer QuizAnswers) float32 {
 		}
 		return evaluateCheck(q.Answer.Check, answer.Check, q.Meta.Score)
 	case Accordance:
-		if q.Answer.Accordance == nil {
+		if answer.Accordance == nil {
 			return 0
 		}
 		if q.Meta.AllOrNone {
