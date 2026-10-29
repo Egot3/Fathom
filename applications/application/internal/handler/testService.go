@@ -77,6 +77,7 @@ type TestService interface {
 	ExportTest(w http.ResponseWriter, r *http.Request)
 	ImportTest(w http.ResponseWriter, r *http.Request)
 	GetRunningQuizzes(w http.ResponseWriter, r *http.Request)
+	RunningInfos(w http.ResponseWriter, r *http.Request)
 	RunningInfo(w http.ResponseWriter, r *http.Request)
 }
 

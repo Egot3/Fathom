@@ -1018,7 +1018,7 @@ func (c *chiService) GetRunningQuizzes(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
+func (c *chiService) RunningInfos(w http.ResponseWriter, r *http.Request) {
 	logger := logging.LoggerFromContext(r.Context()).With(
 		slog.String("layer", "handler"),
 	)
@@ -1070,7 +1070,7 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 		testsByUUID[test.UUID] = test
 	}
 
-	testInfos := make([]contracts.RunningInfo, 0, len(runners))
+	testInfos := make([]contracts.RunningInfoExtended, 0, len(runners))
 	for key, testUUID := range runners {
 		tr, ok := c.manager.Get(key)
 		if !ok {
@@ -1085,17 +1085,49 @@ func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
 			test.Quizzes = nil
 		}
 
-		testInfos = append(testInfos, contracts.RunningInfo{
-			Key:      key,
-			Deadline: tr.Deadline(),
-			IsPaused: tr.IsPaused(),
-			Test:     test,
+		testInfos = append(testInfos, contracts.RunningInfoExtended{
+			RunningInfo: contracts.RunningInfo{
+				IsPaused:   tr.IsPaused(),
+				Deadline:   tr.Deadline(),
+				Key:        key,
+				GroupUUIDs: tr.Groups(),
+			},
+			Test: test,
 		})
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(contracts.RunningInfoResponse{
+	json.NewEncoder(w).Encode(contracts.RunningInfosResponse{
 		TestInfos: testInfos,
+	})
+}
+
+func (c *chiService) RunningInfo(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	w.Header().Set("Content-Type", "application/json")
+
+	runnerKey, err := strconv.ParseUint(chi.URLParam(r, "runnerKey"), 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest)
+		return
+	}
+	logger = logger.With(slog.Uint64("runner_key", runnerKey))
+
+	runner, ok := c.manager.Get(runnerKey)
+	if !ok {
+		logger.Warn("got request for not running key")
+		(&carefulness.JSONError{Err: "no runner with key is active", Status: http.StatusNotFound}).Encode(w)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contracts.RunningInfo{
+		Key:        runnerKey,
+		Deadline:   runner.Deadline(),
+		IsPaused:   runner.IsPaused(),
+		GroupUUIDs: runner.Groups(),
 	})
 }
 
