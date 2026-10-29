@@ -101,7 +101,7 @@
         </thead>
         <tbody>
           {#each q.data.totals as total (total.group_uuid + total.test_uuid + total.user_uuid)}
-            {@const id = total.group_uuid + total.test_uuid + total.user_uuid}
+            {const id = total.group_uuid + total.test_uuid + total.user_uuid}
             <tr
               style="height:20px"
               onclick={() => (focused = id)}
@@ -119,19 +119,21 @@
                   }
                   title="Totals peeker"
                 >
-                  <div class="flex">
-                    <h2 class="text-2xl">{total.test_name}</h2>
-                    <div
-                      class="ml-auto text-2xl chip preset-outlined-surface-400-600"
-                    >
-                      {total.score}/{total.max_score}
+                  <div class="flex flex-col h-full w-full gap-2">
+                    <div class="flex">
+                      <h2 class="text-2xl">{total.test_name}</h2>
+                      <div
+                        class="ml-auto text-2xl chip preset-outlined-surface-400-600"
+                      >
+                        {total.score}/{total.max_score}
+                      </div>
                     </div>
+                    <PeekTotal
+                      userUUID={total.user_uuid}
+                      groupUUID={total.group_uuid}
+                      testUUID={total.test_uuid}
+                    />
                   </div>
-                  <PeekTotal
-                    userUUID={total.user_uuid}
-                    groupUUID={total.group_uuid}
-                    testUUID={total.test_uuid}
-                  />
                 </PeekDialogBig>
               </td>
             </tr>
