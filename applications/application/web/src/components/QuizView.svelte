@@ -60,7 +60,7 @@
 {:else if statusMessage !== ""}
   <span>{statusMessage}</span>
 {:else if quiz}
-  <div class="space-y-1 mt-4">
+  <div class="space-y-1 h-full flex flex-col">
     <h2 class="text-5xl font-bold">{quiz.title}</h2>
     <p class="text-2xl">{quiz.body}</p>
     <QuizAnswerer

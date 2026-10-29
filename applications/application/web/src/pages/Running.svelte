@@ -33,8 +33,6 @@
   });
 
   let answers = $state<Record<string, QuizAnswer>>({});
-
-  let me = $derived(GetUserOrRedirect());
 </script>
 
 <div>
@@ -47,14 +45,17 @@
   {:else}
     <div class="grid grid-cols-12 grid-rows-12 w-screen h-screen p-16 gap-4">
       <div
-        class="row-start-3 row-end-11 col-start-1 col-end-10 p-4 rounded-2xl text-surface-50-950 bg-surface-900-100"
+        class="row-start-3 row-end-11 col-start-1 col-end-10 p-8 rounded-2xl text-surface-50-950 bg-surface-900-100"
       >
         {#if current !== null}
           <QuizView
             UUID={current.uuid}
             {runnerKey}
             bind:chosen={answers[current.uuid]}
-            onanswer={(a) => FetchAnswerPost(runnerKey, current!.uuid, a)}
+            onanswer={(a) =>
+              current !== null
+                ? FetchAnswerPost(runnerKey, current!.uuid, a)
+                : {}}
           />
         {/if}
       </div>
