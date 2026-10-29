@@ -5,7 +5,11 @@
     type Quiz,
     type QuizAnswer,
   } from "../lib/contracts/quiz";
-  import { FetchRunningTestQuizzes } from "../lib/contracts/test";
+  import {
+    FetchRunningTestInfo,
+    FetchRunningTestQuizzes,
+    type TestInfo,
+  } from "../lib/contracts/test";
 
   const { runnerKey }: { runnerKey: string } = $props();
 
@@ -13,11 +17,12 @@
   let current: Quiz | null = $state(null);
 
   let statusMessage: string = $state("");
-  let loading: boolean = $state(true);
+  let loadingQuizzes: boolean = $state(true);
+  let loadingTestInfo: boolean = $state(true);
 
   $effect(() => {
     (async () => {
-      loading = true;
+      loadingQuizzes = true;
       statusMessage = await FetchRunningTestQuizzes(runnerKey)
         .andTee((r) => {
           quizzes = r;
@@ -27,7 +32,24 @@
           (_) => "",
           ({ error }) => error,
         );
-      loading = false;
+      loadingQuizzes = false;
+    })();
+  });
+
+  let info: TestInfo | null = $state(null);
+  $effect(() => {
+    current;
+    (async () => {
+      loadingTestInfo = true;
+      statusMessage = await FetchRunningTestInfo(runnerKey)
+        .andTee((r) => {
+          info = r;
+        })
+        .match(
+          (_) => "",
+          ({ error }) => error,
+        );
+      loadingTestInfo = false;
     })();
   });
 
@@ -35,12 +57,20 @@
 </script>
 
 <div>
-  {#if loading}
+  {#if loadingQuizzes || loadingTestInfo}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
   {:else if statusMessage}
     <div>{statusMessage}</div>
+  {:else if info?.is_paused}
+    <div class="grid grid-cols-12 grid-rows-12 w-screen h-screen p-16 gap-4">
+      <h1
+        class="row-start-3 row-end-11 col-start-1 col-end-13 p-8 rounded-2xl text-surface-50-950 bg-surface-900-100 font-bold flex items-center justify-center"
+      >
+        test is currently paused
+      </h1>
+    </div>
   {:else}
     <div class="grid grid-cols-12 grid-rows-12 w-screen h-screen p-16 gap-4">
       <div

@@ -8,7 +8,6 @@ import {
   TokenizedFetch,
 } from "./tokenizedFetch";
 import { AcceptTransform, type Accept } from "../apiutils/acceptHeader";
-import type { Result } from "postcss";
 
 export type Test = {
   uuid: string;
@@ -40,6 +39,24 @@ export type TestInfo = Test & {
 type CurrentlyRunningResponse = {
   tests: TestInfo[];
 };
+
+export function FetchRunningTestInfo(
+  key: string,
+): ResultAsync<TestInfo, JSONError> {
+  return TokenizedFetch(
+    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}`,
+  )
+    .andThrough((r) => {
+      if (r.status === 423) {
+        return errAsync({
+          error: "requested test is not running",
+        } as JSONError);
+      }
+
+      return okAsync(undefined);
+    })
+    .andThen(NormalizeJSON<TestInfo>);
+}
 
 export function FetchCurrentlyRunningTestInfos(): ResultAsync<
   TestInfo[],
