@@ -34,20 +34,32 @@ type Quiz struct {
 func (q Quiz) EvaluateScore(answer QuizAnswers) float32 {
 	switch q.Meta.Kind {
 	case Input:
+		if q.Answer.Input == nil {
+			return 0
+		}
 		return evaluateInput(q.Answer.Input, answer.Input, q.Meta.Score)
 	case Radio:
 		return evaluateRadio(q.Answer.Radio, answer.Radio, q.Meta.Score)
 	case Order:
+		if q.Answer.Order == nil {
+			return 0
+		}
 		if q.Meta.AllOrNone {
 			return evaluateAllOrNoneOrder(q.Answer.Order, answer.Order, q.Meta.Score)
 		}
 		return evaluateOrder(q.Answer.Order, answer.Order, q.Meta.Score)
 	case Check:
+		if q.Answer.Check == nil {
+			return 0
+		}
 		if q.Meta.AllOrNone {
 			return evaluateAllOrNoneCheck(q.Answer.Check, answer.Check, q.Meta.Score)
 		}
 		return evaluateCheck(q.Answer.Check, answer.Check, q.Meta.Score)
 	case Accordance:
+		if q.Answer.Accordance == nil {
+			return 0
+		}
 		if q.Meta.AllOrNone {
 			return evaluateAllOrNoneAccordance(q.Answer.Accordance, answer.Accordance, q.Meta.Score)
 		}
