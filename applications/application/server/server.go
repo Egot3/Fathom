@@ -166,6 +166,10 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 
 			r.Route("/running/{runnerKey:^[0-9]{1,20}$}", func(r chi.Router) {
 				r.Use(middleware.Maybe(
+					middlewares.IsAllowed, func(r *http.Request) bool {
+						return !middlewares.IsTeacherCondition(r)
+					}))
+				r.Use(middleware.Maybe(
 					middlewares.IsInGroup(svc.GetTestUUID, svc.AllowedToTest, svc.GetDeadline), func(r *http.Request) bool {
 						return !middlewares.IsTeacherCondition(r)
 					}))

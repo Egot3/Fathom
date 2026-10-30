@@ -149,3 +149,37 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 		})
 	}
 }
+
+var allowed = struct {
+	sync.RWMutex
+	users map[uuid.UUID]struct{}
+}{
+	users: make(map[uuid.UUID]struct{}),
+}
+
+func IsAllowed(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		logger := logging.LoggerFromContext(ctx)
+
+		claims, ok := ctx.Value("claims").(jwtutils.Claims)
+		if !ok {
+			logger.Error("couldn't retrieve claims from context, is JWT middleware up?")
+			(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusInternalServerError}).Encode(w)
+			return
+		}
+		allowed.RLock()
+		defer allowed.RUnlock()
+		if _, ok := allowed.users[claims.UserID]; !ok {
+			logger.Warn("forbidden user tried to access runner endpoint")
+			(&carefulness.JSONError{Err: "your participation has ended", Status: http.StatusForbidden}).Encode(w)
+			return
+		}
+
+		next.ServeHTTP(w, r.WithContext(context.WithValue(ctx, "ban", func(UUID uuid.UUID) {
+			allowed.RLock()
+			defer allowed.RUnlock()
+			allowed.users[UUID] = struct{}{}
+		})))
+	})
+}

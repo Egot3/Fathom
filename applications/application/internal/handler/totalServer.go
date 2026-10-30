@@ -276,6 +276,11 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 		(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusUnauthorized}).Encode(w)
 		return
 	}
+	ban, ok := ctx.Value("ban").(func(uuid.UUID))
+	if !ok {
+		(&carefulness.JSONError{Err: "couldn't start totalization", Status: http.StatusInternalServerError}).Encode(w)
+		return
+	}
 
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
@@ -320,6 +325,8 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't totalize because of unknown error"})
 		return
 	}
+
+	ban(userUUID) // chekhov's gun
 
 	w.WriteHeader(http.StatusNoContent)
 }
