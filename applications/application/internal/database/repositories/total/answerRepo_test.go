@@ -4,14 +4,17 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"encoding/json/v2"
 	"fmt"
 	"math"
 	mrand "math/rand/v2"
 	"testing"
+	"time"
 
 	"github.com/egot3/fathom/internal/database/repositories"
 	"github.com/egot3/fathom/internal/database/repositories/total"
 	"github.com/egot3/fathom/internal/models"
+	"github.com/egot3/fathom/internal/quiz"
 	"github.com/egot3/fathom/internal/testutils"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
@@ -469,5 +472,135 @@ func TestAnswer_Totals(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, N, amount)
 		require.Len(t, totals, int(amount))
+	})
+}
+
+func TestAnswer_AnswersInTest(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		t.Run("Single", func(t *testing.T) {
+			i := NewInjectorWithTestRepo(t)
+			r := do.MustInvoke[total.TotalRepository](i)
+			db := do.MustInvoke[*bun.DB](i)
+
+			testM := models.Test{Name: rand.Text()}
+			err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
+			require.NoError(t, err)
+
+			qans := quiz.QuizAnswers{Input: &quiz.AnswerInput{Input: rand.Text()}}
+			qscore := mrand.IntN(256) + 1
+			quizAns, err := json.Marshal(qans)
+			require.NoError(t, err)
+			q := models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: int(qscore), CorrectAnswer: string(quizAns)}
+			err = db.NewInsert().Model(&q).Returning("*").Scan(t.Context())
+			require.NoError(t, err)
+
+			_, err = db.NewInsert().Model(&models.TestsQuizzes{TestUUID: testM.UUID, QuizUUID: q.UUID}).Exec(t.Context())
+			require.NoError(t, err)
+
+			name := rand.Text()
+			groupUUID := uuid.UUID{}
+			err = db.NewInsert().Model(&models.Group{Name: name}).Returning("uuid").Scan(t.Context(), &groupUUID)
+			require.NoError(t, err)
+
+			var userUUID uuid.UUID
+
+			err = db.NewInsert().Model(&models.User{Nickname: rand.Text(), PasswordHash: []byte{}}).
+				Returning("uuid").
+				Scan(t.Context(), &userUUID)
+			require.NoError(t, err)
+			require.NotEmpty(t, userUUID)
+
+			_, err = db.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(t.Context())
+
+			ans := quiz.QuizAnswers{Input: &quiz.AnswerInput{Input: rand.Text()}}
+			score := mrand.Float32() * 256
+			totalValue, err := json.Marshal(ans)
+			require.NoError(t, err)
+			_, err = db.NewInsert().Model(&models.Answer{
+				GroupUUID:   groupUUID,
+				TestUUID:    testM.UUID,
+				UserUUID:    userUUID,
+				QuizUUID:    q.UUID,
+				AnswerValue: string(totalValue),
+				Score:       score,
+			}).Exec(t.Context())
+			require.NoError(t, err)
+
+			answers, total, err := r.AnswersInTest(t.Context(), userUUID, testM.UUID, groupUUID, 0, 5)
+			require.NoError(t, err)
+			require.Equal(t, 1, total)
+			require.Len(t, answers, 1)
+
+			require.Equal(t, ans, answers[0].Chosen)
+		})
+		t.Run("Multiple", func(t *testing.T) {
+			i := NewInjectorWithTestRepo(t)
+			r := do.MustInvoke[total.TotalRepository](i)
+			db := do.MustInvoke[*bun.DB](i)
+
+			testM := models.Test{Name: rand.Text()}
+			err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
+			require.NoError(t, err)
+
+			name := rand.Text()
+			groupUUID := uuid.UUID{}
+			err = db.NewInsert().Model(&models.Group{Name: name}).Returning("uuid").Scan(t.Context(), &groupUUID)
+			require.NoError(t, err)
+
+			var userUUID uuid.UUID
+
+			err = db.NewInsert().Model(&models.User{Nickname: rand.Text(), PasswordHash: []byte{}}).
+				Returning("uuid").
+				Scan(t.Context(), &userUUID)
+			require.NoError(t, err)
+			require.NotEmpty(t, userUUID)
+
+			_, err = db.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(t.Context())
+			require.NoError(t, err)
+
+			amount := mrand.Int64N(256) + 10 // when 2 minutes left, brain works faster by coef 5/t, where t is time in minutes
+			var latest quiz.QuizAnswers
+			for i := range amount {
+				qans := quiz.QuizAnswers{Input: &quiz.AnswerInput{Input: rand.Text()}}
+				qscore := mrand.IntN(256) + 1
+				quizAns, err := json.Marshal(qans)
+				require.NoError(t, err)
+				q := models.Quiz{
+					Path:          fmt.Sprintf("/path/to/%v.md", rand.Text()),
+					Checksum:      [8]byte{},
+					Score:         (qscore),
+					CorrectAnswer: string(quizAns),
+				}
+				err = db.NewInsert().Model(&q).Returning("*").Scan(t.Context())
+				require.NoError(t, err)
+
+				_, err = db.NewInsert().Model(&models.TestsQuizzes{TestUUID: testM.UUID, QuizUUID: q.UUID}).Exec(t.Context())
+				require.NoError(t, err)
+
+				ans := quiz.QuizAnswers{Input: &quiz.AnswerInput{Input: rand.Text()}}
+				score := mrand.Float32() * 256
+				totalValue, err := json.Marshal(ans)
+				require.NoError(t, err)
+				_, err = db.NewInsert().Model(&models.Answer{
+					GroupUUID:   groupUUID,
+					TestUUID:    testM.UUID,
+					UserUUID:    userUUID,
+					QuizUUID:    q.UUID,
+					AnswerValue: string(totalValue),
+					Score:       score,
+					AnsweredAt:  time.Now().Add(time.Duration(i) * time.Second),
+				}).Exec(t.Context())
+				require.NoError(t, err)
+
+				latest = ans
+			}
+
+			answers, total, err := r.AnswersInTest(t.Context(), userUUID, testM.UUID, groupUUID, 0, int(amount))
+			require.NoError(t, err)
+			require.EqualValues(t, amount, total)
+			require.Len(t, answers, int(amount))
+
+			require.Equal(t, latest, answers[0].Chosen)
+		})
 	})
 }

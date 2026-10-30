@@ -258,7 +258,7 @@ func (r *bunTotalRepository) AnswersInTest(ctx context.Context, userUUID, testUU
 	subquery := r.db.NewSelect().
 		TableExpr("users_groups_tests_quiz_answers AS ugtqa").
 		Column("*").
-		ColumnExpr("ROW_NUMBER() OVER (PARTITION BY (test_uuid, group_uuid, user_uuid, quiz_uuid) ORDER BY answered_at DESC) as row_num")
+		ColumnExpr("ROW_NUMBER() OVER (PARTITION BY test_uuid, group_uuid, user_uuid, quiz_uuid ORDER BY answered_at DESC) as row_num")
 
 	total, err := r.db.NewSelect().With("ugtqa", subquery).Table("ugtqa").
 		Where("row_num = 1").
