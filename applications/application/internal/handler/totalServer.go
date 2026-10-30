@@ -450,13 +450,6 @@ func (c *chiService) ListUserAnswer(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx = logging.WithLogger(ctx, logger)
 
-	err = r.ParseForm()
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Failed to parse form data"})
-		return
-	}
-
 	page, size, err := httputils.Page(r)
 	if err != nil {
 		logger.Error("couldn't retrieve page/size from request",

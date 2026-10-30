@@ -731,6 +731,98 @@ func TestTotalHandler_GetUserTotal(t *testing.T) {
 		require.EqualValues(t, 1, bodyContract.Totals[0].Score)
 	})
 
+	t.Run("Multiple", func(t *testing.T) {
+
+		i := testutils.NewTestInjector(t,
+			repositories.RepositoryPackage,
+		)
+
+		do.Provide(i, testrunner.NewManager)
+
+		do.Provide(i, handler.NewTestService)
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		userUUID := randomUser(t, db)
+		groupUUID := randomGroup(t, db)
+
+		testUUID := randomTest(t, db)
+		quizUUID, answer := randomQuiz(t, db)
+
+		_, err = db.NewInsert().Model(&models.TestsQuizzes{
+			TestUUID: testUUID,
+			QuizUUID: quizUUID,
+			Position: 1,
+		}).Exec(t.Context())
+		require.NoError(t, err)
+
+		_, err = db.NewInsert().Model(&models.GroupsUsers{
+			GroupUUID: groupUUID,
+			UserUUID:  userUUID,
+		}).Exec(t.Context())
+		require.NoError(t, err)
+
+		b, err := json.Marshal(answer)
+		require.NoError(t, err)
+		_, err = db.NewInsert().Model(&models.Answer{
+			TestUUID:    testUUID,
+			GroupUUID:   groupUUID,
+			UserUUID:    userUUID,
+			QuizUUID:    quizUUID,
+			AnswerValue: string(b),
+			AnsweredAt:  time.Now(),
+		}).Exec(t.Context())
+		require.NoError(t, err)
+
+		a, err := json.Marshal(quiz.QuizAnswers{Input: &quiz.AnswerInput{Input: "obviously wrong answer"}})
+		require.NoError(t, err)
+		_, err = db.NewInsert().Model(&models.Answer{
+			TestUUID:    testUUID,
+			GroupUUID:   groupUUID,
+			UserUUID:    userUUID,
+			QuizUUID:    quizUUID,
+			AnswerValue: string(a),
+			AnsweredAt:  time.Now().Add(15 * time.Second),
+		}).Exec(t.Context())
+		require.NoError(t, err)
+
+		_, err = db.NewInsert().Model(&models.UserGroupsTests{
+			TestUUID:  testUUID,
+			GroupUUID: groupUUID,
+			UserUUID:  userUUID,
+			Score:     1,
+		}).Exec(t.Context())
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(
+			http.MethodGet,
+			fmt.Sprintf("/api/v1/total/%v/%v/%v?page=0&size=1",
+				groupUUID,
+				userUUID,
+				testUUID,
+			),
+			nil,
+		)
+		req.Header.Set("Content-Type", "application/json")
+		testutils.AddTeacherCookie(t, req, userUUID)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		body := rec.Body.Bytes()
+
+		require.Equal(t, http.StatusOK, rec.Code, string(body))
+
+		var bodyContract contracts.TotalsResponse
+		err = json.Unmarshal(body, &bodyContract)
+		require.NoError(t, err, string(body))
+
+		require.Len(t, bodyContract.Totals, 1)
+		require.EqualValues(t, 1, bodyContract.Totals[0].Score)
+	})
+
 	t.Run("Not inferred", func(t *testing.T) {
 
 		i := testutils.NewTestInjector(t,
