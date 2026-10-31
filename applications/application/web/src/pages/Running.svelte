@@ -78,7 +78,13 @@
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
   {:else if statusMessage}
-    <div>{statusMessage}</div>
+    <div class="grid grid-cols-12 grid-rows-12 w-screen h-screen p-16 gap-4">
+      <h1
+        class="row-start-3 row-end-11 col-start-1 col-end-13 p-8 rounded-2xl text-surface-50-950 bg-surface-900-100 font-bold flex items-center justify-center"
+      >
+        {statusMessage}
+      </h1>
+    </div>
   {:else if info?.is_paused}
     <div class="grid grid-cols-12 grid-rows-12 w-screen h-screen p-16 gap-4">
       <h1
