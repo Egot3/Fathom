@@ -76,7 +76,10 @@
   }
 </script>
 
-<div class="h-full flex flex-1 flex-col gap-4">
+<form
+  class="h-full flex flex-1 flex-col gap-4"
+  onsubmit={(e) => e.preventDefault()}
+>
   {#if kind === Kind.Input}
     <input
       class={"input border-2 " +
@@ -192,8 +195,10 @@
   {/if}
 
   <div>
-    <button onclick={answer} class="btn preset-filled-secondary-100-900 btn-2xl"
-      >Answer</button
+    <button
+      onclick={answer}
+      disabled={readonly}
+      class="btn preset-filled-secondary-100-900 btn-2xl">Answer</button
     >
   </div>
-</div>
+</form>
