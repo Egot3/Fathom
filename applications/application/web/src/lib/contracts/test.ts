@@ -20,7 +20,7 @@ export type Test = {
 // re-re-redone
 export function FetchTest(testUUID: string): ResultAsync<Test, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${testUUID}`,
     {
       method: "GET",
       headers: {
@@ -44,7 +44,7 @@ export function FetchRunningTestInfo(
   key: string,
 ): ResultAsync<TestInfo, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}`,
   )
     .andThrough((r) => {
       if (r.status === 423) {
@@ -63,7 +63,7 @@ export function FetchCurrentlyRunningTestInfos(): ResultAsync<
   JSONError
 > {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/all`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/all`,
   ).andThen((r) => {
     if (r.status === 423) {
       return okAsync([]);
@@ -81,13 +81,7 @@ export function FetchAllTests(
   size: number,
 ): ResultAsync<Tests, JSONError> {
   return TokenizedFetch(
-    "https://" +
-      import.meta.env.VITE_DOMAIN +
-      "/api/v1/test/" +
-      "?page=" +
-      page +
-      "&size=" +
-      size,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/?page=${page}&size=${size}`,
     {
       method: "GET",
       headers: {
@@ -112,24 +106,21 @@ export function FetchTestPost(
   };
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(
-    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
 
 export function FetchTestDelete(UUID: string): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${UUID}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${UUID}`,
     {
       method: "DELETE",
     },
@@ -153,7 +144,7 @@ export function FetchTestPatch(
   const bodyString = JSON.stringify(body);
 
   return TokenizedFetch(
-    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/test/" + UUID,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${UUID}`,
     {
       method: "PATCH",
       headers: {
@@ -182,11 +173,7 @@ export function FetchTestBundle(
   const bodyString = JSON.stringify(body);
 
   return TokenizedFetch(
-    "https://" +
-      import.meta.env.VITE_DOMAIN +
-      "/api/v1/test/" +
-      testUUID +
-      "/quizzes",
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${testUUID}/quizzes`,
     {
       method: "POST",
       headers: {
@@ -211,7 +198,7 @@ export function FetchTestPrune(
   const bodyString = JSON.stringify(body);
 
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/quizzes`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${testUUID}/quizzes`,
     {
       method: "DELETE",
       headers: {
@@ -244,7 +231,7 @@ export function FetchTestStart(
     group_uuids: groupUUIDs,
   } as TestStartRequest);
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/start`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/start`,
     {
       method: "POST",
       body: body,
@@ -260,7 +247,7 @@ export function FetchTestStart(
 
 export function FetchTestPause(key: string): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/pause`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/pause`,
     {
       method: "POST",
       headers: {
@@ -274,7 +261,7 @@ export function FetchTestPause(key: string): ResultAsync<null, JSONError> {
 
 export function FetchTestResume(key: string): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/resume`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/resume`,
     {
       method: "POST",
       headers: {
@@ -288,7 +275,7 @@ export function FetchTestResume(key: string): ResultAsync<null, JSONError> {
 
 export function FetchTestStop(key: string): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/stop`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/stop`,
     {
       method: "POST",
       headers: {
@@ -314,7 +301,7 @@ export function FetchTestExtend(
 
   const bodyString = JSON.stringify(body);
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/extend`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/extend`,
     {
       method: "POST",
       body: bodyString,
@@ -332,7 +319,7 @@ export function FetchTestExport(
   accepts: Accept[],
 ): ResultAsync<Blob, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/${testUUID}/export`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${testUUID}/export`,
     {
       method: "GET",
       headers: {
@@ -349,7 +336,7 @@ export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
   formData.append("imported", file, file.name);
 
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/import`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/import`,
     {
       method: "POST",
       body: formData,
@@ -367,7 +354,7 @@ export function FetchRunningTestQuizzes(
   key: string,
 ): ResultAsync<Quiz[], JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/quizzes`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/quizzes`,
   )
     .andThen(NormalizeJSON<GetQuizzesResponse>)
     .map(({ quizzes }) => quizzes);
@@ -375,7 +362,7 @@ export function FetchRunningTestQuizzes(
 
 export function FetchTestTotalize(key: string): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/running/${key}/`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/running/${key}/`,
     {
       method: "POST",
     },
