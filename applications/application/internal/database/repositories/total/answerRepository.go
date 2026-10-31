@@ -2,6 +2,7 @@ package total
 
 import (
 	"context"
+	"time"
 
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/google/uuid"
@@ -14,5 +15,5 @@ type TotalRepository interface {
 	Answer(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (string, error)
 	ListTotals(ctx context.Context, page, size int, userUUID, testUUID, groupUUID uuid.UUID) ([]contracts.Total, int, error)
 	AnswersInTest(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, page, size int) ([]contracts.Answer, int, error)
-	LatestAnswers(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, quizUUIDs uuid.UUIDs) (map[uuid.UUID]string, error)
+	LatestAnswers(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, startedAt time.Time, quizUUIDs uuid.UUIDs) (map[uuid.UUID]string, error)
 }

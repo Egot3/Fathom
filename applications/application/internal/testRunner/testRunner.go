@@ -55,6 +55,7 @@ type concreteTestRunner struct {
 	groupUUIDs uuid.UUIDs
 	testUUID   uuid.UUID
 	banned     map[uuid.UUID]struct{}
+	startedAt  time.Time
 }
 
 func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID, cleanup func()) error {
@@ -114,6 +115,7 @@ func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration,
 	tr.quizzes = quizzes
 	tr.isPaused = false
 	tr.deadline = time.Now().Add(duration)
+	tr.startedAt = time.Now()
 
 	tr.timer = time.NewTimer(time.Until(tr.deadline))
 
@@ -334,6 +336,13 @@ func (tr *concreteTestRunner) Deadline() time.Time {
 	defer tr.mu.RUnlock()
 
 	return tr.deadline
+}
+
+func (tr *concreteTestRunner) StartedAt() time.Time {
+	tr.mu.RLock()
+	defer tr.mu.RUnlock()
+
+	return tr.startedAt
 }
 
 func (tr *concreteTestRunner) GetAll() uuid.UUIDs {

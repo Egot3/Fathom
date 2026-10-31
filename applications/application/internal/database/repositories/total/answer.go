@@ -3,6 +3,7 @@ package total
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/models"
@@ -293,12 +294,14 @@ func (r *bunTotalRepository) AnswersInTest(ctx context.Context, userUUID, testUU
 func (r *bunTotalRepository) LatestAnswers(
 	ctx context.Context,
 	userUUID, testUUID, groupUUID uuid.UUID,
+	startedAt time.Time,
 	quizUUIDs uuid.UUIDs,
 ) (map[uuid.UUID]string, error) {
 	sub := r.db.NewSelect().
 		TableExpr("users_groups_tests_quiz_answers AS a").
 		ColumnExpr("a.quiz_uuid, a.answer_value").
 		ColumnExpr("ROW_NUMBER() OVER (PARTITION BY a.quiz_uuid ORDER BY a.answered_at DESC) AS rn").
+		Where("a.answered_at >= ?", startedAt).
 		Where("a.test_uuid = ?", testUUID).
 		Where("a.group_uuid = ?", groupUUID).
 		Where("a.user_uuid = ?", userUUID)

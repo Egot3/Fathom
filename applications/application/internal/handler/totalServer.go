@@ -563,7 +563,7 @@ func (c *chiService) MyAnswers(w http.ResponseWriter, r *http.Request) {
 		quizzes[i] = parsed
 	}
 
-	userAnswers, err := c.answerRepo.LatestAnswers(ctx, userUUID, testUUID, groupUUID, quizzes)
+	userAnswers, err := c.answerRepo.LatestAnswers(ctx, userUUID, testUUID, groupUUID, tr.StartedAt(), quizzes)
 	if err != nil {
 		logger.Error("couldn't get answers",
 			slog.String("Error", err.Error()),

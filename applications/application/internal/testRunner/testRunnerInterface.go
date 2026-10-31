@@ -26,6 +26,7 @@ type TestRunner interface {
 	Test() uuid.UUID
 	IsBanned(uuid.UUID) bool
 	Ban(uuid.UUID)
+	StartedAt() time.Time
 }
 
 var TestRunnerPackage = do.Package(
