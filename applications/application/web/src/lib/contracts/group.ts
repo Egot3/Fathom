@@ -26,7 +26,7 @@ export function FetchGroups(
   size: number,
 ): ResultAsync<ListGroupResponse, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/group?page=${page}&size=${size}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group?page=${page}&size=${size}`,
     {
       method: "GET",
       headers: {
@@ -50,24 +50,21 @@ export function FetchGroupPost(
     appendants: appendants,
   };
   const bodyString = JSON.stringify(body);
-  return TokenizedFetch(
-    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/group/",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .map((_) => null);
 }
 
 export function FetchGroupDelete(UUID: string): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${UUID}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/${UUID}`,
     {
       method: "DELETE",
     },
@@ -91,7 +88,7 @@ export function FetchGroupPatch(
   const bodyString = JSON.stringify(body);
 
   return TokenizedFetch(
-    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/group/" + UUID,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/${UUID}`,
     {
       method: "PATCH",
       headers: {
@@ -120,7 +117,7 @@ export function FetchGroupPrune(
   const bodyString = JSON.stringify(body);
 
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${groupUUID}/user`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/${groupUUID}/user`,
     {
       method: "DELETE",
       headers: {
@@ -149,7 +146,7 @@ export function FetchGroupAppend(
   const bodyString = JSON.stringify(body);
 
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/group/${groupUUID}/user`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/${groupUUID}/user`,
     {
       method: "POST",
       headers: {

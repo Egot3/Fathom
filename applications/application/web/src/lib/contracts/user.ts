@@ -41,7 +41,7 @@ export function FetchLogin(
     password: password,
   };
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/login`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/login`,
     {
       method: "POST",
       headers: {
@@ -63,7 +63,7 @@ export function FetchRegister(
     password: password,
   };
   return TokenizedFetch(
-    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/register",
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/register`,
     {
       method: "POST",
       headers: {
@@ -96,7 +96,7 @@ export function FetchUsers(
   size: number,
 ): ResultAsync<ListUsersResponse, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/?page=${page}&size=${size}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/?page=${page}&size=${size}`,
     {
       method: "GET",
       headers: {
@@ -108,7 +108,7 @@ export function FetchUsers(
 
 export function FetchUserDelete(UUID: string): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/${UUID}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/${UUID}`,
     {
       method: "DELETE",
     },
@@ -142,7 +142,7 @@ export function FetchUserPatch(
   const bodyString = JSON.stringify(body);
 
   return TokenizedFetch(
-    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/user/" + UUID,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/${UUID}`,
     {
       method: "PATCH",
       headers: {
@@ -162,7 +162,7 @@ export function FetchUserImport(file: File): ResultAsync<null, JSONError> {
   formData.append("imported", file, file.name);
 
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/user/import`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/import`,
     {
       method: "POST",
       body: formData,

@@ -7,6 +7,7 @@
   import { Toaster } from "../lib/apiutils/toaster";
   import {
     FetchAnswerPost,
+    FetchMyAnswers,
     type Quiz,
     type QuizAnswer,
   } from "../lib/contracts/quiz";
@@ -27,6 +28,8 @@
   let loadingQuizzes: boolean = $state(true);
   let loadingTestInfo: boolean = $state(true);
 
+  let answers = $state<Record<string, QuizAnswer>>({});
+
   $effect(() => {
     (async () => {
       loadingQuizzes = true;
@@ -38,6 +41,15 @@
           (_) => "",
           ({ error }) => error,
         );
+
+      await FetchMyAnswers(runnerKey).match(
+        (r) => {
+          answers = { ...r, ...answers };
+        },
+        (e) => {
+          statusMessage = e.error;
+        },
+      );
       loadingQuizzes = false;
     })();
   });
@@ -58,8 +70,6 @@
       loadingTestInfo = false;
     })();
   });
-
-  let answers = $state<Record<string, QuizAnswer>>({});
 </script>
 
 <div>

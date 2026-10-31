@@ -114,7 +114,7 @@ export function FetchAllQuizzes(
   size: number,
 ): ResultAsync<Quizzes, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/?page=${page}&size=${size}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/?page=${page}&size=${size}`,
     {
       method: "GET",
       headers: {
@@ -158,17 +158,14 @@ export function FetchQuizPost(
 
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(
-    "https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -185,7 +182,7 @@ export function FetchQuizPatch(
 ): ResultAsync<null, JSONError> {
   const bodyString = JSON.stringify(req);
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${UUID}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${UUID}`,
     {
       method: "PATCH",
       headers: {
@@ -200,7 +197,7 @@ export function FetchQuizPatch(
 
 export function FetchQuizDelete(UUID: string): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${UUID}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${UUID}`,
     {
       method: "DELETE",
     },
@@ -257,7 +254,7 @@ function getWithCache(
 export function FetchParsedQuiz(
   quizUUID: string,
 ): ResultAsync<ParsedQuiz, JSONError> {
-  const url = `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${quizUUID}/parsed`;
+  const url = `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${quizUUID}/parsed`;
   return getWithCache(url, quizUUID);
 }
 
@@ -267,7 +264,7 @@ export function FetchQuizExport(
 ): ResultAsync<Blob, JSONError> {
   const body = JSON.stringify({ uuids: UUIDs });
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/export`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/export`,
     {
       method: "POST",
       body: body,
@@ -285,7 +282,7 @@ export function FetchQuizImport(file: File): ResultAsync<null, JSONError> {
   formData.append("imported", file, file.name);
 
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/import`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/import`,
     {
       method: "POST",
       body: formData,
@@ -301,7 +298,7 @@ type RawQuiz = {
 };
 export function FetchRawQuiz(UUID: string): ResultAsync<RawQuiz, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${UUID}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${UUID}`,
     {
       method: "GET",
     },
@@ -314,7 +311,7 @@ export function FetchAnswerPost(
   answer: QuizAnswer,
 ): ResultAsync<null, JSONError> {
   return TokenizedFetch(
-    `https://${import.meta.env.VITE_DOMAIN}/api/v1/total/running/${runnerKey}/${quizUUID}`,
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/running/${runnerKey}/${quizUUID}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -329,6 +326,16 @@ export function FetchRunningQuiz(
   key: string,
   UUID: string,
 ): ResultAsync<ParsedQuiz, JSONError> {
-  const url = `https://${import.meta.env.VITE_DOMAIN}/api/v1/test/running/${key}/${UUID}`;
+  const url = `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/${UUID}`;
   return getWithCache(url, UUID);
+}
+
+export function FetchMyAnswers(
+  runnerKey: string,
+): ResultAsync<Record<string, QuizAnswer>, JSONError> {
+  return TokenizedFetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/running/${runnerKey}/answers`,
+  )
+    .andThen(NormalizeJSON<{ answers: Record<string, QuizAnswer> }>)
+    .map((r) => r.answers);
 }

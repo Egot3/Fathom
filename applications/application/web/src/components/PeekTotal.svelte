@@ -35,7 +35,13 @@
 
 <div class="grid grid-cols-12 w-full flex-1 overflow-scroll">
   <div class="col-start-1 col-end-9 p-3">
-    <QuizView UUID={currentUUID!} {chosen} correct={current?.correct} />
+    {#if currentUUID !== undefined}
+      <QuizView UUID={currentUUID} {chosen} correct={current?.correct} />
+    {:else}
+      <div
+        class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
+      ></div>
+    {/if}
   </div>
   <div
     class="flex flex-col col-start-9 col-end-13 bg-surface-600-400 rounded-[0.25rem] p-1 gap-2"
