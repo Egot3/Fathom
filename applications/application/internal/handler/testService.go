@@ -79,6 +79,7 @@ type TestService interface {
 	GetRunningQuizzes(w http.ResponseWriter, r *http.Request)
 	RunningInfos(w http.ResponseWriter, r *http.Request)
 	RunningInfo(w http.ResponseWriter, r *http.Request)
+	MyAnswers(w http.ResponseWriter, r *http.Request)
 }
 
 type TotalService interface {

@@ -1,6 +1,7 @@
 package contracts
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/egot3/fathom/internal/models"
@@ -68,4 +69,8 @@ type RunningInfoExtended struct {
 
 type RunningInfosResponse struct {
 	TestInfos []RunningInfoExtended `json:"tests"`
+}
+
+type MyAnswersResponse struct {
+	Answers map[uuid.UUID]json.RawMessage `json:"answers"`
 }

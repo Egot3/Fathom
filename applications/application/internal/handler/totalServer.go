@@ -492,3 +492,94 @@ func (c *chiService) ListUserAnswer(w http.ResponseWriter, r *http.Request) {
 		Size:    size,
 	})
 }
+
+func (c *chiService) MyAnswers(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+	w.Header().Set("Content-Type", "application/json")
+
+	runnerKeyStr := chi.URLParam(r, "runnerKey")
+	if runnerKeyStr == "" {
+		logger.Error("couldn't get valid runnerkey")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	runnerKey, err := strconv.ParseUint(runnerKeyStr, 10, 64)
+	if err != nil {
+		logger.Error("couldn't parse runnerKey",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	logger = logger.With(slog.Uint64("runner_key", runnerKey))
+
+	claims, ok := jwtutils.ClaimsFromContext(ctx)
+	if !ok {
+		logger.Error("couldn't retrieve claims from context")
+		(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusUnauthorized}).Encode(w)
+		return
+	}
+
+	tr, ok := c.manager.Get(runnerKey)
+	if !ok {
+		logger.Error("couldn't retrieve runner from manager")
+		(&carefulness.JSONError{Err: "runner not found", Status: http.StatusNotFound}).Encode(w)
+		return
+	}
+
+	userUUID := claims.UserID
+	groups, err := c.groupRepo.UserGroupsIn(ctx, userUUID, tr.Groups())
+	if err != nil || len(groups) == 0 {
+		logger.Error("user has no intersections in groups with test")
+		(&carefulness.JSONError{Err: "user has no intersections in groups test", Status: http.StatusForbidden}).Encode(w)
+		return
+	}
+	groupUUID := groups[0]
+
+	testUUID := tr.Test()
+	logger = logger.With(
+		slog.String("group_uuid", groupUUID.String()),
+		slog.String("user_uuid", userUUID.String()),
+		slog.String("test_uuid", testUUID.String()),
+	)
+	ctx = logging.WithLogger(ctx, logger)
+
+	rawQuizzes := r.URL.Query()["quiz"]
+	quizzes := make(uuid.UUIDs, len(rawQuizzes))
+	for i, rawUUID := range rawQuizzes {
+		parsed, err := uuid.Parse(rawUUID)
+		if err != nil {
+			logger.Error("couldn't parse quizUUID in url",
+				slog.String("Error", err.Error()),
+			)
+			(&carefulness.JSONError{Err: "bad uuid in query", Status: http.StatusBadRequest}).Encode(w)
+			return
+		}
+
+		quizzes[i] = parsed
+	}
+
+	userAnswers, err := c.answerRepo.LatestAnswers(ctx, userUUID, testUUID, groupUUID, quizzes)
+	if err != nil {
+		logger.Error("couldn't get answers",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't get answers because of unforseen error"})
+		return
+	}
+
+	jsonifiedAnswers := make(map[uuid.UUID]json.RawMessage, len(userAnswers)) // Keep It Idiomatic
+	for k, v := range userAnswers {
+		jsonifiedAnswers[k] = json.RawMessage(v)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contracts.MyAnswersResponse{
+		Answers: jsonifiedAnswers,
+	})
+}
