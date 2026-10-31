@@ -1,3 +1,5 @@
+import { Navigate } from "../router.svelte";
+
 type userData = {
   UUID: string;
   nickname: string;
@@ -36,7 +38,7 @@ function GetUser(): userData | null {
 function GetUserOrRedirect(): userData {
   const u = GetUser();
   if (u == null) {
-    window.location.href = "/login";
+    Navigate("/login");
     return null as never; // holy hell
   }
   return u;

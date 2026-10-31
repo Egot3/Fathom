@@ -17,6 +17,7 @@
     FetchTestTotalize,
     type TestInfo,
   } from "../lib/contracts/test";
+  import { Navigate } from "../lib/router.svelte";
 
   const { runnerKey }: { runnerKey: string } = $props();
 
@@ -142,11 +143,11 @@
             key={runnerKey}
             actor={FetchTestTotalize}
             callback={() => {
-              Toaster.info({
+              Toaster.success({
                 title: "Finished",
                 description: "Your answers were send successfuly",
               });
-              window.location.href = "/home";
+              Navigate("/home");
             }}
           />
           {#snippet trigger()}

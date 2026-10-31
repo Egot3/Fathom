@@ -19,7 +19,7 @@ export function TokenizedFetch(
     if (exp < new Date()) {
       console.log("expired");
       window.location.reload();
-      Toaster.info({
+      Toaster.warning({
         title: "Session expired!",
         description: "login again",
       });

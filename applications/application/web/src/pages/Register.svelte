@@ -11,6 +11,7 @@
   import { SetUser } from "../lib/bgdata/user.svelte";
   import { LoaderCircle } from "@lucide/svelte";
   import ErrorPopover from "../components/ErrorPopover.svelte";
+  import { Navigate } from "../lib/router.svelte";
 
   let loginError = $state(false);
   let passwordError = $state(false);
@@ -56,7 +57,7 @@
             isTeacher: r.user.is_teacher,
             nickname: r.user.nickname,
           });
-          window.location.href = "/home";
+          Navigate("/home");
         })
         .orTee((e) => {
           statusMessage = e.error;
@@ -209,12 +210,15 @@
           </Popover.Positioner>
         </Popover.Provider>
 
-        <a
+        <button
           class="btn btn-lg w-2/5 leading-[0.75] preset-outlined-primary-500 self-center"
-          href={"login?login=" + login}
+          onclick={(e) => {
+            e.preventDefault();
+            Navigate("login?login=" + login);
+          }}
         >
           Log in instead
-        </a>
+        </button>
       </div>
     </form>
   </div>

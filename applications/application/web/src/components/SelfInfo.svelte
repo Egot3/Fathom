@@ -1,5 +1,6 @@
 <script lang="ts">
   import { GetUserOrRedirect } from "../lib/bgdata/user.svelte";
+  import { Navigate } from "../lib/router.svelte";
 
   const user = $state(GetUserOrRedirect());
 </script>
@@ -17,8 +18,12 @@
   </p>
 
   {#if user.isTeacher}
-    <a class="mt-auto btn preset-filled-primary-500 flex w-fit" href="/teachery"
-      >Go to teacher's control panel</a
+    <button
+      class="mt-auto btn preset-filled-primary-500 flex w-fit"
+      onclick={(e) => {
+        e.preventDefault();
+        Navigate("/teachery");
+      }}>Go to teacher's control panel</button
     >
   {/if}
 </div>
