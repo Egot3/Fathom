@@ -650,7 +650,7 @@ func TestAnswer_LatestAnswers(t *testing.T) {
 			}).Exec(t.Context())
 			require.NoError(t, err)
 
-			m, err := r.LatestAnswers(t.Context(), userUUID, testM.UUID, groupUUID, uuid.UUIDs{quiz.UUID})
+			m, err := r.LatestAnswers(t.Context(), userUUID, testM.UUID, groupUUID, time.Now().Add(-1*time.Second), uuid.UUIDs{quiz.UUID})
 			require.NoError(t, err)
 
 			require.Equal(t, totalValue, m[quiz.UUID])
@@ -701,7 +701,7 @@ func TestAnswer_LatestAnswers(t *testing.T) {
 				tValue = totalValue
 			}
 
-			m, err := r.LatestAnswers(t.Context(), userUUID, testM.UUID, groupUUID, uuid.UUIDs{quiz.UUID})
+			m, err := r.LatestAnswers(t.Context(), userUUID, testM.UUID, groupUUID, time.Now().Add(-1*time.Second), uuid.UUIDs{quiz.UUID})
 			require.NoError(t, err)
 
 			require.Equal(t, tValue, m[quiz.UUID])
