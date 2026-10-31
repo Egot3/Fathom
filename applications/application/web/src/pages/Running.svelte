@@ -20,7 +20,8 @@
   const { runnerKey }: { runnerKey: string } = $props();
 
   let quizzes: Quiz[] = $state([]);
-  let current: Quiz | null = $state(null);
+  let currentIdx: number = $state(0);
+  let current: Quiz | null = $derived(quizzes[currentIdx] ?? null);
 
   let statusMessage: string = $state("");
   let loadingQuizzes: boolean = $state(true);
@@ -32,7 +33,6 @@
       statusMessage = await FetchRunningTestQuizzes(runnerKey)
         .andTee((r) => {
           quizzes = r;
-          if (current === null) current = quizzes[0];
         })
         .match(
           (_) => "",
@@ -44,7 +44,7 @@
 
   let info: TestInfo | null = $state(null);
   $effect(() => {
-    current;
+    currentIdx;
     (async () => {
       loadingTestInfo = true;
       statusMessage = await FetchRunningTestInfo(runnerKey)
@@ -87,10 +87,18 @@
             UUID={current.uuid}
             {runnerKey}
             bind:chosen={answers[current.uuid]}
-            onanswer={(a) =>
+            onanswer={(a) => {
               current !== null
-                ? FetchAnswerPost(runnerKey, current!.uuid, a)
-                : {}}
+                ? FetchAnswerPost(runnerKey, current.uuid, a)
+                    .andTee((_) => currentIdx++)
+                    .orTee((e) =>
+                      Toaster.error({
+                        title: "Couldn't send answer!",
+                        description: e.error,
+                      }),
+                    )
+                : {};
+            }}
           />
         {/if}
       </div>
