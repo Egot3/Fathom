@@ -11,13 +11,13 @@ import (
 	"mime"
 	"net/http"
 
+	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/passwordutils"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,7 +30,7 @@ func (c *chiService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	userUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -71,7 +71,7 @@ func (c *chiService) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	userUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
@@ -172,7 +172,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 
 	w.Header().Set("Content-Type", "application/json")
-	userUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	userUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})

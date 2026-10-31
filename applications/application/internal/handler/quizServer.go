@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	exportutils "github.com/egot3/fathom/internal/exportUtils"
@@ -38,7 +39,7 @@ func (c *chiService) DeleteQuiz(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	quizUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	quizUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -68,7 +69,7 @@ func (c *chiService) GetQuiz(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	quizUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	quizUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -300,7 +301,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx := logging.WithLogger(r.Context(), logger)
 
-	quizUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	quizUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)

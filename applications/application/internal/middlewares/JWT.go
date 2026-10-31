@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -18,7 +17,7 @@ func JWT(next http.Handler) http.Handler {
 		ctx := r.Context()
 		logger := logging.LoggerFromContext(ctx)
 
-		authorization, err := r.Cookie("jwt_token")
+		authorization, err := r.Cookie("jwt")
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -33,7 +32,7 @@ func JWT(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx = context.WithValue(ctx, "claims", *claims)
+		ctx = jwtutils.WithClaims(ctx, *claims)
 		ctx = logging.WithLogger(ctx, logger.With(slog.String("user_uuid", claims.UserID.String())))
 
 		cookie, err := httputils.NewAuthCookie(claims.UserID, claims.IsTeacher)

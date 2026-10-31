@@ -50,7 +50,8 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger := logging.LoggerFromContext(r.Context()).With(slog.String("layer", "middleware"))
+			ctx := r.Context()
+			logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "middleware"))
 
 			runnerKey, err := strconv.ParseUint(chi.URLParam(r, "runnerKey"), 10, 64)
 			if err != nil {
@@ -69,7 +70,7 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 
 			g := cache.currentGeneration(upd)
 
-			claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+			claims, ok := jwtutils.ClaimsFromContext(ctx)
 			if !ok {
 				logger.Error("Failed to retrieve jwt claims")
 				w.WriteHeader(http.StatusInternalServerError)
@@ -153,9 +154,10 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 func NotBanned(isBanned func(key uint64, user uuid.UUID) bool) func(http.Handler) http.Handler { // statelessness?
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger := logging.LoggerFromContext(r.Context())
+			ctx := r.Context()
+			logger := logging.LoggerFromContext(ctx)
 
-			claims, ok := r.Context().Value("claims").(jwtutils.Claims)
+			claims, ok := jwtutils.ClaimsFromContext(ctx)
 			if !ok {
 				logger.Error("couldn't retrieve claims from context, is JWT middleware up?")
 				(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusInternalServerError}).Encode(w)

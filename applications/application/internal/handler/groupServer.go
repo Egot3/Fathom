@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/httputils"
@@ -24,7 +25,7 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	groupUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -75,7 +76,7 @@ func (c *chiService) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	groupUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
@@ -110,7 +111,7 @@ func (c *chiService) GetGroup(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	groupUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
@@ -148,7 +149,7 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	groupUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
@@ -276,7 +277,7 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	groupUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	groupUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		logger.Error("Bad uuid")
 		w.WriteHeader(http.StatusInternalServerError)

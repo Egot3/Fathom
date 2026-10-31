@@ -448,7 +448,7 @@ func TestUserHandler_Delete(t *testing.T) {
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
+			Name:     "jwt",
 			Value:    token,
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
@@ -496,7 +496,7 @@ func TestUserHandler_Delete(t *testing.T) {
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
+			Name:     "jwt",
 			Value:    token,
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
@@ -543,7 +543,7 @@ func TestUserHandler_Delete(t *testing.T) {
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
+			Name:     "jwt",
 			Value:    token,
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
@@ -590,7 +590,7 @@ func TestUserHandler_Delete(t *testing.T) {
 		)
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
+			Name:     "jwt",
 			Value:    token,
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
@@ -686,7 +686,7 @@ func TestUserHandler_Patch(t *testing.T) {
 
 			req.Header.Set("Content-Type", "application/json")
 			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
+				Name:     "jwt",
 				Value:    token,
 				Path:     "/",
 				Expires:  time.Now().Add(jwtutils.JWTTTL),
@@ -756,7 +756,7 @@ func TestUserHandler_Patch(t *testing.T) {
 
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
+			Name:     "jwt",
 			Value:    token,
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
@@ -812,7 +812,7 @@ func TestUserHandler_Patch(t *testing.T) {
 
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{
-			Name:     "jwt_token",
+			Name:     "jwt",
 			Value:    token,
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
@@ -870,7 +870,7 @@ func TestUserHandler_Patch(t *testing.T) {
 
 			req.Header.Set("Content-Type", "application/json")
 			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
+				Name:     "jwt",
 				Value:    token,
 				Path:     "/",
 				Expires:  time.Now().Add(jwtutils.JWTTTL),
@@ -926,7 +926,7 @@ func TestUserHandler_Patch(t *testing.T) {
 
 			req.Header.Set("Content-Type", "application/json")
 			req.AddCookie(&http.Cookie{
-				Name:     "jwt_token",
+				Name:     "jwt",
 				Value:    token,
 				Path:     "/",
 				Expires:  time.Now().Add(jwtutils.JWTTTL),

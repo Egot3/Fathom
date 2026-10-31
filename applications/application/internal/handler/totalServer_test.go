@@ -1610,7 +1610,7 @@ func TestTotalHandler_Totalize(t *testing.T) {
 		require.NoError(t, err)
 
 		cookie := &http.Cookie{
-			Name:     "jwt_token",
+			Name:     "jwt",
 			Value:    token,
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),

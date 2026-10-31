@@ -9,7 +9,7 @@ import (
 )
 
 var ResetCookie = &http.Cookie{
-	Name:     "jwt_token",
+	Name:     "jwt",
 	Value:    "",
 	Path:     "/",
 	Expires:  time.Unix(0, 0),
@@ -25,7 +25,7 @@ func NewAuthCookie(userUUID uuid.UUID, isTeacher bool) (*http.Cookie, error) {
 	}
 
 	cookie := &http.Cookie{
-		Name:     "jwt_token",
+		Name:     "jwt",
 		Value:    newToken,
 		Path:     "/",
 		Expires:  time.Now().Add(jwtutils.JWTTTL),
