@@ -5,6 +5,7 @@
   import _ from "lodash";
   import { Toast } from "@skeletonlabs/skeleton-svelte";
   import { Toaster } from "./lib/apiutils/toaster";
+  import { CurrentPath, Navigate } from "./lib/router.svelte";
 
   type LazyPage = () => Promise<{ default: Component<any, any, any> }>;
 
@@ -48,13 +49,13 @@
   }
 
   const sendToLogin = () => {
-    window.location.href = "/login";
+    Navigate("/login");
   };
   const sendToHome = () => {
-    window.location.href = "/home";
+    Navigate("/home");
   };
 
-  const match = $derived(matchRoute(window.location.pathname));
+  const match = $derived(matchRoute(CurrentPath()));
   const requestor = GetUser();
 </script>
 
@@ -70,9 +71,12 @@
   {/await}
 {/if}
 
-<Toast.Group toaster={Toaster}>
+<Toast.Group toaster={Toaster} class="w-3xl max-w-none max-h-none">
   {#snippet children(toast)}
-    <Toast {toast}>
+    <Toast
+      {toast}
+      class="w-full max-w-none h-20 max-h-none text-primary-contrast-200-800"
+    >
       <Toast.Message>
         <Toast.Title>{toast.title}</Toast.Title>
         <Toast.Description>{toast.description}</Toast.Description>

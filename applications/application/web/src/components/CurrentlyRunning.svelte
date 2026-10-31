@@ -11,6 +11,7 @@
   import TestEnder from "./TestEnder.svelte";
   import TestExtender from "./TestExtender.svelte";
   import TestStarter from "./TestStarter.svelte";
+  import { Navigate } from "../lib/router.svelte";
 
   const { inTeachery }: { inTeachery?: boolean } = $props();
 
@@ -80,8 +81,12 @@
     {:else if chosen.is_paused}
       <div class="badge preset-tonal-warning w-fit">Paused</div>
     {:else}
-      <a class="mb-auto btn preset-filled-primary-500" href={`/${chosen.key}`}
-        >Join?</a
+      <button
+        class="mb-auto btn preset-filled-primary-500"
+        onclick={(e) => {
+          e.preventDefault();
+          Navigate(`/${chosen.key}`);
+        }}>Join?</button
       >
     {/if}
   {/if}
