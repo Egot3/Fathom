@@ -4,6 +4,7 @@ import { GetTokenExpiration, SetTokenExpiration } from "../bgdata/user.svelte";
 import { ERR_UNAUTHORIZED } from "../carefulness/unauthorized";
 import { type JSONError } from "../statuses/jsonerror";
 import { untrack } from "svelte";
+import { Navigate } from "../router.svelte";
 
 export const maxAgeRegex = /max-age=(\d+)/;
 
@@ -18,7 +19,7 @@ export function TokenizedFetch(
 
     if (exp < new Date()) {
       console.log("expired");
-      window.location.reload();
+      Navigate("/login");
       Toaster.warning({
         title: "Session expired!",
         description: "login again",
