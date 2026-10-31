@@ -604,3 +604,107 @@ func TestAnswer_AnswersInTest(t *testing.T) {
 		})
 	})
 }
+
+func TestAnswer_LatestAnswers(t *testing.T) {
+	i := NewInjectorWithTestRepo(t)
+	t.Run("Valid", func(t *testing.T) {
+		t.Run("Single", func(t *testing.T) {
+			i := i.Scope(t.Name())
+			r := do.MustInvoke[total.TotalRepository](i)
+			db := do.MustInvoke[*bun.DB](i)
+
+			testM := models.Test{Name: rand.Text()}
+			err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
+			require.NoError(t, err)
+
+			var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: 1}
+			err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
+			require.NoError(t, err)
+
+			_, err = db.NewInsert().Model(&models.TestsQuizzes{TestUUID: testM.UUID, QuizUUID: quiz.UUID}).Exec(t.Context())
+			require.NoError(t, err)
+
+			name := rand.Text()
+			groupUUID := uuid.UUID{}
+			err = db.NewInsert().Model(&models.Group{Name: name}).Returning("uuid").Scan(t.Context(), &groupUUID)
+			require.NoError(t, err)
+
+			var userUUID uuid.UUID
+			err = db.NewInsert().Model(&models.User{Nickname: rand.Text(), PasswordHash: []byte{}}).
+				Returning("uuid").
+				Scan(t.Context(), &userUUID)
+			require.NoError(t, err)
+			require.NotEmpty(t, userUUID)
+
+			_, err = db.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(t.Context())
+
+			score := mrand.Float32() * 256
+			totalValue := rand.Text()
+			_, err = db.NewInsert().Model(&models.Answer{
+				GroupUUID:   groupUUID,
+				TestUUID:    testM.UUID,
+				UserUUID:    userUUID,
+				QuizUUID:    quiz.UUID,
+				AnswerValue: totalValue,
+				Score:       score,
+			}).Exec(t.Context())
+			require.NoError(t, err)
+
+			m, err := r.LatestAnswers(t.Context(), userUUID, testM.UUID, groupUUID, uuid.UUIDs{quiz.UUID})
+			require.NoError(t, err)
+
+			require.Equal(t, totalValue, m[quiz.UUID])
+		})
+		t.Run(t.Name(), func(t *testing.T) {
+			i := i.Scope(t.Name())
+			r := do.MustInvoke[total.TotalRepository](i)
+			db := do.MustInvoke[*bun.DB](i)
+
+			testM := models.Test{Name: rand.Text()}
+			err := db.NewInsert().Model(&testM).Returning("*").Scan(t.Context())
+			require.NoError(t, err)
+
+			var quiz models.Quiz = models.Quiz{Path: fmt.Sprintf("/path/to/%v.md", rand.Text()), Checksum: [8]byte{}, Score: 1}
+			err = db.NewInsert().Model(&quiz).Returning("*").Scan(t.Context())
+			require.NoError(t, err)
+
+			_, err = db.NewInsert().Model(&models.TestsQuizzes{TestUUID: testM.UUID, QuizUUID: quiz.UUID}).Exec(t.Context())
+			require.NoError(t, err)
+
+			name := rand.Text()
+			groupUUID := uuid.UUID{}
+			err = db.NewInsert().Model(&models.Group{Name: name}).Returning("uuid").Scan(t.Context(), &groupUUID)
+			require.NoError(t, err)
+
+			var userUUID uuid.UUID
+			err = db.NewInsert().Model(&models.User{Nickname: rand.Text(), PasswordHash: []byte{}}).
+				Returning("uuid").
+				Scan(t.Context(), &userUUID)
+			require.NoError(t, err)
+			require.NotEmpty(t, userUUID)
+
+			_, err = db.NewInsert().Model(&models.GroupsUsers{GroupUUID: groupUUID, UserUUID: userUUID}).Exec(t.Context())
+
+			var tValue string
+			for range mrand.IntN(32) + 1 {
+				score := mrand.Float32() * 256
+				totalValue := rand.Text()
+				_, err = db.NewInsert().Model(&models.Answer{
+					GroupUUID:   groupUUID,
+					TestUUID:    testM.UUID,
+					UserUUID:    userUUID,
+					QuizUUID:    quiz.UUID,
+					AnswerValue: totalValue,
+					Score:       score,
+				}).Exec(t.Context())
+				require.NoError(t, err)
+				tValue = totalValue
+			}
+
+			m, err := r.LatestAnswers(t.Context(), userUUID, testM.UUID, groupUUID, uuid.UUIDs{quiz.UUID})
+			require.NoError(t, err)
+
+			require.Equal(t, tValue, m[quiz.UUID])
+		})
+	})
+}

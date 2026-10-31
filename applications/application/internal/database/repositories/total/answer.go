@@ -257,6 +257,9 @@ func (r *bunTotalRepository) AnswersInTest(ctx context.Context, userUUID, testUU
 
 	subquery := r.db.NewSelect().
 		TableExpr("users_groups_tests_quiz_answers AS ugtqa").
+		Where("ugtqa.test_uuid = ?", testUUID).
+		Where("ugtqa.group_uuid = ?", groupUUID).
+		Where("ugtqa.user_uuid = ?", userUUID).
 		Column("*").
 		ColumnExpr("ROW_NUMBER() OVER (PARTITION BY test_uuid, group_uuid, user_uuid, quiz_uuid ORDER BY answered_at DESC) as row_num")
 
@@ -274,17 +277,52 @@ func (r *bunTotalRepository) AnswersInTest(ctx context.Context, userUUID, testUU
 			"ugtqa.answer_value AS answer_value"). //wow
 		Join("JOIN groups AS g").JoinOn("g.uuid = ugtqa.group_uuid").ColumnExpr("g.name AS group_name").
 		Join("JOIN tests AS t").JoinOn("t.uuid = ugtqa.test_uuid").ColumnExpr("t.name AS test_name").
-		Join("JOIN quizzes AS q").JoinOn("q.uuid = ugtqa.quiz_uuid").ColumnExpr("q.correct_answer AS correct").ColumnExpr("q.path AS quiz_name").ColumnExpr("q.score AS max_score").
+		Join("JOIN quizzes AS q").JoinOn("q.uuid = ugtqa.quiz_uuid").ColumnExpr("q.path AS quiz_name").ColumnExpr("q.score AS max_score").
 		OrderBy("ugtqa.answered_at", bun.OrderDesc).
-		Offset(page*size).Limit(size).
-		ScanAndCount(ctx, &answers)
+		Offset(page*size).Limit(size).ColumnExpr("q.correct_answer AS correct").ScanAndCount(ctx, &answers)
 	if err != nil {
 		return nil, 0, err
 	}
-
 	if len(answers) == 0 {
 		return nil, 0, sql.ErrNoRows
 	}
 
 	return answers, total, nil
+}
+
+func (r *bunTotalRepository) LatestAnswers(
+	ctx context.Context,
+	userUUID, testUUID, groupUUID uuid.UUID,
+	quizUUIDs uuid.UUIDs,
+) (map[uuid.UUID]string, error) {
+	sub := r.db.NewSelect().
+		TableExpr("users_groups_tests_quiz_answers AS a").
+		ColumnExpr("a.quiz_uuid, a.answer_value").
+		ColumnExpr("ROW_NUMBER() OVER (PARTITION BY a.quiz_uuid ORDER BY a.answered_at DESC) AS rn").
+		Where("a.test_uuid = ?", testUUID).
+		Where("a.group_uuid = ?", groupUUID).
+		Where("a.user_uuid = ?", userUUID)
+
+	if len(quizUUIDs) > 0 {
+		sub = sub.Where("a.quiz_uuid IN (?)", bun.List(quizUUIDs))
+	}
+
+	var rows []struct {
+		QuizUUID    uuid.UUID `bun:"quiz_uuid"`
+		AnswerValue string    `bun:"answer_value"`
+	}
+	err := r.db.NewSelect().
+		TableExpr("(?) AS l", sub).
+		Column("quiz_uuid", "answer_value").
+		Where("rn = 1").
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(map[uuid.UUID]string, len(rows))
+	for _, row := range rows {
+		out[row.QuizUUID] = row.AnswerValue
+	}
+	return out, nil
 }

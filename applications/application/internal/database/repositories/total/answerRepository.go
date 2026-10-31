@@ -14,4 +14,5 @@ type TotalRepository interface {
 	Answer(ctx context.Context, userUUID, testUUID, groupUUID, quizUUID uuid.UUID) (string, error)
 	ListTotals(ctx context.Context, page, size int, userUUID, testUUID, groupUUID uuid.UUID) ([]contracts.Total, int, error)
 	AnswersInTest(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, page, size int) ([]contracts.Answer, int, error)
+	LatestAnswers(ctx context.Context, userUUID, testUUID, groupUUID uuid.UUID, quizUUIDs uuid.UUIDs) (map[uuid.UUID]string, error)
 }
