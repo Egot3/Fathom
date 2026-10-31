@@ -29,5 +29,25 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Install tools
+        run: |
+          go install github.com/jstemmer/go-junit-report/v2@latest
+
       - name: Run Tests
-        run: sudo $(which go) test -v -race -covermode=atomic -coverprofile=coverage.txt ./...
+        run: sudo $(which go) test -v -race -covermode=atomic -coverprofile=coverage.out ./... | go-junit-report -parser gojson > report.xml
+
+      - name: Publish Test Results Dashboard
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Go Test Summary
+          path: report.xml
+          reporter: java-junit
+
+      - name: Upload Coverage HTML Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-coverage-report
+          path: coverage.html
+          retention-days: 14
