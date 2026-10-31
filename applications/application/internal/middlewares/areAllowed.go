@@ -150,36 +150,32 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 	}
 }
 
-var allowed = struct {
-	sync.RWMutex
-	users map[uuid.UUID]struct{}
-}{
-	users: make(map[uuid.UUID]struct{}),
-}
+func NotBanned(isBanned func(key uint64, user uuid.UUID) bool) func(http.Handler) http.Handler { // statelessness?
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logger := logging.LoggerFromContext(r.Context())
 
-func IsAllowed(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		logger := logging.LoggerFromContext(ctx)
+			claims, ok := r.Context().Value("claims").(jwtutils.Claims)
+			if !ok {
+				logger.Error("couldn't retrieve claims from context, is JWT middleware up?")
+				(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusInternalServerError}).Encode(w)
+				return
+			}
 
-		claims, ok := ctx.Value("claims").(jwtutils.Claims)
-		if !ok {
-			logger.Error("couldn't retrieve claims from context, is JWT middleware up?")
-			(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusInternalServerError}).Encode(w)
-			return
-		}
-		allowed.RLock()
-		defer allowed.RUnlock()
-		if _, ok := allowed.users[claims.UserID]; !ok {
-			logger.Warn("forbidden user tried to access runner endpoint")
-			(&carefulness.JSONError{Err: "your participation has ended", Status: http.StatusForbidden}).Encode(w)
-			return
-		}
+			key, err := strconv.ParseUint(chi.URLParam(r, "runnerKey"), 10, 64)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(carefulness.ErrMalformedRequest)
+				return
+			}
 
-		next.ServeHTTP(w, r.WithContext(context.WithValue(ctx, "ban", func(UUID uuid.UUID) {
-			allowed.RLock()
-			defer allowed.RUnlock()
-			allowed.users[UUID] = struct{}{}
-		})))
-	})
+			if isBanned(key, claims.UserID) {
+				logger.Warn("banned user tried to access runner endpoint")
+				(&carefulness.JSONError{Err: "your participation has ended", Status: http.StatusForbidden}).Encode(w)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }

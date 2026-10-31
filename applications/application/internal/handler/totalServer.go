@@ -276,11 +276,6 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 		(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusUnauthorized}).Encode(w)
 		return
 	}
-	ban, ok := ctx.Value("ban").(func(uuid.UUID))
-	if !ok {
-		(&carefulness.JSONError{Err: "couldn't start totalization", Status: http.StatusInternalServerError}).Encode(w)
-		return
-	}
 
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
@@ -326,7 +321,12 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ban(userUUID) // chekhov's gun
+	/*
+	 *  you may argue that user should be banned on totalization start and unbanned on fail,
+	 * but this is too much of overhead for forbidding to finish quiz
+	 * on a way to giving it for checking
+	 */
+	tr.Ban(userUUID)
 
 	w.WriteHeader(http.StatusNoContent)
 }

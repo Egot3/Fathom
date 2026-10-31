@@ -54,6 +54,7 @@ type concreteTestRunner struct {
 	cleanup    func()
 	groupUUIDs uuid.UUIDs
 	testUUID   uuid.UUID
+	banned     map[uuid.UUID]struct{}
 }
 
 func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID, cleanup func()) error {
@@ -116,6 +117,7 @@ func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration,
 
 	tr.timer = time.NewTimer(time.Until(tr.deadline))
 
+	tr.banned = make(map[uuid.UUID]struct{})
 	tr.giveup = make(chan struct{})
 	stop := tr.giveup
 
@@ -367,4 +369,18 @@ func (tr *concreteTestRunner) Groups() uuid.UUIDs {
 	defer tr.mu.RUnlock()
 
 	return tr.groupUUIDs
+}
+
+func (tr *concreteTestRunner) IsBanned(userUUID uuid.UUID) bool {
+	tr.mu.RLock()
+	defer tr.mu.RUnlock()
+	_, ok := tr.banned[userUUID]
+	return ok
+}
+
+func (tr *concreteTestRunner) Ban(userUUID uuid.UUID) {
+	tr.mu.Lock()
+	defer tr.mu.Unlock()
+
+	tr.banned[userUUID] = struct{}{}
 }
