@@ -101,6 +101,7 @@ type Service interface {
 	GetDeadline(key uint64) (time.Time, error)
 	IsRunning(quiz uuid.UUID) bool
 	GetTestUUID(uint64) uuid.UUID
+	IsBanned(uint64, uuid.UUID) bool
 }
 
 func NewTestService(i do.Injector) (Service, error) {

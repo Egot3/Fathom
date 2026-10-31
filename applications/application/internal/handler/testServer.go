@@ -1148,3 +1148,12 @@ func (c *chiService) GetTestUUID(key uint64) uuid.UUID {
 
 	return tr.Test()
 }
+
+func (c *chiService) IsBanned(key uint64, userUUID uuid.UUID) bool {
+	tr, ok := c.manager.Get(key)
+	if !ok {
+		return false // logically, if something doesn't exist, noone is [IsBanned]
+	}
+
+	return tr.IsBanned(userUUID)
+}

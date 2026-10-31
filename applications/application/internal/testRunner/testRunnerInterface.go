@@ -24,6 +24,8 @@ type TestRunner interface {
 	GetAll() uuid.UUIDs
 	Checksum() uint64
 	Test() uuid.UUID
+	IsBanned(uuid.UUID) bool
+	Ban(uuid.UUID)
 }
 
 var TestRunnerPackage = do.Package(

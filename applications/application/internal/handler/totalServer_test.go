@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/database/repositories"
@@ -1541,5 +1542,102 @@ func TestTotalHandler_Totalize(t *testing.T) {
 				require.Equal(t, http.StatusLocked, rec.Code, rec.Body.String())
 			})
 		}
+	})
+
+	t.Run("Re-totalize", func(t *testing.T) {
+		i := testutils.NewTestInjector(t, repositories.RepositoryPackage)
+
+		do.Provide(i, testrunner.NewManager)
+		do.Provide(i, handler.NewTestService)
+
+		db := do.MustInvoke[*bun.DB](i)
+
+		userUUID := randomUser(t, db)
+		groupUUID := randomGroup(t, db)
+
+		testUUID := randomTest(t, db)
+		quizUUID, path := predefinedQuiz(t, db)
+
+		t.Logf("userUUID: %v, groupUUID: %v, quizUUID: %v, testUUID: %v", userUUID, groupUUID, quizUUID, testUUID)
+
+		_, err := db.NewInsert().Model(&models.TestsQuizzes{
+			TestUUID: testUUID,
+			QuizUUID: quizUUID,
+			Position: 1,
+		}).Exec(t.Context())
+		require.NoError(t, err)
+
+		_, err = db.NewInsert().Model(&models.GroupsUsers{
+			GroupUUID: groupUUID,
+			UserUUID:  userUUID,
+		}).Exec(t.Context())
+		require.NoError(t, err)
+		t.Logf("bound %v and %v", userUUID, groupUUID)
+
+		_, err = db.NewInsert().Model(&models.Answer{
+			GroupUUID: groupUUID,
+			UserUUID:  userUUID,
+			TestUUID:  testUUID,
+			QuizUUID:  quizUUID,
+			Score:     1,
+		}).Exec(t.Context())
+		require.NoError(t, err)
+
+		router, err := server.ChiServer(i)
+		require.NoError(t, err)
+
+		m := do.MustInvoke[*testrunner.Manager](i)
+
+		tr, err := m.Start(t.Context(), 30*time.Second, []string{path}, uuid.UUIDs{quizUUID}, uuid.UUIDs{groupUUID}, testUUID)
+		require.NoError(t, err)
+
+		all := m.GetAll()
+		require.Len(t, all, 1)
+		key := all[0]
+		trc, ok := m.Get(key)
+		require.True(t, ok)
+		require.Equal(t, trc, tr)
+
+		req := httptest.NewRequest(
+			http.MethodPost,
+			fmt.Sprintf("/api/v1/total/running/%d",
+				key,
+			),
+			nil,
+		)
+		req.Header.Set("Content-Type", "application/json")
+		token, err := jwtutils.GenerateToken(userUUID, false)
+		require.NoError(t, err)
+
+		cookie := &http.Cookie{
+			Name:     "jwt_token",
+			Value:    token,
+			Path:     "/",
+			Expires:  time.Now().Add(jwtutils.JWTTTL),
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
+		}
+		req.AddCookie(cookie)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusNoContent, rec.Code, rec.Body.String())
+
+		req = httptest.NewRequest(
+			http.MethodPost,
+			fmt.Sprintf("/api/v1/total/running/%d",
+				key,
+			),
+			nil,
+		)
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(cookie)
+		rec = httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusForbidden, rec.Code, rec.Body.String())
 	})
 }
