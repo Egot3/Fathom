@@ -13,10 +13,11 @@ import (
 // requires JWT
 func IsTeacherRights(next http.Handler) http.Handler { // did you know you don't have rights?
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := logging.LoggerFromContext(r.Context())
+		ctx := r.Context()
+		logger := logging.LoggerFromContext(ctx)
 		logger = logger.With(slog.String("layer", "middleware"))
 
-		claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+		claims, ok := jwtutils.ClaimsFromContext(ctx)
 		if !ok {
 			logger.Error("Failed to retrieve jwt claims")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -40,10 +41,11 @@ func IsTeacherRights(next http.Handler) http.Handler { // did you know you don't
 
 // still requires JWT
 func IsTeacherCondition(r *http.Request) bool {
-	logger := logging.LoggerFromContext(r.Context())
+	ctx := r.Context()
+	logger := logging.LoggerFromContext(ctx)
 	logger = logger.With(slog.String("layer", "condition"))
 
-	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	claims, ok := jwtutils.ClaimsFromContext(ctx)
 	if !ok {
 		logger.Error("Failed to retrieve jwt claims")
 		return false

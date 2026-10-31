@@ -42,7 +42,7 @@ func (c *chiService) AddQuizzes(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	testUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve test uuid"})
@@ -87,7 +87,7 @@ func (c *chiService) DeleteTest(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	testUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve test uuid"})
@@ -171,7 +171,7 @@ func (c *chiService) GetTest(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	testUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve test uuid"})
@@ -204,7 +204,7 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	testUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve test uuid"})
@@ -376,7 +376,7 @@ func (c *chiService) RemoveQuizzes(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 	w.Header().Set("Content-Type", "application/json")
 
-	testUUID, ok := (r.Context().Value("uuid")).(uuid.UUID)
+	testUUID, ok := jwtutils.UUIDFromContext(ctx)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve test uuid"})
@@ -647,7 +647,7 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 
 	logger.With(slog.Int("page", page), slog.Int("size", size))
 
-	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	claims, ok := jwtutils.ClaimsFromContext(ctx)
 	if !ok {
 		logger.Error("Failed to retrieve jwt claims")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -941,12 +941,13 @@ func (c *chiService) ImportTest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *chiService) GetRunningQuizzes(w http.ResponseWriter, r *http.Request) {
-	logger := logging.LoggerFromContext(r.Context()).With(
+	ctx := r.Context()
+	logger := logging.LoggerFromContext(ctx).With(
 		slog.String("layer", "handler"),
 	)
 	w.Header().Set("Content-Type", "application/json")
 
-	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	claims, ok := jwtutils.ClaimsFromContext(ctx)
 	if !ok {
 		logger.Error("failed to retrieve jwt claims")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -961,7 +962,7 @@ func (c *chiService) GetRunningQuizzes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logger = logger.With(slog.Uint64("runner_key", runnerKey))
-	ctx := logging.WithLogger(r.Context(), logger)
+	ctx = logging.WithLogger(r.Context(), logger)
 
 	tr, ok := c.manager.Get(runnerKey)
 	if !ok {
@@ -1025,7 +1026,7 @@ func (c *chiService) RunningInfos(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := logging.WithLogger(r.Context(), logger)
 
-	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	claims, ok := jwtutils.ClaimsFromContext(ctx)
 	if !ok {
 		logger.Error("Failed to retrieve jwt claims")
 		(&carefulness.JSONError{Err: "Unable to retrieve jwt's claims", Status: http.StatusInternalServerError}).Encode(w)

@@ -18,7 +18,7 @@ func AddTeacherCookie(t *testing.T, req *http.Request, UUID uuid.UUID) {
 	require.NoError(t, err)
 
 	req.AddCookie(&http.Cookie{
-		Name:     "jwt_token",
+		Name:     "jwt",
 		Value:    token,
 		Path:     "/",
 		Expires:  time.Now().Add(jwtutils.JWTTTL),

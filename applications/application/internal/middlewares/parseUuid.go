@@ -1,11 +1,11 @@
 package middlewares
 
 import (
-	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 
+	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/google/uuid"
@@ -25,7 +25,7 @@ func ParseUUID(next http.Handler) http.Handler {
 
 		logger.Info("parsed uuid in middelware",
 			slog.String("uuid", UUID.String()))
-		ctx := context.WithValue(r.Context(), "uuid", UUID)
+		ctx := jwtutils.WithUUID(r.Context(), UUID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

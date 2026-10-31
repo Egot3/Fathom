@@ -160,7 +160,7 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 	logger = logger.With(slog.Uint64("runner_key", runnerKey))
 
-	claims, ok := r.Context().Value("claims").(jwtutils.Claims)
+	claims, ok := jwtutils.ClaimsFromContext(ctx)
 	if !ok {
 		logger.Error("couldn't retrieve claims from context")
 		(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusUnauthorized}).Encode(w)
@@ -270,7 +270,7 @@ func (c *chiService) Totalize(w http.ResponseWriter, r *http.Request) {
 	}
 	logger = logger.With(slog.Uint64("runner_key", runnerKey))
 
-	claims, ok := r.Context().Value("claims").(jwtutils.Claims)
+	claims, ok := jwtutils.ClaimsFromContext(ctx)
 	if !ok {
 		logger.Error("couldn't retrieve claims from context")
 		(&carefulness.JSONError{Err: "couldn't retrieve claims", Status: http.StatusUnauthorized}).Encode(w)

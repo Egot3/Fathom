@@ -9,17 +9,17 @@ import (
 	"github.com/egot3/fathom/internal/carefulness"
 	"github.com/egot3/fathom/internal/logging"
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 // requires JWT
 // requires parseUUID
 func UUIDRights(next http.Handler) http.Handler { // did you know you have rights?
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := logging.LoggerFromContext(r.Context())
+		ctx := r.Context()
+		logger := logging.LoggerFromContext(ctx)
 		logger = logger.With(slog.String("layer", "middleware"))
 
-		claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+		claims, ok := jwtutils.ClaimsFromContext(ctx)
 		if !ok {
 			logger.Error("Failed to retrieve jwt claims")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -27,7 +27,7 @@ func UUIDRights(next http.Handler) http.Handler { // did you know you have right
 			return
 		}
 
-		uuid, ok := (r.Context().Value("uuid")).(uuid.UUID)
+		uuid, ok := jwtutils.UUIDFromContext(ctx)
 		if !ok {
 			logger.Error("Failed to retrieve uuid")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -51,10 +51,11 @@ func UUIDRights(next http.Handler) http.Handler { // did you know you have right
 
 func UserRights(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := logging.LoggerFromContext(r.Context())
+		ctx := r.Context()
+		logger := logging.LoggerFromContext(ctx)
 		logger = logger.With(slog.String("layer", "middleware"))
 
-		claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+		claims, ok := jwtutils.ClaimsFromContext(ctx)
 		if !ok {
 			logger.Error("Failed to retrieve jwt claims")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -77,7 +78,7 @@ func UserRights(next http.Handler) http.Handler {
 }
 
 func IsUserRights(r *http.Request) bool {
-	claims, ok := (r.Context().Value("claims")).(jwtutils.Claims)
+	claims, ok := jwtutils.ClaimsFromContext(r.Context())
 	if !ok {
 		return false
 	}
