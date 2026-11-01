@@ -19,7 +19,7 @@
   } from "../lib/contracts/test";
   import { Navigate } from "../lib/router.svelte";
 
-  const { runnerKey }: { runnerKey: string } = $props();
+  const { runnerKey }: { runnerKey?: string } = $props();
 
   let quizzes: Quiz[] = $state([]);
   let currentIdx: number = $state(0);
@@ -32,49 +32,53 @@
   let answers = $state<Record<string, QuizAnswer>>({});
 
   $effect(() => {
-    (async () => {
-      loadingQuizzes = true;
-      statusMessage = await FetchRunningTestQuizzes(runnerKey)
-        .andTee((r) => {
-          quizzes = r;
-        })
-        .match(
-          (_) => "",
-          ({ error }) => error,
-        );
+    if (runnerKey) {
+      (async () => {
+        loadingQuizzes = true;
+        statusMessage = await FetchRunningTestQuizzes(runnerKey)
+          .andTee((r) => {
+            quizzes = r;
+          })
+          .match(
+            (_) => "",
+            ({ error }) => error,
+          );
 
-      await FetchMyAnswers(runnerKey).match(
-        (r) => {
-          answers = { ...r, ...answers };
-        },
-        (e) => {
-          statusMessage = e.error;
-        },
-      );
-      loadingQuizzes = false;
-    })();
+        await FetchMyAnswers(runnerKey).match(
+          (r) => {
+            answers = { ...r, ...answers };
+          },
+          (e) => {
+            statusMessage = e.error;
+          },
+        );
+        loadingQuizzes = false;
+      })();
+    }
   });
 
   let info: TestInfo | null = $state(null);
   $effect(() => {
     currentIdx;
-    (async () => {
-      loadingTestInfo = true;
-      statusMessage = await FetchRunningTestInfo(runnerKey)
-        .andTee((r) => {
-          info = r;
-        })
-        .match(
-          (_) => "",
-          ({ error }) => error,
-        );
-      loadingTestInfo = false;
-    })();
+    if (runnerKey) {
+      (async () => {
+        loadingTestInfo = true;
+        statusMessage = await FetchRunningTestInfo(runnerKey)
+          .andTee((r) => {
+            info = r;
+          })
+          .match(
+            (_) => "",
+            ({ error }) => error,
+          );
+        loadingTestInfo = false;
+      })();
+    }
   });
 </script>
 
 <div>
-  {#if loadingQuizzes || loadingTestInfo}
+  {#if loadingQuizzes || loadingTestInfo || !runnerKey}
     <div
       class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"
     ></div>
