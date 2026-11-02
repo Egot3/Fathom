@@ -258,7 +258,7 @@ func (c *chiService) commitDeletion(ctx context.Context, quizUUID uuid.UUID, for
 		if jerr, ok := errors.AsType[carefulness.JSONErrorable](err); ok {
 			return jerr
 		}
-		panic("not jsonerrorable got from transaction")
+		return &carefulness.JSONError{Err: "unforseen error while deleting quizzes", Status: http.StatusInternalServerError}
 	}
 
 	return nil
@@ -338,7 +338,7 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 		if jerr, ok := errors.AsType[carefulness.JSONErrorable](err); ok {
 			return jerr
 		}
-		panic("not jsonerrorable got from transaction")
+		return &carefulness.JSONError{Err: "unforseen error while deleting quizzes", Status: http.StatusInternalServerError}
 	}
 
 	return nil
