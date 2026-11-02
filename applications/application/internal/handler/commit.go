@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/csv"
@@ -300,7 +299,8 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 				return &carefulness.JSONError{Err: err.Error(), Status: http.StatusBadRequest}
 			}
 
-			passwordHash, err := bcrypt.GenerateFromPassword([]byte(raw[1]), bcrypt.DefaultCost)
+			password := []byte(raw[1])
+			passwordHash, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
 			if err != nil {
 				logger.Error("couldn't hash password",
 					slog.String("error", err.Error()),
@@ -322,9 +322,11 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 				logger.Info("resolved user as new")
 			case err != nil:
 				return err
-			case bytes.Equal(existing.PasswordHash, passwordHash):
-				logger.Info("resolved user as existing")
 			default:
+				if err = bcrypt.CompareHashAndPassword(existing.PasswordHash, password); err == nil {
+					logger.Info("resolved user as existing")
+					break
+				}
 				return &carefulness.Conflict{Conflictor: raw[0]}
 			}
 		}
