@@ -26,13 +26,13 @@ func evaluateCheck(required, factual *AnswerCheck, score int) float32 {
 
 	var iterDist = len(factual.ChoiceIdxs)
 
-	for i := 0; i < iterDist; i++ {
+	for i := range iterDist {
 		if slices.Contains(factual.ChoiceIdxs, required.ChoiceIdxs[i]) {
 			total++
 		}
 	}
 
-	return float32(score) * (total / float32(iterDist))
+	return float32(score) * (total / float32(len(required.ChoiceIdxs)))
 }
 
 func evaluateAllOrNoneCheck(required, factual *AnswerCheck, score int) float32 {
@@ -42,7 +42,7 @@ func evaluateAllOrNoneCheck(required, factual *AnswerCheck, score int) float32 {
 
 	var iterDist = len(factual.ChoiceIdxs)
 
-	for i := 0; i < iterDist; i++ {
+	for i := range iterDist {
 		if !slices.Contains(factual.ChoiceIdxs, required.ChoiceIdxs[i]) {
 			return 0
 		}
@@ -59,13 +59,13 @@ func evaluateOrder(required, factual *AnswerOrder, score int) float32 {
 
 	var iterDist = len(factual.ItemIdxs)
 
-	for i := 0; i < iterDist; i++ {
+	for i := range iterDist {
 		if required.ItemIdxs[i] == factual.ItemIdxs[i] {
 			total++
 		}
 	}
 
-	return float32(score) * (total / float32(iterDist))
+	return float32(score) * (total / float32(len(required.ItemIdxs)))
 }
 
 func evaluateAllOrNoneOrder(required, factual *AnswerOrder, score int) float32 {
@@ -75,7 +75,7 @@ func evaluateAllOrNoneOrder(required, factual *AnswerOrder, score int) float32 {
 
 	var iterDist = len(factual.ItemIdxs)
 
-	for i := 0; i < iterDist; i++ {
+	for i := range iterDist {
 		if required.ItemIdxs[i] != factual.ItemIdxs[i] {
 			return 0
 		}
@@ -92,13 +92,13 @@ func evaluateAccordance(required, factual *AnswerAccordance, score int) float32 
 
 	var iterDist = len(factual.Accordance)
 
-	for i := 0; i < iterDist; i++ {
+	for i := range iterDist {
 		if required.Accordance[i] == factual.Accordance[i] {
 			total++
 		}
 	}
 
-	return float32(score) * (total / float32(iterDist))
+	return float32(score) * (total / float32(len(required.Accordance)))
 }
 
 func evaluateAllOrNoneAccordance(required, factual *AnswerAccordance, score int) float32 {
