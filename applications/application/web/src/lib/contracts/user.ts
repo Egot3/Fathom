@@ -118,7 +118,7 @@ export function FetchUserDelete(UUID: string): ResultAsync<null, JSONError> {
 }
 
 type PatchUserRequest = {
-  name: string | undefined;
+  nickname: string | undefined;
   password: string | undefined;
   is_teacher: boolean | undefined;
 };
@@ -134,7 +134,7 @@ export function FetchUserPatch(
   { Name, Password, IsTeacher }: PatchUserStruct,
 ): ResultAsync<null, JSONError> {
   const body: PatchUserRequest = {
-    name: Name,
+    nickname: Name,
     password: Password,
     is_teacher: IsTeacher,
   };
