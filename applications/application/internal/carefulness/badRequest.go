@@ -1,8 +1,6 @@
 package carefulness
 
 import (
-	"encoding/json"
-	"errors"
 	"net/http"
 )
 
@@ -17,11 +15,6 @@ func (e *MalformedRequest) Error() string {
 
 func (e *MalformedRequest) JSONError() *JSONError {
 	return &JSONError{Err: e.Error(), Status: http.StatusBadRequest}
-}
-
-func (e *MalformedRequest) Is(target error) bool {
-	var err *json.SyntaxError
-	return errors.As(target, &err)
 }
 
 func (e *MalformedRequest) Encode(w http.ResponseWriter) {
