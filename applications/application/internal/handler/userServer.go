@@ -113,7 +113,7 @@ func (c *chiService) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	var req contracts.LoginRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -186,7 +186,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req contracts.PatchRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -272,7 +272,7 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	var req contracts.RegisterRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),

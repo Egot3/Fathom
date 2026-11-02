@@ -9,8 +9,12 @@ import (
 	"github.com/egot3/fathom/internal/carefulness"
 )
 
-func ParseJSON[T any](from io.ReadCloser, to *T) carefulness.JSONErrorable {
-	err := json.NewDecoder(from).Decode(to)
+// consumes r.body because, yk, it must
+func ParseJSON[T any](from *http.Request, to *T) carefulness.JSONErrorable {
+	if mime := from.Header.Get("Content-Type"); mime != "application/json" {
+		return &carefulness.UnsupportedMediaType{Mime: mime}
+	}
+	err := json.NewDecoder(from.Body).Decode(to)
 	if err != nil {
 		if _, ok := errors.AsType[*json.SyntaxError](err); ok {
 			return carefulness.ErrMalformedRequest
