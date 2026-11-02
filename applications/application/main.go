@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/starters"
 	"github.com/samber/do/v2"
 	"github.com/uptrace/bun"
@@ -17,7 +18,11 @@ func main() {
 	i := starters.GenerateInjector()
 	logger := do.MustInvoke[*slog.Logger](i)
 	starter := do.MustInvoke[starters.Starter](i)
-
+	err := jwtutils.Load()
+	if err != nil {
+		logger.Error("bad JWT_SECRET", slog.String("Error", err.Error()))
+		os.Exit(1)
+	}
 	serveErrCh := make(chan error, 1)
 	go func() {
 		serveErrCh <- starter.Serve()
