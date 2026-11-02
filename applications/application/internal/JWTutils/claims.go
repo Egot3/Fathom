@@ -2,13 +2,23 @@ package jwtutils
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
-var secretKey = []byte(os.Getenv("JWT_SECRET"))
+var secretKey []byte
+
+func Load() error {
+	secretKey = []byte(os.Getenv("JWT_SECRET"))
+	if len(secretKey) < 32 {
+		return fmt.Errorf("can't have JWT_SECRET be less than 32 bytes")
+	}
+
+	return nil
+}
 
 type jwtKey struct{}
 
