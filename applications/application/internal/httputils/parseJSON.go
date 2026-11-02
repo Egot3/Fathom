@@ -12,10 +12,11 @@ import (
 func ParseJSON[T any](from io.ReadCloser, to *T) carefulness.JSONErrorable {
 	err := json.NewDecoder(from).Decode(to)
 	if err != nil {
-		switch {
-		case errors.Is(err, carefulness.ErrMalformedRequest):
+		if _, ok := errors.AsType[*json.SyntaxError](err); ok {
 			return carefulness.ErrMalformedRequest
+		}
 
+		switch {
 		case errors.Is(err, carefulness.ErrUnprocessableRequest):
 			return carefulness.ErrUnprocessableRequest
 
