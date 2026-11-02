@@ -78,6 +78,7 @@ func (r *bunUserRepository) List(ctx context.Context, page, size int) ([]models.
 	total, err := r.db.NewSelect().
 		Model(&users).
 		OrderBy("created_at", bun.OrderAsc).
+		Offset(page * size).Limit(size).
 		ScanAndCount(ctx)
 	if err != nil {
 		return nil, total, err
