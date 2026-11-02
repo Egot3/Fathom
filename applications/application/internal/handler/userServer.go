@@ -179,6 +179,12 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims, ok := jwtutils.ClaimsFromContext(ctx)
+	if !ok {
+		logger.Warn("Couldn't to retrieve claims from context")
+		(&carefulness.JSONError{Err: "unable to retrieve requestor's claims", Status: http.StatusInternalServerError}).Encode(w)
+	}
+
 	var req contracts.PatchRequest
 	jerr := httputils.ParseJSON(r.Body, &req)
 	if jerr != nil {
@@ -220,7 +226,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 
 	var isTeacher = req.IsTeacher
 	if isTeacher != nil {
-		is, err := c.userRepo.IsTeacher(ctx, userUUID)
+		is, err := c.userRepo.IsTeacher(ctx, claims.UserID)
 		if err != nil {
 			logger.Error("Error while checking if user is teacher",
 				slog.String("Error", err.Error()),
@@ -231,6 +237,7 @@ func (c *chiService) PatchUser(w http.ResponseWriter, r *http.Request) {
 		}
 		if !is {
 			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(carefulness.JSONError{Err: "you have no rights to change your teachery"})
 			return
 		}
 	}
