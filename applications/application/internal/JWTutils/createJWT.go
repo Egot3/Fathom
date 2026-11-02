@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const JWTTTL = 3600 * time.Second
+const JWTTTL = time.Hour
 
 func GenerateToken(userID uuid.UUID, isTeacher bool) (string, error) {
 	now := time.Now()
