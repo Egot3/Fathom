@@ -295,7 +295,6 @@ func (c *chiService) Register(w http.ResponseWriter, r *http.Request) {
 	err := passwordutils.CheckPasswordSafety(req.Password)
 	if err != nil {
 		logger.Error("bad password",
-			slog.String("password", req.Password),
 			slog.String("because", err.Error()),
 		)
 		w.WriteHeader(http.StatusBadRequest)

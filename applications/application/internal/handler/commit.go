@@ -293,7 +293,6 @@ func (c *chiService) commitUserImport(ctx context.Context, reader *csv.Reader) c
 			err = passwordutils.CheckPasswordSafety(raw[1])
 			if err != nil {
 				logger.Error("bad password",
-					slog.String("password", raw[1]),
 					slog.String("because", err.Error()),
 				)
 				return &carefulness.JSONError{Err: err.Error(), Status: http.StatusBadRequest}
