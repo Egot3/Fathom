@@ -119,6 +119,9 @@ func (r *bunTestRepository) Tests(ctx context.Context, UUIDs uuid.UUIDs) ([]mode
 
 func (r *bunTestRepository) DeleteTest(ctx context.Context, UUID uuid.UUID) error {
 	res, err := r.db.NewDelete().Model(&models.Test{UUID: UUID}).WherePK().Exec(ctx)
+	if err != nil {
+		return err
+	}
 
 	c, err := res.RowsAffected()
 	if err != nil {
