@@ -36,7 +36,7 @@ func (c *chiService) AppendUsers(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.AppendUsersRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -159,7 +159,7 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.PatchGroupRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -213,7 +213,7 @@ func (c *chiService) PostGroup(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var req contracts.PostGroupRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -288,7 +288,7 @@ func (c *chiService) RemoveUsers(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.RemoveUsersRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),

@@ -184,7 +184,7 @@ func (c *chiService) PostQuiz(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	var req contracts.PostQuizRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -313,7 +313,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	var req contracts.PatchQuizRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -511,7 +511,7 @@ func (c *chiService) ExportQuizBank(w http.ResponseWriter, r *http.Request) {
 	ctx := logging.WithLogger(r.Context(), logger)
 
 	var req contracts.ExportQuizRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		jerr.Encode(w)
 		return

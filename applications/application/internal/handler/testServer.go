@@ -52,7 +52,7 @@ func (c *chiService) AddQuizzes(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.AddQuizzesToTestRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -129,7 +129,7 @@ func (c *chiService) ExtendTest(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.ExtendTestRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -214,7 +214,7 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.PatchTestRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -312,7 +312,7 @@ func (c *chiService) PostTest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var req contracts.PostTestRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -386,7 +386,7 @@ func (c *chiService) RemoveQuizzes(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.RemoveQuizzesRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
@@ -461,7 +461,7 @@ func (c *chiService) StartTest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var req contracts.StartRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),

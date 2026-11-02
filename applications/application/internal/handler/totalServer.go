@@ -189,7 +189,7 @@ func (c *chiService) PostAnswer(w http.ResponseWriter, r *http.Request) {
 	ctx = logging.WithLogger(ctx, logger)
 
 	var req contracts.PostAnswerRequest
-	jerr := httputils.ParseJSON(r.Body, &req)
+	jerr := httputils.ParseJSON(r, &req)
 	if jerr != nil {
 		logger.Error("Failed to parse body",
 			slog.String("Error", jerr.Error()),
