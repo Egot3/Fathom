@@ -23,7 +23,7 @@ func InputParser(reader *bufio.Scanner, quizP *quiz.Quiz) error {
 			break
 		}
 	}
-	if quizP.Answer.Input.Input == "" {
+	if quizP.Answer.Input == nil {
 		return fmt.Errorf("Can't have no answer in input")
 	}
 
