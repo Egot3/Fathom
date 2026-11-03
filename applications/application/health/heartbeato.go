@@ -29,7 +29,7 @@ type component struct {
 
 type Response struct {
 	Status     Status               `json:"status"`
-	Version    version.Version      `json:"version,omitempty"`
+	Version    version.Version      `json:"version"`
 	Components map[string]component `json:"components,omitempty"`
 }
 

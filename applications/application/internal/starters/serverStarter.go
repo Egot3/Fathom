@@ -7,13 +7,14 @@ import (
 	"net/http"
 
 	"github.com/egot3/fathom/internal/config"
+	"github.com/egot3/fathom/internal/logging"
 	"github.com/go-chi/chi/v5"
 	"github.com/samber/do/v2"
 )
 
 type Starter interface {
 	Serve() error
-	Shutdown(ctx context.Context) error
+	ShutdownWithContext(ctx context.Context) error
 }
 
 type httpStarter struct {
@@ -30,7 +31,8 @@ func (h httpStarter) Serve() error {
 	return err
 }
 
-func (h httpStarter) Shutdown(ctx context.Context) error {
+func (h httpStarter) ShutdownWithContext(ctx context.Context) error {
+	logging.LoggerFromContext(ctx).Info("Shutting down server")
 	return h.server.Shutdown(ctx)
 }
 
