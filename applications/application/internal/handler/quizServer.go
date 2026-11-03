@@ -707,7 +707,7 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("ETag", checkString)
-	w.Header().Set("Cache-Control", "public, immutable, must-revalidate")
+	w.Header().Set("Cache-Control", "private, immutable, must-revalidate")
 
 	f, err := os.Open(quiz.Path)
 	if err != nil {
