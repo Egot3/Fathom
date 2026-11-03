@@ -1,10 +1,15 @@
 package testrunner_test
 
 import (
+	"context"
+	"fmt"
+	"log/slog"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/egot3/fathom/internal/carefulness"
 	testrunner "github.com/egot3/fathom/internal/testRunner"
 	"github.com/egot3/fathom/internal/testutils"
@@ -494,4 +499,79 @@ func TestRunner_PauseResume(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestManager_Shutdown(t *testing.T) {
+	i := do.New(testrunner.ManagerPackage)
+	logger := log.New(os.Stderr)
+	logger.SetLevel(log.DebugLevel)
+
+	do.ProvideValue(i, slog.New(logger))
+
+	t.Run("Alive runner", func(t *testing.T) {
+		i := i.Scope(t.Name())
+		m := do.MustInvoke[*testrunner.Manager](i)
+
+		_, err := m.Start(t.Context(), time.Hour, nil, nil, nil, uuid.Nil)
+		require.NoError(t, err) // we are niling it
+
+		ctx, _ := context.WithTimeout(t.Context(), 200*time.Millisecond)
+		require.NoError(t, m.ShutdownWithContext(ctx))
+	})
+
+	t.Run("Start after dead", func(t *testing.T) {
+		i := i.Scope(t.Name())
+		m := do.MustInvoke[*testrunner.Manager](i)
+
+		_, err := m.Start(t.Context(), time.Hour, nil, nil, nil, uuid.Nil)
+		require.NoError(t, err) // we are niling it
+
+		ctx, _ := context.WithTimeout(t.Context(), 200*time.Millisecond)
+		require.NoError(t, m.ShutdownWithContext(ctx))
+
+		_, err = m.Start(t.Context(), time.Hour, nil, nil, nil, uuid.Nil)
+		require.ErrorIs(t, err, testrunner.ErrManagerClosed)
+	})
+
+	t.Run("Concurrent start and shutdown", func(t *testing.T) {
+		for n := range 100 {
+			i := i.Scope(fmt.Sprintf("race-%d", n))
+			do.Provide(i, testrunner.NewManager)
+			m := do.MustInvoke[*testrunner.Manager](i)
+
+			const starters = 16
+			var ready, done sync.WaitGroup
+			gate := make(chan struct{})
+			errs := make(chan error, starters)
+
+			for range starters {
+				ready.Add(1)
+				done.Add(1)
+				go func() {
+					defer done.Done()
+					ready.Done()
+					<-gate
+					_, err := m.Start(t.Context(), time.Hour, nil, nil, nil, uuid.Must(uuid.NewV7()))
+					errs <- err
+				}()
+			}
+			ready.Wait()
+			close(gate)
+
+			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+			err := m.ShutdownWithContext(ctx)
+			cancel()
+			require.NoError(t, err)
+
+			done.Wait()
+			close(errs)
+			for err := range errs {
+				if err != nil {
+					require.ErrorIs(t, err, testrunner.ErrManagerClosed)
+				}
+			}
+			require.Empty(t, m.GetAll(), "shutdown must leave no runners behind")
+		}
+	})
+
 }

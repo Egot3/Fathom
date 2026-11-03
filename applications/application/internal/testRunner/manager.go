@@ -55,6 +55,17 @@ func (m *Manager) Start(ctx context.Context, duration time.Duration,
 		return nil, err
 	}
 
+	m.mu.RLock()
+	closed := m.closed
+	m.mu.RUnlock()
+
+	if closed {
+		tr.Stop()
+		m.remove(key, tr)
+		m.wg.Done()
+		return nil, ErrManagerClosed
+	}
+
 	go func() {
 		defer m.wg.Done()
 		m.supervise(context.WithoutCancel(ctx), key, tr)
