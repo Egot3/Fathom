@@ -2,6 +2,7 @@ package testrunner
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"maps"
 	"slices"
@@ -17,7 +18,10 @@ import (
 )
 
 type Manager struct {
-	mu        sync.RWMutex
+	// noCopy brothers
+	mu sync.RWMutex
+	wg sync.WaitGroup
+
 	runners   map[uint64]TestRunner
 	totalizer Totalizer
 }
@@ -41,7 +45,9 @@ func (m *Manager) Start(ctx context.Context, duration time.Duration,
 		return nil, err
 	}
 
-	go m.supervise(context.WithoutCancel(ctx), key, tr) // whenthe beheaded context
+	m.wg.Go(func() {
+		m.supervise(context.WithoutCancel(ctx), key, tr)
+	}) // whenthe beheaded context
 
 	return tr, nil
 }
@@ -132,5 +138,25 @@ func (m *Manager) supervise(ctx context.Context, key uint64, tr *concreteTestRun
 	logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "manager"), slog.Uint64("runner_key", key))
 	if err := m.totalizer.TotalizeAll(ctx, tr.Test(), tr.Groups(), tr.StartedAt()); err != nil {
 		logger.Error("couldn't totalize expired runner", slog.String("Error", err.Error()))
+	}
+}
+
+func (m *Manager) Shutdown(ctx context.Context) error {
+	logger := logging.LoggerFromContext(ctx)
+	logger.Info("Started shutting down the manager")
+
+	c := make(chan struct{})
+	go func() {
+		m.wg.Wait()
+		close(c)
+	}()
+
+	select {
+	case <-ctx.Done():
+		logger.Error("Couldn't shut down manager", slog.String("Error", ctx.Err().Error()))
+		return fmt.Errorf("Couldn't shut down manager: %w", ctx.Err())
+	case <-c:
+		logger.Info("Shutdown of manager complete")
+		return nil
 	}
 }
