@@ -516,7 +516,7 @@ func TestManager_Shutdown(t *testing.T) {
 		require.NoError(t, err) // we are niling it
 
 		ctx, _ := context.WithTimeout(t.Context(), 200*time.Millisecond)
-		require.NoError(t, m.ShutdownWithContext(ctx))
+		require.NoError(t, m.Shutdown(ctx))
 	})
 
 	t.Run("Start after dead", func(t *testing.T) {
@@ -527,7 +527,7 @@ func TestManager_Shutdown(t *testing.T) {
 		require.NoError(t, err) // we are niling it
 
 		ctx, _ := context.WithTimeout(t.Context(), 200*time.Millisecond)
-		require.NoError(t, m.ShutdownWithContext(ctx))
+		require.NoError(t, m.Shutdown(ctx))
 
 		_, err = m.Start(t.Context(), time.Hour, nil, nil, nil, uuid.Nil)
 		require.ErrorIs(t, err, testrunner.ErrManagerClosed)
@@ -559,7 +559,7 @@ func TestManager_Shutdown(t *testing.T) {
 			close(gate)
 
 			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
-			err := m.ShutdownWithContext(ctx)
+			err := m.Shutdown(ctx)
 			cancel()
 			require.NoError(t, err)
 

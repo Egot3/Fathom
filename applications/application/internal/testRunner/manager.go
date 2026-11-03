@@ -163,7 +163,7 @@ func (m *Manager) supervise(ctx context.Context, key uint64, tr *concreteTestRun
 	}
 }
 
-func (m *Manager) ShutdownWithContext(ctx context.Context) error {
+func (m *Manager) Shutdown(ctx context.Context) error {
 	logger := logging.LoggerFromContext(ctx)
 	logger.Info("Started shutting down the manager")
 
@@ -191,3 +191,5 @@ func (m *Manager) ShutdownWithContext(ctx context.Context) error {
 		return nil
 	}
 }
+
+var _ do.ShutdownerWithContextAndError = (*Manager)(nil)
