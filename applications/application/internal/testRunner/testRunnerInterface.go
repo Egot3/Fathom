@@ -13,6 +13,7 @@ type TestRunner interface {
 	start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID) error
 	Get(quizUUID uuid.UUID) (*quiz.Quiz, error)
 	Stop()
+	stopFor(r Reason)
 	ExtendTime(duration time.Duration) error
 	Resume() error
 	Pause() error

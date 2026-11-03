@@ -329,3 +329,32 @@ func (r *bunTotalRepository) LatestAnswers(
 	}
 	return out, nil
 }
+
+func (r *bunTotalRepository) TotalizeAll(ctx context.Context, testUUID uuid.UUID, groupUUIDs uuid.UUIDs, startedAt time.Time) error {
+	if len(groupUUIDs) == 0 {
+		return nil
+	}
+
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		quizUUIDsubq := r.db.NewSelect().TableExpr("tests_quizzes AS tq").Where("tq.test_uuid = ?", testUUID).
+			Column("tq.quiz_uuid")
+
+		ansAtSubq := r.db.NewSelect().TableExpr("users_groups_tests_quiz_answers AS i").
+			ColumnExpr("MAX(answered_at)").
+			Where("i.test_uuid = a.test_uuid").Where("i.group_uuid = a.group_uuid").
+			Where("i.user_uuid = a.user_uuid").Where("i.quiz_uuid = a.quiz_uuid").
+			Where("i.answered_at >= ?", startedAt)
+
+		cte := r.db.NewSelect().TableExpr("users_groups_tests_quiz_answers AS a").
+			Where("a.test_uuid = ?", testUUID).Where("a.group_uuid IN (?)", bun.List(groupUUIDs)).
+			Where("a.answered_at >= ?", startedAt).Where("a.quiz_uuid IN (?)", quizUUIDsubq).
+			Where("a.answered_at = ", ansAtSubq).Group("a.test_uuid, a.group_uuid, a.user_uuid")
+
+		_, err := r.db.NewInsert().Model((*models.UserGroupsTests)(nil)).
+			Returning("a.test_uuid, a.group_uuid, a.user_uuid, COALESCE(SUM(a.score), 0)").
+			TableExpr("(?)", cte).On("CONFLICT (test_uuid, group_uuid, user_uuid) DO UPDATE SET score = EXCLUDED.score").
+			Exec(ctx)
+
+		return err
+	})
+}

@@ -2,6 +2,7 @@ package testrunner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -17,11 +18,14 @@ import (
 	"github.com/zeebo/xxh3"
 )
 
+var ErrManagerClosed = errors.New("manager is shutting down")
+
 type Manager struct {
 	// noCopy brothers
 	mu sync.RWMutex
 	wg sync.WaitGroup
 
+	closed    bool
 	runners   map[uint64]TestRunner
 	totalizer Totalizer
 }
@@ -32,12 +36,17 @@ func (m *Manager) Start(ctx context.Context, duration time.Duration,
 	key := deriveKey(groupUUIDs, testUUID)
 
 	m.mu.Lock()
+	if m.closed {
+		m.mu.Unlock()
+		return nil, ErrManagerClosed
+	}
 	if _, exists := m.runners[key]; exists {
 		m.mu.Unlock()
 		return nil, ErrAlreadyRunning
 	}
 	tr := &concreteTestRunner{}
 	m.runners[key] = tr
+	m.wg.Add(1)
 	m.mu.Unlock()
 
 	if err := tr.start(ctx, duration, quizPaths, quizUUIDs, groupUUIDs, testUUID); err != nil {
@@ -45,9 +54,10 @@ func (m *Manager) Start(ctx context.Context, duration time.Duration,
 		return nil, err
 	}
 
-	m.wg.Go(func() {
+	go func() {
+		defer m.wg.Done()
 		m.supervise(context.WithoutCancel(ctx), key, tr)
-	}) // whenthe beheaded context
+	}() // whenthe beheaded context
 
 	return tr, nil
 }
@@ -129,7 +139,7 @@ func (m *Manager) supervise(ctx context.Context, key uint64, tr *concreteTestRun
 	<-tr.done
 	defer m.remove(key, tr)
 
-	if tr.reason != ReasonExpired {
+	if tr.reason == ReasonStopped {
 		return
 	}
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -144,6 +154,15 @@ func (m *Manager) supervise(ctx context.Context, key uint64, tr *concreteTestRun
 func (m *Manager) Shutdown(ctx context.Context) error {
 	logger := logging.LoggerFromContext(ctx)
 	logger.Info("Started shutting down the manager")
+
+	m.mu.Lock()
+	m.closed = true
+	live := slices.Collect(maps.Values(m.runners))
+	m.mu.Unlock()
+
+	for _, tr := range live {
+		tr.stopFor(ReasonShutdowned)
+	}
 
 	c := make(chan struct{})
 	go func() {
