@@ -47,6 +47,7 @@ type Reason uint8
 const (
 	ReasonExpired Reason = iota + 1
 	ReasonStopped
+	ReasonShutdowned
 )
 
 type concreteTestRunner struct {
@@ -185,10 +186,14 @@ func (tr *concreteTestRunner) finishLocked(r Reason) {
 	close(tr.done)
 }
 
-func (tr *concreteTestRunner) Stop() {
+func (tr *concreteTestRunner) stopFor(r Reason) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
-	tr.finishLocked(ReasonExpired)
+	tr.finishLocked(r)
+}
+
+func (tr *concreteTestRunner) Stop() {
+	tr.stopFor(ReasonStopped)
 }
 
 // acquire path quiz pairs from db via uuid
@@ -222,7 +227,6 @@ func (tr *concreteTestRunner) UpsertQuiz(quizPaths []string, quizUUIDs uuid.UUID
 		}
 		quiz.UUID = quizUUIDs[i]
 		quizzes[i] = *quiz
-
 	}
 
 	tr.mu.Lock()
