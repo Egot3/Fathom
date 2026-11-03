@@ -675,6 +675,12 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Bad UUID"})
 		return
 	}
+	claims, ok := jwtutils.ClaimsFromContext(ctx)
+	if !ok {
+		logger.Warn("unable to retrieve claims from context")
+		(&carefulness.JSONError{Err: "Couldn't retrieve claims from context", Status: http.StatusInternalServerError}).Encode(w)
+		return
+	}
 
 	ctx = logging.WithLogger(ctx, logger.With(
 		slog.String("quizUUID", quizUUID.String()),
@@ -721,6 +727,17 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	if !claims.IsTeacher {
+		if err = json.NewEncoder(w).Encode(contracts.PublicQuizResponse{
+			Meta:    q.Meta,
+			Title:   q.Title,
+			Body:    q.Body,
+			Options: q.Options,
+		}); err != nil {
+			logger.Error("Couldn't encode body", slog.String("Error", err.Error()))
+		}
+	}
+
 	if err = json.NewEncoder(w).Encode(contracts.ParsedQuizResponse{Quiz: *q}); err != nil {
 		logger.Error("Couldn't encode body", slog.String("Error", err.Error()))
 	}
