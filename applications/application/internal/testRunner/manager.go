@@ -81,10 +81,8 @@ func (m *Manager) IsQuizRunning(searchedUUID uuid.UUID) bool {
 	defer m.mu.RUnlock()
 
 	for _, runner := range m.runners {
-		for _, quiz := range runner.Quizzes() {
-			if quiz == searchedUUID {
-				return true
-			}
+		if slices.Contains(runner.Quizzes(), searchedUUID) {
+			return true
 		}
 	}
 	return false
