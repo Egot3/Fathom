@@ -695,7 +695,7 @@ func (c *chiService) ParsedQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 	checkString := fmt.Sprintf("%q", hex.EncodeToString(quiz.Checksum[:]))
 
-	if match := r.Header.Get("If-None-Match"); match == checkString {
+	if match := r.Header.Get("If-None-Match"); strings.Contains(match, checkString) {
 		w.WriteHeader(http.StatusNotModified) // caching goes brrrrr
 		return
 	}

@@ -37,3 +37,10 @@ type ExportQuizRequest struct {
 type ParsedQuizResponse struct {
 	Quiz quiz.Quiz `json:"quiz"`
 }
+
+type PublicQuizResponse struct {
+	Meta    quiz.Frontmatter `json:"meta"`
+	Title   string           `json:"title"`
+	Body    string           `json:"body"`
+	Options quiz.QuizOptions `json:"options"`
+}

@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	jwtutils "github.com/egot3/fathom/internal/JWTutils"
@@ -604,7 +605,7 @@ func (c *chiService) GetQuizFromRunning(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("ETag", etag)
 	w.Header().Set("Cache-Control", fmt.Sprintf("private, max-age=%d, must-revalidate", int(math.Round(time.Until(deadline).Hours()))))
 
-	if match := r.Header.Get("If-None-Match"); match == etag {
+	if match := r.Header.Get("If-None-Match"); strings.Contains(match, etag) {
 		w.WriteHeader(http.StatusNotModified) // caching goes brr
 		return
 	}
@@ -983,7 +984,7 @@ func (c *chiService) GetRunningQuizzes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("ETag", etag)
 	w.Header().Set("Cache-Control", fmt.Sprintf("private, max-age=%d, must-revalidate", int(math.Round(time.Until(deadline).Hours()))))
 
-	if match := r.Header.Get("If-None-Match"); match == etag {
+	if match := r.Header.Get("If-None-Match"); strings.Contains(match, etag) {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
