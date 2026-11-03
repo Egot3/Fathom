@@ -8,7 +8,7 @@ func ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&Claims{},
-		func(t *jwt.Token) (interface{}, error) {
+		func(t *jwt.Token) (any, error) {
 			_, ok := t.Method.(*jwt.SigningMethodHMAC)
 			if !ok { //not ok
 				return nil, jwt.ErrSignatureInvalid

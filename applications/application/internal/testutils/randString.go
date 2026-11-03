@@ -12,7 +12,7 @@ func GenerateRandomString(size int) string {
 	var sb strings.Builder
 	sb.Grow(size)
 
-	for i := 0; i < size; i++ {
+	for range size {
 		randomIndex := rand.IntN(len(charset))
 		sb.WriteByte(charset[randomIndex])
 	}

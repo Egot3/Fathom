@@ -51,6 +51,7 @@ func (m *Manager) Start(ctx context.Context, duration time.Duration,
 
 	if err := tr.start(ctx, duration, quizPaths, quizUUIDs, groupUUIDs, testUUID); err != nil {
 		m.remove(key, tr)
+		m.wg.Done()
 		return nil, err
 	}
 
@@ -151,7 +152,7 @@ func (m *Manager) supervise(ctx context.Context, key uint64, tr *concreteTestRun
 	}
 }
 
-func (m *Manager) Shutdown(ctx context.Context) error {
+func (m *Manager) ShutdownWithContext(ctx context.Context) error {
 	logger := logging.LoggerFromContext(ctx)
 	logger.Info("Started shutting down the manager")
 
