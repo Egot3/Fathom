@@ -42,15 +42,26 @@ func (e *NotCachedError) Is(target error) bool {
 	return target == ErrQuizNotCached
 }
 
+type Reason uint8
+
+const (
+	ReasonExpired Reason = iota + 1
+	ReasonStopped
+)
+
 type concreteTestRunner struct {
-	mu         sync.RWMutex
-	quizzes    []quiz.Quiz
-	timer      *time.Timer
-	isPaused   bool
-	deadline   time.Time
-	pausedAt   time.Time
-	checksum   uint64
-	giveup     chan struct{}
+	mu       sync.RWMutex
+	quizzes  []quiz.Quiz
+	timer    *time.Timer
+	isPaused bool
+	deadline time.Time
+	pausedAt time.Time
+	checksum uint64
+
+	giveup chan struct{}
+	done   chan struct{}
+	reason Reason
+
 	cleanup    func()
 	groupUUIDs uuid.UUIDs
 	testUUID   uuid.UUID
@@ -58,7 +69,9 @@ type concreteTestRunner struct {
 	startedAt  time.Time
 }
 
-func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration, quizPaths []string, quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID, cleanup func()) error {
+func (tr *concreteTestRunner) start(ctx context.Context,
+	duration time.Duration, quizPaths []string,
+	quizUUIDs, groupUUIDs uuid.UUIDs, testUUID uuid.UUID) error {
 	if len(quizPaths) != len(quizUUIDs) {
 		return ErrBadQuizzes
 	}
@@ -121,17 +134,18 @@ func (tr *concreteTestRunner) start(ctx context.Context, duration time.Duration,
 
 	tr.banned = make(map[uuid.UUID]struct{})
 	tr.giveup = make(chan struct{})
+	tr.done = make(chan struct{})
 	stop := tr.giveup
 
-	go func(t *time.Timer, stop <-chan struct{}, cleanup func()) {
+	go func(t *time.Timer, stop <-chan struct{}) {
 		select {
 		case <-t.C:
-			cleanup()
+			tr.mu.Lock()
+			tr.finishLocked(ReasonExpired)
+			tr.mu.Unlock()
 		case <-stop:
-			cleanup()
 		}
-		logger.Info("test stopped!")
-	}(tr.timer, stop, cleanup)
+	}(tr.timer, stop)
 	tr.mu.Unlock()
 
 	return nil
@@ -158,17 +172,23 @@ func (tr *concreteTestRunner) Get(quizUUID uuid.UUID) (*quiz.Quiz, error) {
 	return &q, nil
 }
 
+func (tr *concreteTestRunner) finishLocked(r Reason) {
+	if tr.giveup == nil {
+		return
+	}
+	close(tr.giveup)
+	tr.giveup = nil
+	tr.timer.Stop()
+	tr.quizzes = nil
+	tr.isPaused = false
+	tr.reason = r
+	close(tr.done)
+}
+
 func (tr *concreteTestRunner) Stop() {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
-	if tr.giveup != nil {
-		close(tr.giveup)
-		tr.giveup = nil
-	}
-	if tr.timer != nil {
-		tr.timer.Stop()
-	}
-	tr.quizzes = nil
+	tr.finishLocked(ReasonExpired)
 }
 
 // acquire path quiz pairs from db via uuid
@@ -305,16 +325,12 @@ func (tr *concreteTestRunner) Resume() error {
 	tr.deadline = tr.deadline.Add(sincePause)
 
 	if sincePause <= 0 {
-		close(tr.giveup)
-		tr.quizzes = nil
-		tr.isPaused = false
+		tr.finishLocked(ReasonStopped)
 		return ErrRunnerInactive
 	}
 
 	if time.Until(tr.deadline) <= 0 {
-		close(tr.giveup)
-		tr.quizzes = nil
-		tr.isPaused = false
+		tr.finishLocked(ReasonExpired)
 		return ErrRunnerExpired
 	}
 

@@ -2,6 +2,7 @@ package testrunner
 
 import (
 	"context"
+	"log/slog"
 	"maps"
 	"slices"
 	"strings"
@@ -9,14 +10,16 @@ import (
 	"time"
 
 	"github.com/egot3/fathom/internal/hashutils"
+	"github.com/egot3/fathom/internal/logging"
 	"github.com/google/uuid"
 	"github.com/samber/do/v2"
 	"github.com/zeebo/xxh3"
 )
 
 type Manager struct {
-	mu      sync.RWMutex
-	runners map[uint64]TestRunner
+	mu        sync.RWMutex
+	runners   map[uint64]TestRunner
+	totalizer Totalizer
 }
 
 func (m *Manager) Start(ctx context.Context, duration time.Duration,
@@ -33,11 +36,13 @@ func (m *Manager) Start(ctx context.Context, duration time.Duration,
 	m.runners[key] = tr
 	m.mu.Unlock()
 
-	if err := tr.start(ctx, duration, quizPaths, quizUUIDs, groupUUIDs, testUUID,
-		func() { m.remove(key, tr) }); err != nil {
+	if err := tr.start(ctx, duration, quizPaths, quizUUIDs, groupUUIDs, testUUID); err != nil {
 		m.remove(key, tr)
 		return nil, err
 	}
+
+	go m.supervise(context.WithoutCancel(ctx), key, tr) // whenthe beheaded context
+
 	return tr, nil
 }
 
@@ -100,9 +105,32 @@ func (m *Manager) AllRunners() map[uint64]uuid.UUID {
 	return tests
 }
 
+func NewManagerWith(t Totalizer) *Manager {
+	return &Manager{runners: map[uint64]TestRunner{}, totalizer: t}
+}
+
 func NewManager(i do.Injector) (*Manager, error) {
-	return &Manager{
-		mu:      sync.RWMutex{},
-		runners: map[uint64]TestRunner{},
-	}, nil
+	logger := do.MustInvoke[*slog.Logger](i)
+	t, err := do.InvokeAs[Totalizer](i)
+	if err != nil {
+		logger.Warn("no Totalizer registered; expired runners will NOT be totalized")
+		t = nopTotalizer{}
+	}
+	return NewManagerWith(t), nil
+}
+
+func (m *Manager) supervise(ctx context.Context, key uint64, tr *concreteTestRunner) {
+	<-tr.done
+	defer m.remove(key, tr)
+
+	if tr.reason != ReasonExpired {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	logger := logging.LoggerFromContext(ctx).With(slog.String("layer", "manager"), slog.Uint64("runner_key", key))
+	if err := m.totalizer.TotalizeAll(ctx, tr.Test(), tr.Groups(), tr.StartedAt()); err != nil {
+		logger.Error("couldn't totalize expired runner", slog.String("Error", err.Error()))
+	}
 }
