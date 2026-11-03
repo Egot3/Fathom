@@ -103,6 +103,7 @@ type Service interface {
 	IsRunning(quiz uuid.UUID) bool
 	GetTestUUID(uint64) uuid.UUID
 	IsBanned(uint64, uuid.UUID) bool
+	Shutdown(ctx context.Context) error
 }
 
 func NewTestService(i do.Injector) (Service, error) {
@@ -126,4 +127,8 @@ func NewTestService(i do.Injector) (Service, error) {
 		cfg:        cf,
 		db:         db,
 	}, nil
+}
+
+func (c *chiService) Shutdown(ctx context.Context) error {
+	return c.db.DB.Close()
 }

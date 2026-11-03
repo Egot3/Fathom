@@ -14,7 +14,7 @@ import (
 
 type Starter interface {
 	Serve() error
-	ShutdownWithContext(ctx context.Context) error
+	Shutdown(ctx context.Context) error
 }
 
 type httpStarter struct {
@@ -31,7 +31,7 @@ func (h httpStarter) Serve() error {
 	return err
 }
 
-func (h httpStarter) ShutdownWithContext(ctx context.Context) error {
+func (h httpStarter) Shutdown(ctx context.Context) error {
 	logging.LoggerFromContext(ctx).Info("Shutting down server")
 	return h.server.Shutdown(ctx)
 }

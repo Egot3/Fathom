@@ -10,9 +10,7 @@ import (
 
 	jwtutils "github.com/egot3/fathom/internal/JWTutils"
 	"github.com/egot3/fathom/internal/starters"
-	testrunner "github.com/egot3/fathom/internal/testRunner"
 	"github.com/samber/do/v2"
-	"github.com/uptrace/bun"
 )
 
 func main() {
@@ -45,23 +43,10 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	if err := do.ShutdownWithContext[starters.Starter](shutdownCtx, i); err != nil {
-		logger.Error("graceful shutdown failed on starter", slog.String("error", err.Error()))
-	} else {
-		logger.Info("starter shot down")
-	}
-
-	if err := do.ShutdownWithContext[*testrunner.Manager](shutdownCtx, i); err != nil {
-		logger.Error("graceful shutdown failed on manager", slog.String("error", err.Error()))
-	} else {
-		logger.Info("manager stopped")
-	}
-
-	db := do.MustInvoke[*bun.DB](i)
-	if err := db.Close(); err != nil {
-		logger.Error("db close failed", slog.String("error", err.Error()))
-	} else {
-		logger.Info("db connection closed")
+	report := i.ShutdownWithContext(shutdownCtx)
+	if err != nil {
+		logger.Warn("couldn't shutdown cleanly", slog.String("Error", report.Error()))
+		return
 	}
 
 	logger.Info("shutdown finished", slog.String("goodbye", "have a good one"))
