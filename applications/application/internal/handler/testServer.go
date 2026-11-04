@@ -261,6 +261,7 @@ func (c *chiService) PatchTest(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "requested test not found"})
+			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't create test"})

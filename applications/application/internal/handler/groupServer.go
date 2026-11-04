@@ -196,6 +196,7 @@ func (c *chiService) PatchGroup(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Requested group wasn't found"})
+			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 		return
