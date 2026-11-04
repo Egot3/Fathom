@@ -453,7 +453,7 @@ func TestUserHandler_Delete(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteLaxMode,
 			Secure:   true,
 		})
 
@@ -501,7 +501,7 @@ func TestUserHandler_Delete(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteLaxMode,
 			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
@@ -548,7 +548,7 @@ func TestUserHandler_Delete(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteLaxMode,
 			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
@@ -595,7 +595,7 @@ func TestUserHandler_Delete(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteLaxMode,
 			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
@@ -691,7 +691,7 @@ func TestUserHandler_Patch(t *testing.T) {
 				Path:     "/",
 				Expires:  time.Now().Add(jwtutils.JWTTTL),
 				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
+				SameSite: http.SameSiteLaxMode,
 				Secure:   true,
 			})
 			rec := httptest.NewRecorder()
@@ -761,7 +761,7 @@ func TestUserHandler_Patch(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteLaxMode,
 			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
@@ -817,7 +817,7 @@ func TestUserHandler_Patch(t *testing.T) {
 			Path:     "/",
 			Expires:  time.Now().Add(jwtutils.JWTTTL),
 			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteLaxMode,
 			Secure:   true,
 		})
 		rec := httptest.NewRecorder()
@@ -875,7 +875,7 @@ func TestUserHandler_Patch(t *testing.T) {
 				Path:     "/",
 				Expires:  time.Now().Add(jwtutils.JWTTTL),
 				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
+				SameSite: http.SameSiteLaxMode,
 				Secure:   true,
 			})
 			rec := httptest.NewRecorder()
@@ -931,7 +931,7 @@ func TestUserHandler_Patch(t *testing.T) {
 				Path:     "/",
 				Expires:  time.Now().Add(jwtutils.JWTTTL),
 				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
+				SameSite: http.SameSiteLaxMode,
 				Secure:   true,
 			})
 			rec := httptest.NewRecorder()
