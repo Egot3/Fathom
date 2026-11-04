@@ -23,7 +23,7 @@ func AddTeacherCookie(t *testing.T, req *http.Request, UUID uuid.UUID) {
 		Path:     "/",
 		Expires:  time.Now().Add(jwtutils.JWTTTL),
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 		Secure:   true,
 	})
 }

@@ -14,7 +14,7 @@ var ResetCookie = &http.Cookie{
 	Path:     "/",
 	Expires:  time.Unix(0, 0),
 	HttpOnly: true,
-	SameSite: http.SameSiteNoneMode,
+	SameSite: http.SameSiteLaxMode,
 	Secure:   true,
 	MaxAge:   -1,
 }
@@ -31,7 +31,7 @@ func NewAuthCookie(userUUID uuid.UUID, isTeacher bool) (*http.Cookie, error) {
 		Path:     "/",
 		Expires:  time.Now().Add(jwtutils.JWTTTL),
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 		Secure:   true,
 		MaxAge:   int(jwtutils.JWTTTL.Seconds()),
 	}
