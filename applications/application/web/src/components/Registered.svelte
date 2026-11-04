@@ -1,6 +1,4 @@
 <script lang="ts">
-  import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
-  import ArrowRightIcon from "@lucide/svelte/icons/arrow-right";
   import ChangeDialogSqare from "./ChangeDialogSqare.svelte";
   import PeekDialogSquare from "./PeekDialogSquare.svelte";
   import DeleteDialogSquare from "./DeleteDialogSquare.svelte";
@@ -17,8 +15,8 @@
   import PeekDialogue from "./PeekDialogue.svelte";
   import { Dialog } from "@skeletonlabs/skeleton-svelte";
   import { CircleArrowDown } from "@lucide/svelte";
-  import Importer from "./Importer.svelte";
   import { CreatePagedQuery } from "../lib/layoututils/createPagedQuery.svelte";
+  import Importer from "./Importer.svelte";
 
   const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
 
@@ -128,9 +126,15 @@
         {/snippet}
 
         <Importer
-          callback={q.refresh}
           importName="user import"
           fetcher={FetchUserImport}
+          accept={{
+            "text/csv": [".csv"],
+            "text/tab-separated-values": [".tsv"],
+            "application/gzip": [".gz"],
+          }}
+          hint="CSV/TSV with header: name,password (optionally gzipped)"
+          callback={q.refresh}
         />
       </PeekDialogue>
     </div>

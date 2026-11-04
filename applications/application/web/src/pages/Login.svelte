@@ -7,6 +7,7 @@
   import { SetUser } from "../lib/bgdata/user.svelte";
   import { LoaderCircle } from "@lucide/svelte";
   import ErrorPopover from "../components/ErrorPopover.svelte";
+  import { Navigate } from "../lib/router.svelte";
 
   const mainPopover = usePopover({ id: "main" });
   let loginError = $state(false);
@@ -39,22 +40,23 @@
 
     loggingIn = true;
 
-    FetchLogin(login, password)
-      .then((r) => {
-        if (IsJSONError(r)) {
-          statusMessage = r.error;
+    (async () => {
+      await FetchLogin(login, password)
+        .andTee((r) => {
+          SetUser({
+            UUID: r.user.uuid,
+            isTeacher: r.user.is_teacher,
+            nickname: r.user.nickname,
+          });
+          Navigate("/home");
+        })
+        .orTee((e) => {
+          statusMessage = e.error;
           mainPopover().setOpen(true);
           return;
-        }
-
-        SetUser({
-          UUID: r.user.uuid,
-          isTeacher: r.user.is_teacher,
-          nickname: r.user.nickname,
         });
-        window.location.href = "/home";
-      })
-      .finally(() => (loggingIn = false));
+      loggingIn = false;
+    })();
 
     return null as never;
   }
@@ -191,12 +193,15 @@
         </Popover.Provider>
       </div>
 
-      <a
+      <button
         class="btn btn-lg w-2/5 leading-[0.75] text-xl preset-outlined-primary-500 self-center"
-        href={"register?login=" + login}
+        onclick={(e) => {
+          e.preventDefault();
+          Navigate("register?login=" + login);
+        }}
       >
         Register
-      </a>
+      </button>
     </form>
   </div>
 </div>

@@ -5,7 +5,6 @@
     type QuizFile,
     FetchQuizExport,
     FetchQuizImport,
-    FetchParsedQuiz,
     FetchRawQuiz,
   } from "../lib/contracts/quiz";
   import CreateDialog from "./CreateDialog.svelte";
@@ -189,7 +188,12 @@
               <Importer
                 callback={q.refresh}
                 importName="quiz import"
-                fetcher={(file: File) => FetchQuizImport(file)}
+                fetcher={FetchQuizImport}
+                accept={{
+                  "application/zip": [".zip"],
+                  "application/gzip": [".gz", ".tgz"],
+                  "application/x-tar": [".tar"],
+                }}
               />
             </PeekDialogue>
           </div>

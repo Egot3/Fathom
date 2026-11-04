@@ -27,7 +27,7 @@
       <Dialog.Content
         class="card bg-surface-100-900 w-full max-w-[75dvw] h-full max-h-[75dvh] p-4 space-y-4 shadow-xl"
       >
-        <div class="h-full">
+        <div class="h-full flex flex-col gap-2">
           <header class="flex justify-between items-center">
             <Dialog.Title class="text-lg font-bold">{title}</Dialog.Title>
             <Dialog.CloseTrigger class="btn-icon hover:preset-tonal">

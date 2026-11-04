@@ -1,9 +1,10 @@
-import { errAsync, okAsync, ResultAsync } from "neverthrow";
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow";
 import {
   EvictQuiz,
   GetCachedQuiz,
   SetCachedQuiz,
   ReadManifest,
+  type Manifest,
 } from "../apiutils/quizManifest";
 import { type JSONError } from "../statuses/jsonerror";
 import {
@@ -112,23 +113,15 @@ export function FetchAllQuizzes(
   page: number,
   size: number,
 ): ResultAsync<Quizzes, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/?page=${page}&size=${size}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+  return TokenizedFetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/?page=${page}&size=${size}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
       },
-    ),
-    (err) => {
-      console.log(err);
-      return {
-        error: "network error",
-      } as JSONError;
     },
-  ).andThen((r) => NormalizeJSON<Quizzes>(r));
+  ).andThen(NormalizeJSON<Quizzes>);
 }
 
 export enum Kind {
@@ -165,26 +158,14 @@ export function FetchQuizPost(
 
   const bodyString = JSON.stringify(body);
 
-  return ResultAsync.fromPromise(
-    TokenizedFetch("https://" + import.meta.env.VITE_DOMAIN + "/api/v1/quiz/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
-    }),
-    (err) => {
-      console.log("Couldn't fetch test delete: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send test delete because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send test delete because of unknown error" };
+  return TokenizedFetch(`${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -200,26 +181,14 @@ export function FetchQuizPatch(
   req: PatchQuizRequest,
 ): ResultAsync<null, JSONError> {
   const bodyString = JSON.stringify(req);
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${UUID}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/merge-patch+json", // we are being very rfc rn
-        },
-        body: bodyString,
+  return TokenizedFetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${UUID}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/merge-patch+json", // we are being very rfc rn
       },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't fetch quiz patch for quiz: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send quiz patch because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send quiz patch because of unknown error" };
+      body: bodyString,
     },
   )
     .andThen(NormalizeResponse)
@@ -227,72 +196,66 @@ export function FetchQuizPatch(
 }
 
 export function FetchQuizDelete(UUID: string): ResultAsync<null, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${UUID}`,
-      {
-        method: "DELETE",
-      },
-    ),
-    (err) => {
-      console.log("Couldn't fetch quiz delete: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't send quiz delete because of in-browser error",
-        };
-      }
-
-      return { error: "couldn't send quiz delete because of unknown error" };
+  return TokenizedFetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${UUID}`,
+    {
+      method: "DELETE",
     },
   )
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
 
-type ParsedQuizResponse = { quiz: ParsedQuiz };
+export type ParsedQuizResponse = { quiz: ParsedQuiz };
+
+function getWithCache(
+  url: string,
+  quizUUID: string,
+): ResultAsync<ParsedQuiz, JSONError> {
+  const notFound: JSONError = {
+    error: "Quiz with this uuid wasn't found on server",
+  };
+
+  return ReadManifest()
+    .orElse((e) => {
+      console.warn("couldn't read manifest", e);
+      return ok<Manifest, never>({});
+    })
+    .asyncAndThen((manifest) => {
+      const known = manifest[quizUUID];
+
+      return TokenizedFetch(url, {
+        headers: known ? { "If-None-Match": `"${known.checksum}"` } : {},
+      }).andThen((res): ResultAsync<ParsedQuiz, JSONError> => {
+        if (res.status === 304 && known) {
+          return GetCachedQuiz<ParsedQuiz>(
+            quizUUID,
+            known.checksum,
+          ).asyncAndThen((quiz) => okAsync(quiz));
+        }
+
+        if (res.status === 404 || res.status === 410) {
+          return EvictQuiz(quizUUID)
+            .orElse(() => ok(undefined))
+            .asyncAndThen(() => errAsync(notFound));
+        }
+
+        return NormalizeJSON<ParsedQuizResponse>(res)
+          .andTee(({ quiz }) => {
+            const etag = res.headers.get("ETag")?.replace(/"/g, "");
+            if (etag) SetCachedQuiz(quizUUID, etag, quiz);
+          })
+          .map(({ quiz }) => quiz);
+      });
+    });
+}
 
 // may not throw
 export function FetchParsedQuiz(
   quizUUID: string,
 ): ResultAsync<ParsedQuiz, JSONError> {
-  const manifest = ReadManifest();
-  const known = manifest[quizUUID];
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${quizUUID}/parsed`,
-      {
-        headers: known ? { "If-None-Match": `"${known.checksum}"` } : {},
-      },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't fetch parsed quiz: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch parsed quiz because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch parsed quiz because of unknown error" };
-    },
-  ).andThen((r) => {
-    if (r.status === 304 && known) {
-      const cached = GetCachedQuiz<ParsedQuiz>(quizUUID, known.checksum);
-      if (cached !== null) return okAsync(cached);
-    }
-    if (r.status === 404) {
-      EvictQuiz(quizUUID);
-      return errAsync<ParsedQuiz, JSONError>({
-        error: `Quiz ${quizUUID} not found`,
-      });
-    }
-
-    return NormalizeJSON<ParsedQuizResponse>(r)
-      .andTee((body: ParsedQuizResponse) => {
-        const etag = r.headers.get("ETag")?.replace(/"/g, "") ?? "";
-        console.log("ETag:", etag);
-        SetCachedQuiz(quizUUID, etag, body.quiz);
-      })
-      .andThen((r) => okAsync(r.quiz));
-  });
+  const url = `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${quizUUID}/parsed`;
+  return getWithCache(url, quizUUID);
 }
 
 export function FetchQuizExport(
@@ -300,26 +263,15 @@ export function FetchQuizExport(
   accepts: Accept[],
 ): ResultAsync<Blob, JSONError> {
   const body = JSON.stringify({ uuids: UUIDs });
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/export`,
-      {
-        method: "POST",
-        body: body,
-        headers: {
-          Accept: AcceptTransform(accepts),
-          "Content-Type": "application/json",
-        },
+  return TokenizedFetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/export`,
+    {
+      method: "POST",
+      body: body,
+      headers: {
+        Accept: AcceptTransform(accepts),
+        "Content-Type": "application/json",
       },
-    ),
-    (err): JSONError => {
-      console.log("Couldn't fetch quiz export: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch quiz export because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch quiz export because of unknown error" };
     },
   ).andThen(NormalizeBlob);
 }
@@ -329,22 +281,11 @@ export function FetchQuizImport(file: File): ResultAsync<null, JSONError> {
 
   formData.append("imported", file, file.name);
 
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/import`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    ),
-    (err) => {
-      console.log("Couldn't import: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch import quiz because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch quiz import because of unknown error" };
+  return TokenizedFetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/import`,
+    {
+      method: "POST",
+      body: formData,
     },
   )
     .andThen(NormalizeResponse)
@@ -356,21 +297,45 @@ type RawQuiz = {
   body: string;
 };
 export function FetchRawQuiz(UUID: string): ResultAsync<RawQuiz, JSONError> {
-  return ResultAsync.fromPromise(
-    TokenizedFetch(
-      `https://${import.meta.env.VITE_DOMAIN}/api/v1/quiz/${UUID}`,
-      {
-        method: "GET",
-      },
-    ),
-    (err) => {
-      console.log("Couldn't import: ", err);
-      if (err instanceof Error) {
-        return {
-          error: "couldn't fetch import quiz because of in-browser error",
-        };
-      }
-      return { error: "couldn't fetch quiz import because of unknown error" };
+  return TokenizedFetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${UUID}`,
+    {
+      method: "GET",
     },
   ).andThen(NormalizeJSON<RawQuiz>);
+}
+
+export function FetchAnswerPost(
+  runnerKey: string,
+  quizUUID: string,
+  answer: QuizAnswer,
+): ResultAsync<null, JSONError> {
+  return TokenizedFetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/running/${runnerKey}/${quizUUID}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answer }),
+    },
+  )
+    .andThen(NormalizeResponse)
+    .map(() => null);
+}
+
+export function FetchRunningQuiz(
+  key: string,
+  UUID: string,
+): ResultAsync<ParsedQuiz, JSONError> {
+  const url = `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/${UUID}`;
+  return getWithCache(url, UUID);
+}
+
+export function FetchMyAnswers(
+  runnerKey: string,
+): ResultAsync<Record<string, QuizAnswer>, JSONError> {
+  return TokenizedFetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/running/${runnerKey}/answers`,
+  )
+    .andThen(NormalizeJSON<{ answers: Record<string, QuizAnswer> }>)
+    .map((r) => r.answers);
 }

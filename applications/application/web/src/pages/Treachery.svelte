@@ -1,9 +1,9 @@
 <script lang="ts">
   import BentoContainer from "../components/BentoContainer.svelte";
+  import CurrentlyRunning from "../components/CurrentlyRunning.svelte";
   import Groups from "../components/Groups.svelte";
   import Quizzes from "../components/Quizzes.svelte";
   import Registered from "../components/Registered.svelte";
-  import TeacherCurrentlyRunning from "../components/TeacherCurrentlyRunning.svelte";
   import Tests from "../components/Tests.svelte";
   import TotalsTable from "../components/TotalsTable.svelte";
 </script>
@@ -15,7 +15,7 @@
   >
     <h2 class="text-2xl font-bold">Now running</h2>
     <hr class="hr mt-5 mb-5" />
-    <TeacherCurrentlyRunning />
+    <CurrentlyRunning inTeachery />
   </div>
   <div
     id="testing_results"

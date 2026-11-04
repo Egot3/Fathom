@@ -8,13 +8,16 @@ export function CreateFitRows(opts: {
   let height = $state(0);
 
   const pageSize = $derived(
-    Math.min(max, Math.max(min,
-      Math.floor(height / rowHeight) - reserve)),
+    Math.min(max, Math.max(min, Math.floor(height / rowHeight) - reserve)),
   );
 
   function measure(node: HTMLElement) {
     const ro = new ResizeObserver(([e]) => {
-      height = e.contentRect.height;
+      const next = Math.round(
+        e.borderBoxSize?.[0]?.blockSize ?? e.contentRect.height,
+      );
+      if (Math.abs(next - height) >= rowHeight / 2 || height === 0)
+        height = next;
     });
     ro.observe(node);
     return { destroy: () => ro.disconnect() };
@@ -22,7 +25,11 @@ export function CreateFitRows(opts: {
 
   return {
     measure,
-    get pageSize() { return pageSize; },
-    get ready() { return height > 0; },
+    get pageSize() {
+      return pageSize;
+    },
+    get ready() {
+      return height > 0;
+    },
   };
 }

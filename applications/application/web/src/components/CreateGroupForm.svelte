@@ -12,11 +12,10 @@
 
   async function PostGroup(e: Event) {
     e.preventDefault();
-    const postResponse = await FetchGroupPost(name, Array.from(users));
-    if (postResponse !== null) {
-      statusMessage = postResponse.error;
-      return;
-    }
+    statusMessage = await FetchGroupPost(name, Array.from(users)).match(
+      (r) => "",
+      ({ error }) => error,
+    );
 
     callback();
   }

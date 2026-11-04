@@ -135,8 +135,13 @@
 
           <Importer
             callback={q.refresh}
+            accept={{
+              "application/zip": [".zip"],
+              "application/gzip": [".gz", ".tgz"],
+              "application/x-tar": [".tar"],
+            }}
             importName="test import"
-            fetcher={(file: File) => FetchTestImport(file)}
+            fetcher={FetchTestImport}
           />
         </PeekDialogue>
       </div>

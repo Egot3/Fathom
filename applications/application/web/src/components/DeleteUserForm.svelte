@@ -1,6 +1,6 @@
 <script lang="ts">
   import { FetchUserDelete } from "../lib/contracts/user";
-  import DeleteForm from "./DeleteForm.svelte";
+  import Confirm from "./Confirm.svelte";
 
   const {
     name,
@@ -13,4 +13,5 @@
   } = $props();
 </script>
 
-<DeleteForm {name} {UUID} {callback} deletor={FetchUserDelete}></DeleteForm>
+<Confirm {name} key={UUID} {callback} actor={FetchUserDelete} value="Delete"
+></Confirm>
