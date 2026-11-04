@@ -1,6 +1,7 @@
 package server
 
 import (
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/egot3/fathom/internal/handler"
 	"github.com/egot3/fathom/internal/middlewares"
 	"github.com/egot3/fathom/version"
+	"github.com/egot3/fathom/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -207,6 +209,13 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 
 		})
 	})
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/home", http.StatusFound) })
+	dist, err := fs.Sub(web.Dist, "dist")
+	if err != nil {
+		return nil, err
+	}
+	r.Get("/*", SPAHandler(dist).ServeHTTP)
 
 	return r, nil
 }

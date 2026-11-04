@@ -1,4 +1,14 @@
-FROM golang:1-alpine AS builder
+FROM node:22-alpine AS web
+WORKDIR /src/web
+COPY web/package.json web/yarn.lock ./
+RUN yarn install --frozen-lockfile
+COPY web/ ./
+ARG PUBLIC_BASE_URL
+ENV PUBLIC_BASE_URL=$PUBLIC_BASE_URL
+RUN yarn run build
+
+
+FROM golang:1-alpine AS go
 
 ARG VERSION_TYPE
 ENV VERSION_TYPE=$VERSION_TYPE
@@ -14,7 +24,13 @@ WORKDIR /fathom
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags="-w -s -X github.com/egot3/fathom/version.Type=${VERSION_TYPE} -X github.com/egot3/fathom/version.SemVer=${SEMVER} -X github.com/egot3/fathom/version.Name=${VERSION_NAME}" -o /app .
+COPY --from=web /src/web/dist ./web/dist
+RUN CGO_ENABLED=0 go build -ldflags="-w -s -X github.com/egot3/fathom/version.Type=${VERSION_TYPE} -X github.com/egot3/fathom/version.SemVer=${SEMVER} -X github.com/egot3/fathom/version.Name=${VERSION_NAME}" -o -o /out/fathom .
+
+
 FROM scratch
-COPY --from=builder /app /app
-ENTRYPOINT ["/app"]
+ARG PORT
+ENV PORT=$PORT
+COPY --from=go /out/fathom /fathom
+EXPOSE ${PORT}
+ENTRYPOINT ["/fathom"]
