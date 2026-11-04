@@ -85,9 +85,11 @@ func IsInGroup(testUUIDGetter func(uint64) uuid.UUID, allowedChecker func(contex
 				g.testUUID = upd
 				g.allowed = make(map[uuid.UUID]bool)
 			}
-
-			is, ok := g.allowed[userUUID]
 			g.mu.Unlock()
+
+			g.mu.RLock()
+			is, ok := g.allowed[userUUID]
+			g.mu.RUnlock()
 
 			if !ok {
 				d, err := deadlineGetter(runnerKey)
