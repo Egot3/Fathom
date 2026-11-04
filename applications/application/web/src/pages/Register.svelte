@@ -11,6 +11,7 @@
   import { SetUser } from "../lib/bgdata/user.svelte";
   import { LoaderCircle } from "@lucide/svelte";
   import ErrorPopover from "../components/ErrorPopover.svelte";
+  import { Navigate } from "../lib/router.svelte";
 
   let loginError = $state(false);
   let passwordError = $state(false);
@@ -43,31 +44,30 @@
 
   let registering = $state(false);
 
-  async function SubmitLogin(e: Event) {
+  async function SubmitRegister(e: Event) {
     e.preventDefault();
+
     registering = true;
 
-    const body: RegisterRequest = {
-      nickname: login,
-      password: password,
-    };
-
-    FetchRegister(login, password)
-      .then((r) => {
-        if (IsJSONError(r)) {
-          statusMessage = r.error;
+    (async () => {
+      await FetchRegister(login, password)
+        .andTee((r) => {
+          SetUser({
+            UUID: r.user.uuid,
+            isTeacher: r.user.is_teacher,
+            nickname: r.user.nickname,
+          });
+          Navigate("/home");
+        })
+        .orTee((e) => {
+          statusMessage = e.error;
           mainPopover().setOpen(true);
           return;
-        }
-
-        SetUser({
-          UUID: r.user.uuid,
-          isTeacher: r.user.is_teacher,
-          nickname: r.user.nickname,
         });
-        window.location.href = "/home";
-      })
-      .finally(() => (registering = false));
+      registering = false;
+    })();
+
+    return null as never;
   }
 </script>
 
@@ -76,7 +76,7 @@
     class="h-4/5 w-1/2 bg-surface-950-50 rounded-2xl p-2.5 overflow-scroll flex items-center"
   >
     <form
-      onsubmit={SubmitLogin}
+      onsubmit={SubmitRegister}
       class="w-full flex flex-col h-full justify-center"
     >
       <h1 class="self-center text-6xl justify-self-start m-4 font-bold">
@@ -210,12 +210,15 @@
           </Popover.Positioner>
         </Popover.Provider>
 
-        <a
+        <button
           class="btn btn-lg w-2/5 leading-[0.75] preset-outlined-primary-500 self-center"
-          href={"login?login=" + login}
+          onclick={(e) => {
+            e.preventDefault();
+            Navigate("login?login=" + login);
+          }}
         >
           Log in instead
-        </a>
+        </button>
       </div>
     </form>
   </div>
