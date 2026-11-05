@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/egot3/fathom/internal/config"
 	"github.com/egot3/fathom/internal/contracts"
 	"github.com/egot3/fathom/internal/database/repositories"
 	"github.com/egot3/fathom/internal/handler"
@@ -1371,11 +1372,15 @@ func TestTestHandler_RunningQuizzes(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, rec.Code)
 
+		cfg := do.MustInvoke[*config.Config](i)
+		rel, err := cfg.TurnToRel(quiz.Path)
+		require.NoError(t, err)
+
 		var resp contracts.GetQuizzes
 		err = json.NewDecoder(rec.Body).Decode(&resp)
 		require.NoError(t, err)
 		require.Len(t, resp.Quizzes, 1)
-		require.Equal(t, quiz.Path, resp.Quizzes[0].Path)
+		require.Equal(t, rel, resp.Quizzes[0].Path)
 	})
 
 	t.Run("Deleted half-way-through", func(t *testing.T) {
