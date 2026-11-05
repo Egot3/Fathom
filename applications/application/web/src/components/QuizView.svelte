@@ -1,4 +1,17 @@
+<script module lang="ts">
+  import "katex/dist/katex.min.css";
+  import { marked } from "marked";
+  import markedKatex from "marked-katex-extension";
+
+  marked.use(
+    markedKatex({
+      throwOnError: false,
+    }),
+  );
+</script>
+
 <script lang="ts">
+  import { renderToString } from "katex";
   import {
     FetchParsedQuiz,
     FetchRunningQuiz,
@@ -6,6 +19,7 @@
     type QuizAnswer,
   } from "../lib/contracts/quiz";
   import QuizAnswerer from "./QuizAnswerer.svelte";
+  import DOMPurify from "isomorphic-dompurify";
 
   let {
     UUID,
@@ -62,7 +76,12 @@
 {:else if quiz}
   <div class="space-y-1 h-full flex flex-col">
     <h2 class="text-5xl font-bold">{quiz.title}</h2>
-    <p class="text-2xl">{quiz.body}</p>
+    <p class="text-2xl">
+      {@html DOMPurify.sanitize(marked.parse(quiz.body) as string, {
+        USE_PROFILES: { html: true, mathMl: true },
+        ADD_TAGS: ["semantics", "annotation"],
+      })}
+    </p>
     <QuizAnswerer
       kind={quiz.meta.kind}
       options={quiz.options}

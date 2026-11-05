@@ -74,6 +74,7 @@
       })();
     }
   });
+  $inspect("cur", current);
 </script>
 
 <div>
