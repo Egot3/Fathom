@@ -210,12 +210,15 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 		})
 	})
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/home", http.StatusFound) })
 	dist, err := fs.Sub(web.Dist, "dist")
 	if err != nil {
 		return nil, err
 	}
-	r.Get("/*", SPAHandler(dist).ServeHTTP)
+	spa, err := SPAHandler(dist)
+	if err != nil {
+		return nil, err
+	}
+	r.Get("/*", spa.ServeHTTP)
 
 	return r, nil
 }
