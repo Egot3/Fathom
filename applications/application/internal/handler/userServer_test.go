@@ -206,6 +206,7 @@ func TestUserHandler_Register(t *testing.T) {
 			"/api/v1/user/register",
 			strings.NewReader(fmt.Sprintf(`{"nickname": %q, "password": %q}`, nickname, "123123EqdsasE")),
 		)
+		conflictingReq.Header.Set("Content-Type", "application/json")
 		rec = httptest.NewRecorder()
 
 		router.ServeHTTP(rec, conflictingReq)
