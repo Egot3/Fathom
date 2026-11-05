@@ -19,12 +19,11 @@
   const tests = CreateRunningTests();
 
   let chosenIdx = $state(0);
-  let selectedKey: string | null = $derived(tests.data[chosenIdx]?.key ?? null);
-  const chosen = $derived(
-    selectedKey === null
-      ? (tests.data.find((t) => t.key === selectedKey) ?? tests.data[0])
-      : tests.data[0],
-  ); // something malicious is brewing
+
+  const chosen = $derived(tests.data[chosenIdx] ?? tests.data[0]);
+  // something malicious is brewing
+  // not anymore
+
   const deadline = $derived(
     chosen?.deadline ? new Date(chosen.deadline).toLocaleString() : "",
   );
