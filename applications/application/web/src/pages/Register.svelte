@@ -162,7 +162,7 @@
                 return;
               }}
               onblur={() => {
-                if (repeated != password) {
+                if (repeated !== password) {
                   repeatedState = InputStatus.Punish;
                   reapeatedError = true;
                   repeatedMessage = "Passwords don't match";

@@ -69,7 +69,7 @@ ${answer}`);
 </script>
 
 <form onsubmit={PostQuiz} class="w-full flex flex-col h-full space-y-2">
-  <div class="flex">
+  <div class="flex gap-2">
     <div class="flex flex-col w-1/2">
       <UXInput
         label="Name/path"
@@ -78,9 +78,15 @@ ${answer}`);
         bind:ready={nameReady}
         message={nameMessage}
         checker={(v: string) => {
+          if (pathRegex.test(v)) {
+            return true;
+          }
+          if (v.length === 0) {
+            return false;
+          }
           nameMessage =
             "name must have no special symbols and doesn't contain any extensions";
-          return pathRegex.test(v);
+          return false;
         }}
       />
 

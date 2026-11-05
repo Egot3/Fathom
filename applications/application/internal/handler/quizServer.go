@@ -22,6 +22,7 @@ import (
 	"github.com/egot3/fathom/internal/httputils"
 	"github.com/egot3/fathom/internal/importutils"
 	"github.com/egot3/fathom/internal/logging"
+	"github.com/egot3/fathom/internal/models"
 	"github.com/egot3/fathom/internal/quiz"
 	quizparser "github.com/egot3/fathom/internal/quizParser"
 	"github.com/go-chi/chi/v5"
@@ -164,6 +165,23 @@ func (c *chiService) ListQuizzes(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	for i, q := range quizzes {
+		p, err := c.cfg.TurnToRel(q.Path)
+		if err != nil {
+			logger.Error("couldn't convert path to rel", slog.String("path", q.Path), slog.String("Error", err.Error()))
+			(&carefulness.JSONError{Err: "can't convert path to rel", Status: http.StatusInternalServerError}).Encode(w)
+			return
+		}
+
+		quizzes[i] = models.Quiz{
+			UUID:          q.UUID,
+			Checksum:      q.Checksum,
+			Path:          p,
+			Score:         q.Score,
+			CorrectAnswer: q.CorrectAnswer,
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -387,7 +405,7 @@ func (c *chiService) PatchQuiz(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		buf.Write(frontmatter)
-		buf.WriteString("---\n\n")
+		buf.WriteString("---\n")
 
 		logger.Info("After writing frontmatter", slog.String("Quiz", buf.String()))
 

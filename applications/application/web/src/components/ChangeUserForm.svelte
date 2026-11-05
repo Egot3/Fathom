@@ -9,6 +9,11 @@
   } from "../lib/contracts/user";
   import { GetUser } from "../lib/bgdata/user.svelte";
   import { CheckPassword } from "../lib/passwordUtils/checkPassword";
+  import { onMount } from "svelte";
+  import {
+    GetPasswordPolicy,
+    LoadPasswordPolicy,
+  } from "../lib/passwordUtils/policy.svelte";
 
   const {
     callback,
@@ -69,14 +74,25 @@
 
     if (!_.isEmpty(patched)) {
       statusMessage = await FetchUserPatch(UUID, patched).match(
-        (r) => "",
+        (r) => {
+          callback();
+          return "";
+        },
         ({ error }) => error,
       );
       return;
     }
-
-    callback();
   }
+
+  onMount(() => {
+    LoadPasswordPolicy();
+  });
+  const policy = $derived(GetPasswordPolicy());
+  const violations = $derived(policy ? CheckPassword(password, policy) : []);
+
+  $effect(() => {
+    passwordMessage = violations.join("\n");
+  });
 </script>
 
 <form onsubmit={ChangeUser} class="w-full flex flex-col h-full space-y-2">
@@ -107,9 +123,9 @@
     bind:value={password}
     bind:ready={passwordReady}
     message={passwordMessage ?? ""}
+    initValue={""}
     checker={(v: string) => {
-      passwordMessage = CheckPassword(v);
-      return passwordMessage === null;
+      return violations.length === 0;
     }}
   />
 
