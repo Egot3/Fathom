@@ -19,15 +19,12 @@ export type Test = {
 
 // re-re-redone
 export function FetchTest(testUUID: string): ResultAsync<Test, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${testUUID}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
+  return TokenizedFetch(`/api/v1/test/${testUUID}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
     },
-  ).andThen(NormalizeJSON<Test>);
+  }).andThen(NormalizeJSON<Test>);
 }
 
 export type TestInfo = Test & {
@@ -43,9 +40,7 @@ type CurrentlyRunningResponse = {
 export function FetchRunningTestInfo(
   key: string,
 ): ResultAsync<TestInfo, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}`,
-  )
+  return TokenizedFetch(`/api/v1/test/running/${key}`)
     .andThrough((r) => {
       if (r.status === 423) {
         return errAsync({
@@ -62,9 +57,7 @@ export function FetchCurrentlyRunningTestInfos(): ResultAsync<
   TestInfo[],
   JSONError
 > {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/all`,
-  ).andThen((r) => {
+  return TokenizedFetch(`/api/v1/test/running/all`).andThen((r) => {
     if (r.status === 423) {
       return okAsync([]);
     }
@@ -80,15 +73,12 @@ export function FetchAllTests(
   page: number,
   size: number,
 ): ResultAsync<Tests, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/?page=${page}&size=${size}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
+  return TokenizedFetch(`/api/v1/test/?page=${page}&size=${size}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
     },
-  ).andThen(NormalizeJSON<Tests>);
+  }).andThen(NormalizeJSON<Tests>);
 }
 
 type PostTestRequest = {
@@ -106,7 +96,7 @@ export function FetchTestPost(
   };
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(`${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/`, {
+  return TokenizedFetch(`/api/v1/test/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -119,12 +109,9 @@ export function FetchTestPost(
 }
 
 export function FetchTestDelete(UUID: string): ResultAsync<null, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${UUID}`,
-    {
-      method: "DELETE",
-    },
-  )
+  return TokenizedFetch(`/api/v1/test/${UUID}`, {
+    method: "DELETE",
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -143,17 +130,14 @@ export function FetchTestPatch(
 
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${UUID}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`/api/v1/test/${UUID}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -172,17 +156,14 @@ export function FetchTestBundle(
 
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${testUUID}/quizzes`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`/api/v1/test/${testUUID}/quizzes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -197,17 +178,14 @@ export function FetchTestPrune(
 
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${testUUID}/quizzes`,
-    {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`/api/v1/test/${testUUID}/quizzes`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -230,59 +208,47 @@ export function FetchTestStart(
     duration: duration,
     group_uuids: groupUUIDs,
   } as TestStartRequest);
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/start`,
-    {
-      method: "POST",
-      body: body,
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "*/*;q=0", //those who nose
-      },
+  return TokenizedFetch(`/api/v1/test/running/start`, {
+    method: "POST",
+    body: body,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "*/*;q=0",
     },
-  )
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
 
 export function FetchTestPause(key: string): ResultAsync<null, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/pause`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "*/*;q=0", //those who nose
-      },
+  return TokenizedFetch(`/api/v1/test/running/${key}/pause`, {
+    method: "POST",
+    headers: {
+      Accept: "*/*;q=0",
     },
-  )
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
 
 export function FetchTestResume(key: string): ResultAsync<null, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/resume`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "*/*;q=0", //those who nose
-      },
+  return TokenizedFetch(`/api/v1/test/running/${key}/resume`, {
+    method: "POST",
+    headers: {
+      Accept: "*/*;q=0",
     },
-  )
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
 
 export function FetchTestStop(key: string): ResultAsync<null, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/stop`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "*/*;q=0",
-      },
+  return TokenizedFetch(`/api/v1/test/running/${key}/stop`, {
+    method: "POST",
+    headers: {
+      Accept: "*/*;q=0",
     },
-  )
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -300,16 +266,14 @@ export function FetchTestExtend(
   };
 
   const bodyString = JSON.stringify(body);
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/extend`,
-    {
-      method: "POST",
-      body: bodyString,
-      headers: {
-        Accept: "*/*;q=0",
-      },
+  return TokenizedFetch(`/api/v1/test/running/${key}/extend`, {
+    method: "POST",
+    body: bodyString,
+    headers: {
+      Accept: "*/*;q=0",
+      "Content-Type": "application/json",
     },
-  )
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -318,16 +282,13 @@ export function FetchTestExport(
   testUUID: string,
   accepts: Accept[],
 ): ResultAsync<Blob, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/${testUUID}/export`,
-    {
-      method: "GET",
-      headers: {
-        Accept: AcceptTransform(accepts),
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+  return TokenizedFetch(`/api/v1/test/${testUUID}/export`, {
+    method: "GET",
+    headers: {
+      Accept: AcceptTransform(accepts),
+      "Content-Type": "application/x-www-form-urlencoded",
     },
-  ).andThen(NormalizeBlob);
+  }).andThen(NormalizeBlob);
 }
 
 export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
@@ -335,13 +296,10 @@ export function FetchTestImport(file: File): ResultAsync<null, JSONError> {
 
   formData.append("imported", file, file.name);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/import`,
-    {
-      method: "POST",
-      body: formData,
-    },
-  )
+  return TokenizedFetch(`/api/v1/test/import`, {
+    method: "POST",
+    body: formData,
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -353,20 +311,15 @@ type GetQuizzesResponse = {
 export function FetchRunningTestQuizzes(
   key: string,
 ): ResultAsync<Quiz[], JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/quizzes`,
-  )
+  return TokenizedFetch(`/api/v1/test/running/${key}/quizzes`)
     .andThen(NormalizeJSON<GetQuizzesResponse>)
     .map(({ quizzes }) => quizzes);
 }
 
 export function FetchTestTotalize(key: string): ResultAsync<null, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/running/${key}/`,
-    {
-      method: "POST",
-    },
-  )
+  return TokenizedFetch(`/api/v1/total/running/${key}/`, {
+    method: "POST",
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }

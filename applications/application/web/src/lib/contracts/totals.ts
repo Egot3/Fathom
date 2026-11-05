@@ -45,7 +45,7 @@ export function FetchTotals(
   testUUID?: string,
 ): ResultAsync<Totals, JSONError> {
   return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/${groupUUID ?? "all"}/${userUUID ?? "all"}/${testUUID ?? "all"}?page=${page}&size=${size}`,
+    `/api/v1/total/${groupUUID ?? "all"}/${userUUID ?? "all"}/${testUUID ?? "all"}?page=${page}&size=${size}`,
     {
       method: "GET",
       headers: {
@@ -65,7 +65,7 @@ export function FetchAnswers(
   size: number,
 ): ResultAsync<Answers, JSONError> {
   return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/${groupUUID}/${userUUID}/${testUUID}/answers?page=${page}&size=${size}`,
+    `/api/v1/total/${groupUUID}/${userUUID}/${testUUID}/answers?page=${page}&size=${size}`,
     {
       method: "GET",
       headers: {

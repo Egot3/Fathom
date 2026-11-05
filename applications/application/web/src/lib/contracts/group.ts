@@ -25,15 +25,12 @@ export function FetchGroups(
   page: number,
   size: number,
 ): ResultAsync<ListGroupResponse, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group?page=${page}&size=${size}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
+  return TokenizedFetch(`/api/v1/group?page=${page}&size=${size}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
     },
-  ).andThen(NormalizeJSON<ListGroupResponse>);
+  }).andThen(NormalizeJSON<ListGroupResponse>);
 }
 
 type PostGroupRequest = {
@@ -50,7 +47,7 @@ export function FetchGroupPost(
     appendants: appendants,
   };
   const bodyString = JSON.stringify(body);
-  return TokenizedFetch(`${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/`, {
+  return TokenizedFetch(`/api/v1/group/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -63,12 +60,9 @@ export function FetchGroupPost(
 }
 
 export function FetchGroupDelete(UUID: string): ResultAsync<null, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/${UUID}`,
-    {
-      method: "DELETE",
-    },
-  )
+  return TokenizedFetch(`/api/v1/group/${UUID}`, {
+    method: "DELETE",
+  })
     .andThen(NormalizeResponse)
     .map((_) => null);
 }
@@ -87,17 +81,14 @@ export function FetchGroupPatch(
 
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/${UUID}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`/api/v1/group/${UUID}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .map((_) => null);
 }
@@ -116,17 +107,14 @@ export function FetchGroupPrune(
 
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/${groupUUID}/user`,
-    {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`/api/v1/group/${groupUUID}/user`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .map((_) => null);
 }
@@ -145,17 +133,14 @@ export function FetchGroupAppend(
 
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/group/${groupUUID}/user`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`/api/v1/group/${groupUUID}/user`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .map((_) => null);
 }
