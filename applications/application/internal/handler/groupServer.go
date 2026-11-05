@@ -372,3 +372,55 @@ func (c *chiService) AllowedToTest(ctx context.Context, userUUID uuid.UUID, key 
 	}
 	return c.groupRepo.IsInAny(ctx, info.Groups(), userUUID)
 }
+
+func (c *chiService) ListGroupUsers(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+	w.Header().Set("Content-Type", "application/json")
+
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Failed to parse form data"})
+		return
+	}
+
+	page, size, jerr := httputils.Page(r)
+	if jerr != nil {
+		logger.Error("couldn't retrieve page/size from request",
+			slog.String("Error", jerr.Error()),
+		)
+		jerr.Encode(w)
+		return
+	}
+
+	groupUUID, ok := jwtutils.UUIDFromContext(ctx)
+	if !ok {
+		logger.Error("Bad uuid")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve uuid"})
+		return
+	}
+
+	logger = logger.With(slog.Int("page", page), slog.Int("size", size))
+	ctx = logging.WithLogger(ctx, logger)
+
+	users, total, err := c.groupRepo.GroupUsers(ctx, groupUUID, page, size)
+	if err != nil {
+		logger.Error("Failed to get users",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contracts.ListGroupUsersResponse{
+		Users: users,
+		Total: total,
+		Page:  page,
+		Size:  size,
+	})
+}

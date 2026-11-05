@@ -22,6 +22,7 @@ export function CreateFitRows(opts: {
     ro.observe(node);
     return { destroy: () => ro.disconnect() };
   }
+  const ready = $derived(height > 0);
 
   return {
     measure,
@@ -29,7 +30,7 @@ export function CreateFitRows(opts: {
       return pageSize;
     },
     get ready() {
-      return height > 0;
+      return ready;
     },
   };
 }

@@ -64,7 +64,7 @@
           }}
         >
           <div>
-            {answer.quiz_name.slice(14).slice(0, -3)}
+            {answer.quiz_name}
           </div>
           <div>
             {answer.score}/{answer.max_score}

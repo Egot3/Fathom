@@ -86,6 +86,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				r.Route("/user", func(r chi.Router) {
 					r.Post("/", svc.AppendUsers)
 					r.Delete("/", svc.RemoveUsers)
+					r.Get("/", svc.ListGroupUsers)
 				})
 			})
 		})
@@ -155,6 +156,7 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 				r.Group(func(r chi.Router) {
 					r.Use(middlewares.IsTeacherRights)
 
+					r.Get("/quizzes", svc.TestQuizzes)
 					r.Delete("/", svc.DeleteTest)
 					r.Patch("/", svc.PatchTest)
 					r.Post("/quizzes", svc.AddQuizzes)

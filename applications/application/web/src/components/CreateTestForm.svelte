@@ -19,8 +19,6 @@
         ({ error }) => error,
       );
   }
-
-  $inspect(name);
 </script>
 
 <form onsubmit={PostTest} class="w-full flex flex-col h-full">

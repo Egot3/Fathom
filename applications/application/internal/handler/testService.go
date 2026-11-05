@@ -47,6 +47,7 @@ type GroupService interface {
 	AppendUsers(w http.ResponseWriter, r *http.Request)
 	RemoveUsers(w http.ResponseWriter, r *http.Request)
 	ListGroups(w http.ResponseWriter, r *http.Request)
+	ListGroupUsers(w http.ResponseWriter, r *http.Request)
 }
 
 type QuizService interface {
@@ -80,6 +81,7 @@ type TestService interface {
 	RunningInfos(w http.ResponseWriter, r *http.Request)
 	RunningInfo(w http.ResponseWriter, r *http.Request)
 	MyAnswers(w http.ResponseWriter, r *http.Request)
+	TestQuizzes(w http.ResponseWriter, r *http.Request)
 }
 
 type TotalService interface {

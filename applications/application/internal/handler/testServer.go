@@ -193,6 +193,22 @@ func (c *chiService) GetTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i, q := range test.Quizzes {
+		p, err := c.cfg.TurnToRel(q.Path)
+		if err != nil {
+			logger.Error("couldn't convert path to rel", slog.String("path", q.Path), slog.String("Error", err.Error()))
+			(&carefulness.JSONError{Err: "can't convert path to rel", Status: http.StatusInternalServerError}).Encode(w)
+			return
+		}
+
+		test.Quizzes[i] = models.Quiz{
+			UUID:          q.UUID,
+			Checksum:      q.Checksum,
+			Path:          p,
+			Score:         q.Score,
+			CorrectAnswer: q.CorrectAnswer,
+		}
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.GetTestResponse{Test: test})
 }
@@ -649,24 +665,7 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 
 	logger.With(slog.Int("page", page), slog.Int("size", size))
 
-	claims, ok := jwtutils.ClaimsFromContext(ctx)
-	if !ok {
-		logger.Error("Failed to retrieve jwt claims")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Unable to retrieve jwt's claims"})
-		return
-	}
-
-	var tests []models.Test
-	var total int
-	if claims.IsTeacher {
-		logger.Debug("got teacher request")
-		tests, total, err = c.testRepo.ListTestsAdvanced(ctx, page, size)
-		logger.Debug("got advanced tests info", slog.Any("tests", tests))
-	} else {
-		logger.Debug("got pupil request", slog.Any("claims", claims))
-		tests, total, err = c.testRepo.ListTests(ctx, page, size)
-	}
+	tests, total, err := c.testRepo.ListTests(ctx, page, size)
 
 	if err != nil {
 		logger.Error("couldn't select tests for listing", slog.String("Error", err.Error()))
@@ -684,6 +683,82 @@ func (c *chiService) ListTests(w http.ResponseWriter, r *http.Request) {
 		Total: total,
 		Page:  page,
 		Size:  size,
+	})
+}
+
+func (c *chiService) TestQuizzes(w http.ResponseWriter, r *http.Request) {
+	logger := logging.LoggerFromContext(r.Context()).With(
+		slog.String("layer", "handler"),
+	)
+	ctx := logging.WithLogger(r.Context(), logger)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "Failed to parse form data"})
+		return
+	}
+
+	page, size, jerr := httputils.Page(r)
+	if jerr != nil {
+		logger.Error("couldn't retrieve page/size from request",
+			slog.String("Error", jerr.Error()),
+		)
+		jerr.Encode(w)
+		return
+	}
+
+	logger = logger.With(slog.Int("page", page), slog.Int("size", size))
+
+	testUUID, err := uuid.Parse(chi.URLParam(r, "uuid"))
+	if err != nil {
+		logger.Error("couldn't parse UUID in url",
+			slog.String("Error", err.Error()),
+		)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "couldn't parse UUID in url"})
+		return
+	}
+
+	logger = logger.With(slog.String("test_uuid", testUUID.String()))
+
+	quizzes, total, err := c.testRepo.TestQuizzes(ctx, testUUID, page, size)
+
+	if err != nil {
+		logger.Error("couldn't select tests for listing", slog.String("Error", err.Error()))
+		if gone, ok := errors.AsType[*carefulness.Gone](err); ok {
+			gone.Encode(w)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	for i, q := range quizzes {
+		p, err := c.cfg.TurnToRel(q.Path)
+		if err != nil {
+			logger.Error("couldn't convert path to rel", slog.String("path", q.Path), slog.String("Error", err.Error()))
+			(&carefulness.JSONError{Err: "can't convert path to rel", Status: http.StatusInternalServerError}).Encode(w)
+			return
+		}
+
+		quizzes[i] = models.Quiz{
+			UUID:          q.UUID,
+			Checksum:      q.Checksum,
+			Path:          p,
+			Score:         q.Score,
+			CorrectAnswer: q.CorrectAnswer,
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contracts.ListQuizResponse{
+		Quizzes: quizzes,
+		Total:   total,
+		Page:    page,
+		Size:    size,
 	})
 }
 

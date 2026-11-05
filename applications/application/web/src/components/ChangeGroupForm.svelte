@@ -7,11 +7,15 @@
     FetchGroupAppend,
     FetchGroupPatch,
     FetchGroupPrune,
+    FetchGroupUsers,
     type Group,
   } from "../lib/contracts/group";
   import ExistingUserChips from "./ExistingUserChips.svelte";
   import UserChips from "./UserChips.svelte";
   import { ok, safeTry } from "neverthrow";
+  import { CreateFitRows } from "../lib/layoututils/fitRows.svelte";
+  import { CreatePagedQuery } from "../lib/layoututils/createPagedQuery.svelte";
+  import Pagination from "./Pagination.svelte";
 
   const {
     callback,
@@ -31,8 +35,15 @@
 
   let nameReady: boolean = $state(false);
 
+  const q = CreatePagedQuery({
+    pageSize: () => 5,
+    enabled: () => true,
+    params: () => UUID,
+    fetcher: FetchGroupUsers,
+  });
+
   let newName = $derived(name);
-  let pupils = $derived(new SvelteSet(response.pupils));
+  let removed = $state(new SvelteSet<string>());
   let newPupils = $state(new SvelteSet<string>());
 
   async function ChangeGroup(e: Event) {
@@ -43,18 +54,12 @@
         yield* FetchGroupPatch(UUID, newName);
       }
 
-      const pupilsArr = Array.from(pupils);
-      const pupilsRemoved = _.difference(response.pupils, pupilsArr);
-      if (pupilsRemoved.length > 0) {
-        yield* FetchGroupPrune(
-          UUID,
-          pupilsRemoved.map((v) => v.uuid),
-        );
+      if (removed.size > 0) {
+        yield* FetchGroupPrune(UUID, Array.from(removed));
       }
 
-      const newPupilsArr = Array.from(newPupils);
-      if (newPupilsArr.length > 0) {
-        yield* FetchGroupAppend(UUID, newPupilsArr);
+      if (newPupils.size > 0) {
+        yield* FetchGroupAppend(UUID, Array.from(newPupils));
       }
 
       return ok(undefined);
@@ -71,7 +76,7 @@
     );
   }
 
-  const existing = new SvelteSet((() => pupils)());
+  const existing = $derived(new SvelteSet(q.data?.users ?? []));
 </script>
 
 <form onsubmit={ChangeGroup} class="w-full flex flex-col h-full space-y-2">
@@ -99,12 +104,13 @@
     }}
   />
 
-  <div class="w-full flex">
-    <div class="h-full w-1/2">
-      <label class="label">
+  <div class="w-full flex min-h-19">
+    <div class="h-full w-1/2 min-h-19">
+      <label class="label min-h-19">
         <span class="label-text">Existing pupils</span>
-        <ExistingUserChips bind:pupils />
+        <ExistingUserChips users={q.data?.users ?? []} bind:removed />
       </label>
+      <Pagination bind:page={q.page} pageSize={5} total={q.data?.total ?? 0} />
     </div>
     <div class="h-full w-1/2">
       <label class="label">

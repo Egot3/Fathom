@@ -16,8 +16,6 @@
     maxSelect?: number;
   } = $props();
 
-  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
-
   const q = CreatePagedQuery({
     pageSize: () => 5,
     enabled: () => true,

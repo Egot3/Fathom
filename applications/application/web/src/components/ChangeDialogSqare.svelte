@@ -1,7 +1,7 @@
 <script lang="ts" generics="T">
   import { Pencil, X } from "@lucide/svelte";
   import { Dialog, Portal } from "@skeletonlabs/skeleton-svelte";
-  import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
+  import type { JSONError } from "../lib/statuses/jsonerror";
   import type { Snippet } from "svelte";
   import type { ResultAsync } from "neverthrow";
   import { IsResultAsync } from "../lib/apiutils/isResultAsync";
@@ -13,40 +13,62 @@
     contentGetter,
   }: {
     title: string;
-    callback: () => void;
+    callback?: () => void;
     children: Snippet<[{ content: T }]>;
     contentGetter: () => ResultAsync<T, JSONError> | T;
   } = $props();
 
+  let open = $state(false);
+  let content = $state<T | undefined>(undefined);
   let error = $state("");
-  let content = $derived(contentGetter());
-  async function getContent(): Promise<T | null | undefined> {
-    if (!IsResultAsync(content)) {
-      return content;
+  let loading = $state(false);
+  let token = 0;
+
+  async function load() {
+    const mine = ++token;
+    error = "";
+    content = undefined;
+    loading = true;
+
+    const raw = contentGetter();
+    if (IsResultAsync(raw)) {
+      await raw.match(
+        (v) => {
+          if (mine === token) content = v;
+        },
+        (e) => {
+          if (mine === token) error = e.error;
+        },
+      );
+    } else {
+      content = raw;
     }
 
-    return await content
-      .orTee((r) => (error = r.error))
-      .match(
-        (r) => r,
-        (_) => undefined,
-      );
+    if (mine === token) loading = false;
+  }
+
+  function onOpenChange(details: { open: boolean }) {
+    open = details.open;
+    if (details.open) {
+      load();
+    } else {
+      token++;
+      content = undefined;
+      loading = false;
+    }
   }
 </script>
 
-<Dialog>
+<Dialog {open} {onOpenChange}>
   <Dialog.Trigger
-    onclick={() => {
-      content = contentGetter();
-      callback();
-    }}
+    onclick={callback}
     class="btn mb-0 mt-0 preset-filled-surface-300-700 hover:preset-filled-warning-300-700 aspect-square h-auto w-auto p-1 m-px"
-    ><Pencil size="16" /></Dialog.Trigger
   >
+    <Pencil size="16" />
+  </Dialog.Trigger>
 
   <Portal>
     <Dialog.Backdrop class="fixed inset-0 z-50 bg-surface-50-950/50" />
-
     <Dialog.Positioner
       class="fixed inset-0 z-50 flex items-center justify-center"
     >
@@ -60,15 +82,15 @@
           >
         </header>
 
-        {#await getContent()}
-          <div>loading</div>
-        {:then content}
-          {#if error}
+        {#if open}
+          {#if loading}
+            <div>loading</div>
+          {:else if error}
             {error}
-          {:else if content}
-            {@render children?.({ content })}
+          {:else if content !== undefined}
+            {@render children({ content })}
           {/if}
-        {/await}
+        {/if}
       </Dialog.Content>
     </Dialog.Positioner>
   </Portal>

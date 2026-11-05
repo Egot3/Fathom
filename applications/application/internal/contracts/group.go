@@ -32,3 +32,10 @@ type ListGroupsResponse struct {
 	Total  int            `json:"total"`
 	Groups []models.Group `json:"groups"`
 }
+
+type ListGroupUsersResponse struct {
+	Page  int           `json:"page"`
+	Size  int           `json:"size"`
+	Total int           `json:"total"`
+	Users []models.User `json:"users"`
+}

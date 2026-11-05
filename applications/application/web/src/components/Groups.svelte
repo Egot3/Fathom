@@ -44,9 +44,8 @@
     <table class="table table-auto self-start">
       <thead>
         <tr class="text-surface-100-900 flex">
-          <th class="w-1/3">Group</th>
-          <th class="w-1/3">User count</th>
-          <th class="w-1/3"></th>
+          <th class="w-1/2">Group</th>
+          <th class="w-1/2"></th>
         </tr>
       </thead>
 
@@ -58,8 +57,7 @@
             class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
           >
             <td class="w-1/3">{group.name}</td>
-            <td class="w-1/3">{group.pupils?.length ?? 0}</td>
-            <td class="w-1/3">
+            <td class="w-1/3 ml-auto">
               {#if group.uuid === focused || group.uuid === clickFocused}
                 <div class="flex flex-row-reverse">
                   <DeleteDialogSquare
@@ -92,8 +90,10 @@
                     title="Group peeker"
                     contentGetter={() => group}
                   >
-                    {#snippet children({ content }: { content: Group })}
-                      <GroupPeek {content} />
+                    {#snippet children({ content }: { content?: Group })}
+                      {#if content}
+                        <GroupPeek {content} />
+                      {/if}
                     {/snippet}
                   </PeekDialogSquare>
                 </div>
