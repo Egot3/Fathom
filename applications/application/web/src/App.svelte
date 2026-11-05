@@ -30,7 +30,7 @@
     { path: /^\/home\/?$/, load: () => import("./pages/Home.svelte") },
     {
       path: /^\/teachery\/?$/,
-      load: () => import("./pages/Treachery.svelte"),
+      load: () => import("./pages/Teachery.svelte"),
       teacher: true,
     },
     {

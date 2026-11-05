@@ -3,8 +3,6 @@ WORKDIR /src/web
 COPY web/package.json web/yarn.lock ./
 RUN yarn install --frozen-lockfile
 COPY web/ ./
-ARG PUBLIC_BASE_URL
-ENV PUBLIC_BASE_URL=$PUBLIC_BASE_URL
 RUN yarn run build
 
 
