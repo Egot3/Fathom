@@ -144,3 +144,23 @@ export function FetchGroupAppend(
     .andThen(NormalizeResponse)
     .map((_) => null);
 }
+
+type ListGroupUsersResponse = {
+  users: User[];
+  total: number;
+};
+export function FetchGroupUsers(
+  page: number,
+  size: number,
+  uuid: string,
+): ResultAsync<ListGroupUsersResponse, JSONError> {
+  return TokenizedFetch(
+    `/api/v1/group/${uuid}/user?page=${page}&size=${size}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    },
+  ).andThen(NormalizeJSON<ListGroupUsersResponse>);
+}

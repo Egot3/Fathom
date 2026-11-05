@@ -21,7 +21,7 @@
   const showUser = $derived(!userUUID);
   const colClass = $derived(showUser ? "w-1/5" : "w-1/4");
 
-  const fit = CreateFitRows({ rowHeight: 24, reserve: 1 });
+  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
 
   let selected = $state({
     user: null as string | null,
@@ -39,6 +39,7 @@
     }),
     fetcher: (page, size, p) =>
       FetchTotals(page, size, p.user, p.group, p.test),
+
     debounce: 500,
   });
 
@@ -79,7 +80,7 @@
     {/if}
   </div>
 
-  <div class="flex-1 min-h-0 overflow-auto" use:fit.measure>
+  <div class="flex-1 min-h-0 relative overflow-auto" use:fit.measure>
     {#if q.loading}
       <div
         class="animate-pulse h-full w-full bg-surface-400-600 rounded-xl"

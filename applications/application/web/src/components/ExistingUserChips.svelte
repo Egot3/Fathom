@@ -1,36 +1,36 @@
 <script lang="ts">
   import { SvelteSet } from "svelte/reactivity";
   import { CheckIcon } from "@lucide/svelte";
-  import _ from "lodash";
   import type { User } from "../lib/contracts/user";
 
   let {
-    pupils = $bindable(new SvelteSet<User>()),
+    users,
+    removed = $bindable(new SvelteSet<string>()),
     disabled = false,
   }: {
-    pupils: SvelteSet<User>;
+    users: User[];
+    removed?: SvelteSet<string>;
     disabled?: boolean;
   } = $props();
-
-  const startinggroups = new Set(pupils);
 </script>
 
 <div class="grid gap-4 m-2 w-full place-items-center h-full overflow-auto">
-  {#each startinggroups as pupil}
+  {#each users as user (user.uuid)}
+    {const kept = !removed.has(user.uuid)}
     <button
       {disabled}
       type="button"
-      class={`chip capitalize preset-outlined-surface-400-600 ${pupils.has(pupil) ? "preset-tonal-primary" : ""}`}
+      class={`chip capitalize preset-outlined-surface-400-600 ${kept ? "preset-tonal-primary" : "line-through opacity-60"}`}
       onclick={() => {
-        if (pupils.has(pupil)) {
-          pupils.delete(pupil);
+        if (kept) {
+          removed.add(user.uuid);
         } else {
-          pupils.add(pupil);
+          removed.delete(user.uuid);
         }
       }}
     >
-      {#if pupils.has(pupil)}<CheckIcon size={14} />{/if}
-      <span>{pupil.nickname}</span>
+      {#if kept}<CheckIcon size={14} />{/if}
+      <span>{user.nickname}</span>
     </button>
   {/each}
 </div>

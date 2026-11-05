@@ -23,11 +23,7 @@
   >
     <h2 class="self-center text-2xl font-bold">Testing results</h2>
     <hr class="hr mt-5 mb-5" />
-    {#if me}
-      <TotalsTable userUUID={me.UUID} filters={["test"]} />
-    {:else}
-      <div>You are not logged in</div>
-    {/if}
+    <TotalsTable userUUID={me?.UUID ?? ""} filters={["test"]} />
   </div>
   <div
     id="self"

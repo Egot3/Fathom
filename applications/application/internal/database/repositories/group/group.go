@@ -151,7 +151,6 @@ func (r *bunGroupRepository) ListGroups(ctx context.Context, page, size int) ([]
 	total, err := r.db.NewSelect().Model(&groups).
 		OrderBy("name", bun.OrderAsc).
 		Offset(size * page).Limit(size).
-		Relation("Users").
 		ScanAndCount(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -203,4 +202,21 @@ func (r *bunGroupRepository) UserGroupsIn(ctx context.Context, userUUID uuid.UUI
 		OrderExpr("group_uuid").
 		Scan(ctx, &out)
 	return out, err
+}
+
+func (r *bunGroupRepository) GroupUsers(ctx context.Context, groupUUID uuid.UUID, page, size int) ([]models.User, int, error) {
+	var users []models.User
+
+	total, err := r.db.NewSelect().
+		Model(&users).
+		Join("JOIN groups_users AS gu ON gu.user_uuid = u.uuid").
+		Where("gu.group_uuid = ?", groupUUID).
+		Limit(size).Offset(page * size).
+		ScanAndCount(ctx)
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
 }

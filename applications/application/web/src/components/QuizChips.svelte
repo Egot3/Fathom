@@ -26,10 +26,12 @@
   let existingQuizUUIDs = $derived(
     new Set(Array.from(existing).map((v) => v.uuid)),
   );
+
+  $inspect("quizzes", q.data?.quizzes);
 </script>
 
 <div
-  class="grid gap-4 m-2 w-full place-items-center h-full overflow-auto"
+  class="grid gap-4 m-2 w-full place-items-center h-full overflow-auto min-h-24"
   use:fit.measure
 >
   {#if q.loading}
@@ -55,7 +57,7 @@
         disabled={existingQuizUUIDs.has(quiz.uuid)}
       >
         {#if chosen.has(quiz.uuid)}<CheckIcon size={14} />{/if}
-        <span>{quiz.path.slice(14).slice(0, -3)}</span>
+        <span>{quiz.path}</span>
       </button>
     {/each}
 

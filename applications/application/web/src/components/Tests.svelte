@@ -53,9 +53,8 @@
     <table class="table table-auto self-start">
       <thead>
         <tr class="text-surface-100-900 flex" style="height:20px">
-          <th class="w-1/3">Test</th>
-          <th class="w-1/3">Quiz count</th>
-          <th class="w-1/3"></th>
+          <th class="w-1/2">Test</th>
+          <th class="w-1/2"></th>
         </tr>
       </thead>
 
@@ -67,9 +66,8 @@
             style="height:20px"
             class="bg-surface-700-300 rounded-xl flex hover:motion-safe:hover:brightness-125 dark:hover:motion-safe:hover:brightness-75"
           >
-            <td class="w-1/3">{test.name}</td>
-            <td class="w-1/3">{test.quizzes?.length ?? 0}</td>
-            <td class="w-1/3">
+            <td class="w-1/2">{test.name}</td>
+            <td class="w-1/2">
               {#if test.uuid === focused || test.uuid === clickFocused}
                 <div class="flex flex-row-reverse">
                   <DeleteDialogSquare
@@ -102,8 +100,10 @@
                     title="Test peeker"
                     contentGetter={() => test}
                   >
-                    {#snippet children({ content }: { content: Test })}
-                      <TestPeek {content} />
+                    {#snippet children({ content }: { content?: Test })}
+                      {#if content}
+                        <TestPeek {content} />
+                      {/if}
                     {/snippet}
                   </PeekDialogSquare>
                 </div>

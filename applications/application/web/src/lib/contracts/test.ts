@@ -27,6 +27,27 @@ export function FetchTest(testUUID: string): ResultAsync<Test, JSONError> {
   }).andThen(NormalizeJSON<Test>);
 }
 
+type ListQuizResponse = {
+  quizzes: Quiz[];
+  total: number;
+};
+
+export function FetchTestQuizzes(
+  page: number,
+  size: number,
+  testUUID: string,
+): ResultAsync<ListQuizResponse, JSONError> {
+  return TokenizedFetch(
+    `/api/v1/test/${testUUID}/quizzes?page=${page}&size=${size}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    },
+  ).andThen(NormalizeJSON<ListQuizResponse>);
+}
+
 export type TestInfo = Test & {
   deadline: Date;
   is_paused: boolean;

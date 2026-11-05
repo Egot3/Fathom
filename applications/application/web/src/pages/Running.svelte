@@ -127,7 +127,7 @@
       >
         <div class="h-11/12 flex flex-col gap-1">
           {#each quizzes as quiz (quiz.uuid)}
-            {const quizName = quiz.path.slice(14).slice(0, -3)}
+            {const quizName = quiz.path}
             <button
               class="items-center justify-center w-full flex bg-surface-300-700"
               onclick={() => {

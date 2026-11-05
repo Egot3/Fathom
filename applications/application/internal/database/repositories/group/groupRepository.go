@@ -16,6 +16,7 @@ type GroupRepository interface {
 	RemoveUsers(ctx context.Context, groupUUID uuid.UUID, userUUIDs uuid.UUIDs) error
 	IsInGroup(ctx context.Context, groupUUID, userUUID uuid.UUID) (bool, error)
 	ListGroups(ctx context.Context, page, size int) ([]models.Group, int, error)
+	GroupUsers(ctx context.Context, groupUUID uuid.UUID, page, size int) ([]models.User, int, error)
 
 	GroupsExist(ctx context.Context, groupUUIDs uuid.UUIDs) (bool, error)
 	IsInAny(ctx context.Context, groupUUIDs uuid.UUIDs, userUUID uuid.UUID) (bool, error)

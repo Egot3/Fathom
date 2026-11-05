@@ -13,7 +13,7 @@
     contentGetter,
   }: {
     title: string;
-    children: Snippet<[{ content: T }]>;
+    children: Snippet<[{ content?: T }]>;
     callback?: () => void;
     contentGetter: () => ResultAsync<T, JSONError> | T;
   } = $props();
