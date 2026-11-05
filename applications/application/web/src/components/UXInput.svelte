@@ -32,12 +32,12 @@
   <ErrorPopover {message} open={popoverOpen}>
     <input
       onmouseover={() => {
-        if (message !== "") {
+        if (message !== "" && value !== initValue) {
           popoverOpen = true;
         }
       }}
       onmouseout={() => {
-        if (message !== "") {
+        if (message !== "" && value !== initValue) {
           popoverOpen = false;
         }
       }}
@@ -45,6 +45,10 @@
       class={"input border-2 " + ClassForStatus(status)}
       {type}
       onblur={() => {
+        if (value.length === 0 || value === initValue) {
+          status = InputStatus.Idle;
+          return;
+        }
         if (ready) {
           status = InputStatus.Treat;
 
@@ -58,6 +62,10 @@
         status = InputStatus.Idle;
       }}
       onkeydown={() => {
+        if (value.length === 0 || value === initValue) {
+          status = InputStatus.Idle;
+          return;
+        }
         if (ready) {
           status = InputStatus.Treat;
         }

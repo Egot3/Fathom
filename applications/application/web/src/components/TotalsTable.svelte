@@ -21,7 +21,7 @@
   const showUser = $derived(!userUUID);
   const colClass = $derived(showUser ? "w-1/5" : "w-1/4");
 
-  const fit = CreateFitRows({ rowHeight: 20, reserve: 1 });
+  const fit = CreateFitRows({ rowHeight: 24, reserve: 1 });
 
   let selected = $state({
     user: null as string | null,

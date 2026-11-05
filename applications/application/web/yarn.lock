@@ -2709,6 +2709,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"marked-katex-extension@npm:^5.1.13":
+  version: 5.1.13
+  resolution: "marked-katex-extension@npm:5.1.13"
+  peerDependencies:
+    katex: ">=0.16 <0.19"
+    marked: ">=4 <19"
+  checksum: 10c0/4805663c59f535cc3bd3c5aaac6c58caf717f175d4b905f6569e64c4577c9a3c4644c5076bbc0ce8137da82152a1d53783e9b7b260b12b0a7c178f78ff69d104
+  languageName: node
+  linkType: hard
+
 "marked@npm:^18.0.7":
   version: 18.0.7
   resolution: "marked@npm:18.0.7"
@@ -3546,6 +3556,7 @@ __metadata:
     katex: "npm:^0.19.1"
     lodash: "npm:^4.18.1"
     marked: "npm:^18.0.7"
+    marked-katex-extension: "npm:^5.1.13"
     melt: "npm:^0.44.0"
     neverthrow: "npm:^8.2.0"
     postcss: "npm:^8.5.19"

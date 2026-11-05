@@ -82,6 +82,10 @@
     bind:ready={nameReady}
     message={nameMessage}
     checker={(v: string) => {
+      if (v.length === 0 || v === name) {
+        nameMessage = "";
+        return false;
+      }
       if (v.length < 3) {
         nameMessage = "name can't be less than 3 characters in length";
         return false;
