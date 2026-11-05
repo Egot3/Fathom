@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"net/http"
 	"os"
@@ -13,6 +14,9 @@ import (
 func loadIndex(fsys fs.FS) ([]byte, error) {
 	raw, err := fs.ReadFile(fsys, "index.html")
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -36,7 +40,7 @@ func SPAHandler(fsys fs.FS) (http.Handler, error) {
 	}
 	files := http.FileServer(http.FS(fsys))
 
-	serveIndex := func(w http.ResponseWriter, r *http.Request) {
+	serveIndex := func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Write(index)
