@@ -25,7 +25,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=web /src/web/dist ./web/dist
-RUN CGO_ENABLED=0 go build -ldflags="-w -s -X github.com/egot3/fathom/version.Type=${VERSION_TYPE} -X github.com/egot3/fathom/version.SemVer=${SEMVER} -X github.com/egot3/fathom/version.Name=${VERSION_NAME}" -o -o /out/fathom .
+RUN CGO_ENABLED=0 go build -ldflags="-w -s -X github.com/egot3/fathom/version.Type=${VERSION_TYPE} -X github.com/egot3/fathom/version.SemVer=${SEMVER} -X github.com/egot3/fathom/version.Name=${VERSION_NAME}" -o /out/fathom .
 
 
 FROM scratch
