@@ -6,5 +6,5 @@ export const CurrentPath = () => path;
 
 export function Navigate(to: string, replace = false) {
   history[replace ? "replaceState" : "pushState"](null, "", to);
-  path = to;
+  path = new URL(to, location.href).pathname;
 }

@@ -48,24 +48,24 @@
     return null;
   }
 
-  const sendToLogin = () => {
-    Navigate("/login");
-  };
-  const sendToHome = () => {
-    Navigate("/home");
-  };
-
   const match = $derived(matchRoute(CurrentPath()));
-  const requestor = GetUser();
+  const requestor = $derived(GetUser());
+
+  const redirectTarget = $derived.by(() => {
+    if (!match) return null;
+    if (requestor === null && !match.route.public) return "/login";
+    if (match.route.teacher && !requestor?.isTeacher) return "/home";
+    return null;
+  });
+
+  $effect(() => {
+    if (redirectTarget !== null) Navigate(redirectTarget, true);
+  });
 </script>
 
 {#if !match}
   <Status404 />
-{:else if requestor === null && !match.route.public}
-  {sendToLogin()}
-{:else if match.route.teacher && !requestor?.isTeacher}
-  {sendToHome()}
-{:else}
+{:else if redirectTarget === null}
   {#await match.route.load() then { default: Page }}
     <Page {...match.params} />
   {/await}

@@ -18,5 +18,13 @@ export default defineConfig(({ mode }) => {
     define: {
       "import.meta.env.PUBLIC_BASE_URL": JSON.stringify(env.PUBLIC_BASE_URL),
     },
+    server: {
+      proxy: {
+        "/api": {
+          target: "http://localhost:8082",
+          changeOrigin: true,
+        },
+      },
+    },
   };
 });
