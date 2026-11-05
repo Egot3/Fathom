@@ -197,7 +197,7 @@
         class="btn btn-lg w-2/5 leading-[0.75] text-xl preset-outlined-primary-500 self-center"
         onclick={(e) => {
           e.preventDefault();
-          Navigate("register?login=" + login);
+          Navigate("/register?login=" + login);
         }}
       >
         Register

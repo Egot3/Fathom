@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Dialog } from "@skeletonlabs/skeleton-svelte";
   import Confirm from "../components/Confirm.svelte";
-  import PeekDialogBig from "../components/PeekDialogBig.svelte";
   import PeekDialogue from "../components/PeekDialogue.svelte";
   import QuizView from "../components/QuizView.svelte";
   import { Toaster } from "../lib/apiutils/toaster";

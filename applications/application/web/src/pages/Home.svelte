@@ -3,9 +3,9 @@
   import CurrentlyRunning from "../components/CurrentlyRunning.svelte";
   import SelfInfo from "../components/SelfInfo.svelte";
   import TotalsTable from "../components/TotalsTable.svelte";
-  import { GetUserOrRedirect } from "../lib/bgdata/user.svelte";
+  import { GetUser } from "../lib/bgdata/user.svelte";
 
-  const me = GetUserOrRedirect();
+  const me = $derived(GetUser());
 </script>
 
 <BentoContainer>
@@ -23,7 +23,11 @@
   >
     <h2 class="self-center text-2xl font-bold">Testing results</h2>
     <hr class="hr mt-5 mb-5" />
-    <TotalsTable userUUID={me.UUID} filters={["test"]} />
+    {#if me}
+      <TotalsTable userUUID={me.UUID} filters={["test"]} />
+    {:else}
+      <div>You are not logged in</div>
+    {/if}
   </div>
   <div
     id="self"
