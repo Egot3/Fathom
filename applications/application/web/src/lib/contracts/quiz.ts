@@ -113,15 +113,12 @@ export function FetchAllQuizzes(
   page: number,
   size: number,
 ): ResultAsync<Quizzes, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/?page=${page}&size=${size}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
+  return TokenizedFetch(`/api/v1/quiz/?page=${page}&size=${size}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
     },
-  ).andThen(NormalizeJSON<Quizzes>);
+  }).andThen(NormalizeJSON<Quizzes>);
 }
 
 export enum Kind {
@@ -158,7 +155,7 @@ export function FetchQuizPost(
 
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(`${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/`, {
+  return TokenizedFetch(`/api/v1/quiz/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -181,27 +178,21 @@ export function FetchQuizPatch(
   req: PatchQuizRequest,
 ): ResultAsync<null, JSONError> {
   const bodyString = JSON.stringify(req);
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${UUID}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/merge-patch+json", // we are being very rfc rn
-      },
-      body: bodyString,
+  return TokenizedFetch(`/api/v1/quiz/${UUID}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
 
 export function FetchQuizDelete(UUID: string): ResultAsync<null, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${UUID}`,
-    {
-      method: "DELETE",
-    },
-  )
+  return TokenizedFetch(`/api/v1/quiz/${UUID}`, {
+    method: "DELETE",
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -254,7 +245,7 @@ function getWithCache(
 export function FetchParsedQuiz(
   quizUUID: string,
 ): ResultAsync<ParsedQuiz, JSONError> {
-  const url = `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${quizUUID}/parsed`;
+  const url = `/api/v1/quiz/${quizUUID}/parsed`;
   return getWithCache(url, quizUUID);
 }
 
@@ -263,17 +254,14 @@ export function FetchQuizExport(
   accepts: Accept[],
 ): ResultAsync<Blob, JSONError> {
   const body = JSON.stringify({ uuids: UUIDs });
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/export`,
-    {
-      method: "POST",
-      body: body,
-      headers: {
-        Accept: AcceptTransform(accepts),
-        "Content-Type": "application/json",
-      },
+  return TokenizedFetch(`/api/v1/quiz/export`, {
+    method: "POST",
+    body: body,
+    headers: {
+      Accept: AcceptTransform(accepts),
+      "Content-Type": "application/json",
     },
-  ).andThen(NormalizeBlob);
+  }).andThen(NormalizeBlob);
 }
 
 export function FetchQuizImport(file: File): ResultAsync<null, JSONError> {
@@ -281,13 +269,10 @@ export function FetchQuizImport(file: File): ResultAsync<null, JSONError> {
 
   formData.append("imported", file, file.name);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/import`,
-    {
-      method: "POST",
-      body: formData,
-    },
-  )
+  return TokenizedFetch(`/api/v1/quiz/import`, {
+    method: "POST",
+    body: formData,
+  })
     .andThen(NormalizeResponse)
     .andThen((_) => okAsync(null));
 }
@@ -297,12 +282,9 @@ type RawQuiz = {
   body: string;
 };
 export function FetchRawQuiz(UUID: string): ResultAsync<RawQuiz, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/quiz/${UUID}`,
-    {
-      method: "GET",
-    },
-  ).andThen(NormalizeJSON<RawQuiz>);
+  return TokenizedFetch(`/api/v1/quiz/${UUID}`, {
+    method: "GET",
+  }).andThen(NormalizeJSON<RawQuiz>);
 }
 
 export function FetchAnswerPost(
@@ -310,14 +292,11 @@ export function FetchAnswerPost(
   quizUUID: string,
   answer: QuizAnswer,
 ): ResultAsync<null, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/running/${runnerKey}/${quizUUID}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answer }),
-    },
-  )
+  return TokenizedFetch(`/api/v1/total/running/${runnerKey}/${quizUUID}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ answer }),
+  })
     .andThen(NormalizeResponse)
     .map(() => null);
 }
@@ -326,16 +305,14 @@ export function FetchRunningQuiz(
   key: string,
   UUID: string,
 ): ResultAsync<ParsedQuiz, JSONError> {
-  const url = `${import.meta.env.PUBLIC_BASE_URL}/api/v1/test/running/${key}/${UUID}`;
+  const url = `/api/v1/test/running/${key}/${UUID}`;
   return getWithCache(url, UUID);
 }
 
 export function FetchMyAnswers(
   runnerKey: string,
 ): ResultAsync<Record<string, QuizAnswer>, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/total/running/${runnerKey}/answers`,
-  )
+  return TokenizedFetch(`/api/v1/total/running/${runnerKey}/answers`)
     .andThen(NormalizeJSON<{ answers: Record<string, QuizAnswer> }>)
     .map((r) => r.answers);
 }

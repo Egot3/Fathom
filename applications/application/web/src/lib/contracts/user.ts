@@ -40,8 +40,9 @@ export function FetchLogin(
     nickname: nickname,
     password: password,
   };
+
   return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/login`,
+    `/api/v1/user/login`,
     {
       method: "POST",
       headers: {
@@ -63,7 +64,7 @@ export function FetchRegister(
     password: password,
   };
   return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/register`,
+    `/api/v1/user/register`,
     {
       method: "POST",
       headers: {
@@ -95,24 +96,18 @@ export function FetchUsers(
   page: number,
   size: number,
 ): ResultAsync<ListUsersResponse, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/?page=${page}&size=${size}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
+  return TokenizedFetch(`/api/v1/user/?page=${page}&size=${size}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
     },
-  ).andThen(NormalizeJSON<ListUsersResponse>);
+  }).andThen(NormalizeJSON<ListUsersResponse>);
 }
 
 export function FetchUserDelete(UUID: string): ResultAsync<null, JSONError> {
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/${UUID}`,
-    {
-      method: "DELETE",
-    },
-  )
+  return TokenizedFetch(`/api/v1/user/${UUID}`, {
+    method: "DELETE",
+  })
     .andThen(NormalizeResponse)
     .map((_) => null);
 }
@@ -141,17 +136,14 @@ export function FetchUserPatch(
 
   const bodyString = JSON.stringify(body);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/${UUID}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: bodyString,
+  return TokenizedFetch(`/api/v1/user/${UUID}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  )
+    body: bodyString,
+  })
     .andThen(NormalizeResponse)
     .map((_) => null);
 }
@@ -161,13 +153,10 @@ export function FetchUserImport(file: File): ResultAsync<null, JSONError> {
 
   formData.append("imported", file, file.name);
 
-  return TokenizedFetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/v1/user/import`,
-    {
-      method: "POST",
-      body: formData,
-    },
-  )
+  return TokenizedFetch(`/api/v1/user/import`, {
+    method: "POST",
+    body: formData,
+  })
     .andThen(NormalizeResponse)
     .map((_) => null);
 }
