@@ -161,22 +161,25 @@ func (r *bunGroupRepository) ListGroups(ctx context.Context, page, size int) ([]
 }
 
 func (r *bunGroupRepository) GroupsExist(ctx context.Context, groupUUIDs uuid.UUIDs) (bool, error) {
+	if len(groupUUIDs) == 0 {
+		return true, nil
+	}
+
+	uniqueUUIDs := make(map[uuid.UUID]struct{})
+	for _, id := range groupUUIDs {
+		uniqueUUIDs[id] = struct{}{}
+	}
+	distinctCount := len(uniqueUUIDs)
+
 	count, err := r.db.NewSelect().
 		Model((*models.Group)(nil)).
 		Where("uuid IN (?)", bun.List(groupUUIDs)).
-		Group("uuid").
-		Having("COUNT(DISTINCT uuid) = ?", len(groupUUIDs)).
 		Count(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	allExist := count == len(groupUUIDs)
-	if !allExist {
-		return false, nil
-	}
-
-	return true, nil
+	return (count == distinctCount), nil
 }
 
 func (r *bunGroupRepository) IsInAny(ctx context.Context, groupUUIDs uuid.UUIDs, userUUID uuid.UUID) (bool, error) {
