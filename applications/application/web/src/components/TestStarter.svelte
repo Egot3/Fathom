@@ -94,18 +94,20 @@
   {:else}
     {#if listTests.total !== 0}
       <form onsubmit={startTest}>
-        {#each listTests.tests as test (test.uuid)}
-          <button
-            type="button"
-            class={`chip preset-outlined-surface-400-600 ${chosenTest === test.uuid ? "preset-tonal-primary" : ""}`}
-            onclick={() => {
-              chosenTest = test.uuid;
-            }}
-          >
-            {#if chosenTest === test.uuid}<CheckIcon size={14} />{/if}
-            <span>{test.name}</span>
-          </button>
-        {/each}
+        <div>
+          {#each listTests.tests as test (test.uuid)}
+            <button
+              type="button"
+              class={`chip preset-outlined-surface-400-600 m-1 ${chosenTest === test.uuid ? "preset-tonal-primary" : ""}`}
+              onclick={() => {
+                chosenTest = test.uuid;
+              }}
+            >
+              {#if chosenTest === test.uuid}<CheckIcon size={14} />{/if}
+              <span>{test.name}</span>
+            </button>
+          {/each}
+        </div>
 
         <div class="flex justify-between items-center gap-4 w-full self-end">
           <Pagination bind:page {pageSize} total={listTests.total} />

@@ -46,7 +46,7 @@
     {#each q.data.groups as group (group.uuid)}
       <button
         type="button"
-        class={`chip preset-outlined-surface-400-600 ${chosen.has(group.uuid) ? "preset-tonal-primary" : ""}`}
+        class={`chip preset-outlined-surface-400-600 m-1 ${chosen.has(group.uuid) ? "preset-tonal-primary" : ""}`}
         onclick={() => {
           if (chosen.has(group.uuid)) {
             chosen.delete(group.uuid);
