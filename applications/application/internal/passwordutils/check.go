@@ -1,42 +1,76 @@
 package passwordutils
 
 import (
-	"errors"
 	"fmt"
-	"regexp"
+	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
-var numberRegex = regexp.MustCompile(`(\d)`)
-var smallerLetterRegex = regexp.MustCompile(`([a-z])`)
-var biggerLetterRegex = regexp.MustCompile(`([A-Z])`)
-var forbiddenRegex = regexp.MustCompile(`([\s])`)
+type Policy struct {
+	MinLength       int  `json:"min_length"`
+	MaxLength       int  `json:"max_length"`
+	MinDigits       int  `json:"min_digits"`
+	MinLowercase    int  `json:"min_lowercase"`
+	MinUppercase    int  `json:"min_uppercase"`
+	AllowWhitespace bool `json:"allow_whitespace"`
+	MaxBytes        int  `json:"max_bytes"`
+}
 
-var startingError = errors.New("invalid password because it: ")
+var DefaultPolicy = Policy{
+	MinLength:    8,
+	MaxLength:    60,
+	MinDigits:    6,
+	MinLowercase: 1,
+	MinUppercase: 1,
+	MaxBytes:     72,
+}
+
+func (p Policy) Violations(password string) []string {
+	var digits, lower, upper int
+	var hasSpace bool
+	for _, r := range password {
+		switch {
+		case r >= '0' && r <= '9':
+			digits++
+		case r >= 'a' && r <= 'z':
+			lower++
+		case r >= 'A' && r <= 'Z':
+			upper++
+		}
+		if unicode.IsSpace(r) {
+			hasSpace = true
+		}
+	}
+
+	var v []string
+	if n := utf8.RuneCountInString(password); n < p.MinLength {
+		v = append(v, fmt.Sprintf("must contain at least %d characters", p.MinLength))
+	} else if n > p.MaxLength {
+		v = append(v, fmt.Sprintf("mustn't be longer than %d characters", p.MaxLength))
+	}
+	if len(password) > p.MaxBytes {
+		v = append(v, fmt.Sprintf("mustn't be longer than %d bytes", p.MaxBytes))
+	}
+	if digits < p.MinDigits {
+		v = append(v, fmt.Sprintf("must contain at least %d numbers", p.MinDigits))
+	}
+	if lower < p.MinLowercase {
+		v = append(v, fmt.Sprintf("must contain at least %d lowercase letters", p.MinLowercase))
+	}
+	if upper < p.MinUppercase {
+		v = append(v, fmt.Sprintf("must contain at least %d uppercase letters", p.MinUppercase))
+	}
+	if !p.AllowWhitespace && hasSpace {
+		v = append(v, "mustn't contain any type of whitespace")
+	}
+	return v
+}
 
 func CheckPasswordSafety(password string) error {
-	var err error = startingError
-	if len(password) < 8 {
-		err = fmt.Errorf("%w\n  - must contain at least 8 characters", err)
-	}
-	if len(password) > 60 {
-		err = fmt.Errorf("%w\n  - mustn't be longer than 60 characters", err)
-	}
-	if len(numberRegex.FindAllString(password, -1)) < 6 { // min 6 numbers (one is always a mathced string)
-		err = fmt.Errorf("%w\n  - must contain at least 6 numbers", err)
-	}
-	if len(smallerLetterRegex.FindAllString(password, -1)) < 1 {
-		err = fmt.Errorf("%w\n  - must contain at least 1 lowercase letter", err)
-	}
-	if len(biggerLetterRegex.FindAllString(password, -1)) < 1 {
-		err = fmt.Errorf("%w\n  - must contain at least 1 uppercase letter", err)
-	}
-	if len(forbiddenRegex.FindString(password)) != 0 {
-		err = fmt.Errorf("%w\n  - mustn't contain any type of whitespace", err)
-	}
-
-	if err == startingError {
+	v := DefaultPolicy.Violations(password)
+	if len(v) == 0 {
 		return nil
 	}
-
-	return err
+	return fmt.Errorf("invalid password because it:\n  - %s", strings.Join(v, "\n  - "))
 }

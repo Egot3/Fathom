@@ -1,17 +1,18 @@
 <script lang="ts">
   import { ClassForStatus, InputStatus } from "../lib/statuses/input";
   import { CheckPassword } from "../lib/passwordUtils/checkPassword";
-  import { Popover, Portal, usePopover } from "@skeletonlabs/skeleton-svelte";
-  import {
-    FetchRegister,
-    type RegisterRequest,
-    type RegisterResponse,
-  } from "../lib/contracts/user";
-  import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
+  import { Popover, usePopover } from "@skeletonlabs/skeleton-svelte";
+  import { FetchRegister } from "../lib/contracts/user";
   import { SetUser } from "../lib/bgdata/user.svelte";
   import { LoaderCircle } from "@lucide/svelte";
   import ErrorPopover from "../components/ErrorPopover.svelte";
   import { Navigate } from "../lib/router.svelte";
+  import { onMount } from "svelte";
+  import {
+    GetPasswordPolicy,
+    LoadPasswordPolicy,
+  } from "../lib/passwordUtils/policy.svelte";
+  import UXInput from "../components/UXInput.svelte";
 
   let loginError = $state(false);
   let passwordError = $state(false);
@@ -43,6 +44,17 @@
   let repeatedClass = $derived(ClassForStatus(repeatedState));
 
   let registering = $state(false);
+
+  onMount(() => {
+    LoadPasswordPolicy();
+  });
+
+  const policy = $derived(GetPasswordPolicy());
+  const violations = $derived(policy ? CheckPassword(password, policy) : []);
+
+  $effect(() => {
+    passwordMessage = violations.join("\n");
+  });
 
   async function SubmitRegister(e: Event) {
     e.preventDefault();
@@ -82,37 +94,30 @@
       <h1 class="self-center text-6xl justify-self-start m-4 font-bold">
         Register
       </h1>
-      <div class="flex flex-col msx-w-md space-y-4 mx-auto w-full">
-        <label class="label">
-          <span class="label-text">Login</span>
-          <ErrorPopover message={loginMessage} open={loginError}>
-            <input
-              class={"input border-2 " + loginClass}
-              type="text"
-              placeholder="myoryourlogin"
-              bind:value={login}
-              onblur={(e: FocusEvent) => {
-                if (login.length < 3) {
-                  loginState = InputStatus.Punish;
-                  loginMessage = "can't have length of login less than 3";
-                  loginError = true;
-                  return;
-                }
-                loginState = InputStatus.Treat;
-              }}
-              onfocus={(e: FocusEvent) => {
-                loginError = false;
-                loginState = InputStatus.Idle;
-                return;
-              }}
-              onkeydown={() => {
-                if (login.length >= 3) {
-                  loginState = InputStatus.Treat;
-                }
-              }}
-            />
-          </ErrorPopover>
-        </label>
+      <div class="flex flex-col space-y-4 mx-auto w-full">
+        <UXInput
+          label="Login"
+          bind:value={login}
+          type="text"
+          bind:message={loginMessage}
+          checker={(v: string) => {
+            if (login.length >= 3) {
+              return true;
+            }
+
+            if (login.length === 0) {
+              return false;
+            }
+            if (login.length < 3) {
+              loginMessage = "can't have length of login less than 3";
+              return false;
+            }
+
+            return true;
+          }}
+          placeholder="myoryourlogin"
+        ></UXInput>
+
         <label class="label">
           <span class="label-text">Password</span>
           <ErrorPopover open={passwordError} message={passwordMessage}>
@@ -122,27 +127,21 @@
               class={"input border-2 " + passwordClass}
               type="password"
               placeholder="supersecurePaSSwoRD!"
-              onblur={(e: FocusEvent) => {
-                const err = CheckPassword(password);
-                if (err !== null) {
-                  passwordMessage = err;
-                  passwordState = InputStatus.Punish;
-                  passwordError = true;
-                  return;
-                }
-
-                passwordState = InputStatus.Treat;
-              }}
               onfocus={(e: FocusEvent) => {
                 passwordError = false;
                 passwordState = InputStatus.Idle;
                 return;
               }}
-              onkeydown={() => {
-                const err = CheckPassword(password);
-                if (err == "") {
-                  passwordState = InputStatus.Treat;
+              onblur={() => {
+                if (password.length === 0) {
+                  passwordState = InputStatus.Idle;
+                  return;
                 }
+                if (violations.length > 0) {
+                  passwordState = InputStatus.Punish;
+                  return;
+                }
+                passwordState = InputStatus.Treat;
               }}
             />
           </ErrorPopover>
@@ -156,27 +155,20 @@
               bind:value={repeated}
               class={"input border-2 " + repeatedClass}
               type="password"
-              placeholder="supersecurePaSSwoRD!"
-              onblur={(e: FocusEvent) => {
-                if (password !== repeated) {
-                  repeatedMessage = "passwords are not equal!";
-                  repeatedState = InputStatus.Punish;
-                  reapeatedError = true;
-                  return;
-                }
-
-                repeatedState = InputStatus.Treat;
-              }}
+              placeholder="supersecurePaSSwoRD12223!"
               onfocus={(e: FocusEvent) => {
                 reapeatedError = false;
                 repeatedState = InputStatus.Idle;
                 return;
               }}
-              onkeyup={() => {
-                console.log("keydown");
-                if (password == repeated) {
-                  repeatedState = InputStatus.Treat;
+              onblur={() => {
+                if (repeated != password) {
+                  repeatedState = InputStatus.Punish;
+                  reapeatedError = true;
+                  repeatedMessage = "Passwords don't match";
+                  return;
                 }
+                repeatedState = passwordState;
               }}
             />
           </ErrorPopover>
@@ -214,7 +206,7 @@
           class="btn btn-lg w-2/5 leading-[0.75] preset-outlined-primary-500 self-center"
           onclick={(e) => {
             e.preventDefault();
-            Navigate("login?login=" + login);
+            Navigate("/login?login=" + login);
           }}
         >
           Log in instead

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/egot3/fathom/health"
 	"github.com/egot3/fathom/internal/handler"
 	"github.com/egot3/fathom/internal/middlewares"
+	"github.com/egot3/fathom/internal/passwordutils"
 	"github.com/egot3/fathom/version"
 	"github.com/egot3/fathom/web"
 	"github.com/go-chi/chi/v5"
@@ -208,6 +210,11 @@ func ChiServer(i do.Injector) (chi.Router, error) {
 			})
 
 		})
+	})
+
+	r.Get("/api/password-policy", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(passwordutils.DefaultPolicy)
 	})
 
 	dist, err := fs.Sub(web.Dist, "dist")
