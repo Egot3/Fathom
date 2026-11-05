@@ -1,29 +1,23 @@
 <script lang="ts">
   import { ClassForStatus, InputStatus } from "../lib/statuses/input";
-  import { CheckPassword } from "../lib/passwordUtils/checkPassword";
   import { Popover, Portal, usePopover } from "@skeletonlabs/skeleton-svelte";
   import { FetchLogin } from "../lib/contracts/user";
-  import { IsJSONError, type JSONError } from "../lib/statuses/jsonerror";
   import { SetUser } from "../lib/bgdata/user.svelte";
   import { LoaderCircle } from "@lucide/svelte";
-  import ErrorPopover from "../components/ErrorPopover.svelte";
   import { Navigate } from "../lib/router.svelte";
+  import UXInput from "../components/UXInput.svelte";
 
   const mainPopover = usePopover({ id: "main" });
-  let loginError = $state(false);
-  let passwordError = $state(false);
 
   const params = new URLSearchParams(window.location.search);
   let login = $state(params.get("login") ?? "");
   let password = $state("");
 
   let statusMessage = $state("");
-  let passwordMessage = $state("");
   let loginMessage = $state("");
 
   let loggingIn = $state(false);
 
-  let passwordState = $state(InputStatus.Idle);
   let loginState = $derived(
     login == ""
       ? InputStatus.Idle
@@ -32,7 +26,6 @@
         : InputStatus.Treat,
   );
 
-  let passwordClass = $derived(ClassForStatus(passwordState));
   let loginClass = $derived(ClassForStatus(loginState));
 
   async function SubmitLogin(e: Event) {
@@ -73,71 +66,37 @@
       <h1 class="self-center text-6xl justify-self-start m-4 font-bold">
         Log in
       </h1>
-      <div class="flex flex-col msx-w-md space-y-4 mx-auto w-full">
-        <label class="label">
-          <span class="label-text">Login</span>
-          <ErrorPopover message={loginMessage} open={loginError}>
-            <input
-              class={"input border-2 " + loginClass}
-              type="text"
-              placeholder="myoryourlogin"
-              bind:value={login}
-              onblur={(e: FocusEvent) => {
-                if (login.length < 3) {
-                  loginState = InputStatus.Punish;
-                  loginMessage = "can't have length of login less than 3";
-                  loginError = true;
-                  return;
-                }
-                loginState = InputStatus.Treat;
-              }}
-              onfocus={(e: FocusEvent) => {
-                loginError = false;
-                loginState = InputStatus.Idle;
-                return;
-              }}
-              onkeydown={() => {
-                if (login.length >= 3) {
-                  loginState = InputStatus.Treat;
-                }
-              }}
-            />
-          </ErrorPopover>
-        </label>
-        <label class="label">
-          <span class="label-text">Password</span>
-          <ErrorPopover open={passwordError} message={passwordMessage}>
-            <input
-              id="password"
-              bind:value={password}
-              class={"input border-2 " + passwordClass}
-              type="password"
-              placeholder="supersecurePaSSwoRD!"
-              onblur={(e: FocusEvent) => {
-                const err = CheckPassword(password);
-                if (err !== null) {
-                  passwordMessage = err;
-                  passwordState = InputStatus.Punish;
-                  passwordError = true;
-                  return;
-                }
+      <div class="flex flex-col space-y-4 mx-auto w-full">
+        <UXInput
+          label="Login"
+          bind:value={login}
+          type="text"
+          bind:message={loginMessage}
+          checker={(v: string) => {
+            if (login.length >= 3) {
+              return true;
+            }
 
-                passwordState = InputStatus.Treat;
-              }}
-              onfocus={(e: FocusEvent) => {
-                passwordError = false;
-                passwordState = InputStatus.Idle;
-                return;
-              }}
-              onkeydown={() => {
-                const err = CheckPassword(password);
-                if (err == "") {
-                  passwordState = InputStatus.Treat;
-                }
-              }}
-            />
-          </ErrorPopover>
-        </label>
+            if (login.length === 0) {
+              return false;
+            }
+            if (login.length < 3) {
+              loginMessage = "can't have length of login less than 3";
+              return false;
+            }
+
+            return true;
+          }}
+          placeholder="myoryourlogin"
+        ></UXInput>
+
+        <UXInput
+          label="Password"
+          bind:value={password}
+          checker={(v: string) => password.length > 0}
+          type="password"
+          placeholder="supersecurePaSSwoRD12312!"
+        ></UXInput>
 
         <Popover>
           <Popover.Trigger
@@ -170,10 +129,7 @@
             <button
               type="submit"
               class="btn btn-lg w-4/5 preset-filled-primary-500"
-              disabled={!(
-                passwordState == InputStatus.Treat &&
-                loginState == InputStatus.Treat
-              )}
+              disabled={!(loginState == InputStatus.Treat)}
             >
               {#if loggingIn}
                 <LoaderCircle class="animate-spin" />

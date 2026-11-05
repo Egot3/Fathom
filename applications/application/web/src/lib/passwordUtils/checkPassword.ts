@@ -1,34 +1,36 @@
-export const CheckPassword = (passwordString: string): string | null => {
-  const passwordLength = passwordString.length;
-  if (passwordLength == 0) {
-    return "";
-  }
-  if (passwordLength <= 8) {
-    return "password must be longer than 7 characters";
-  }
-  if (passwordLength >= 255) {
-    return "password must be shorter than 256 characters";
-  }
+export type PasswordPolicy = {
+  min_length: number;
+  max_length: number;
+  min_digits: number;
+  min_lowercase: number;
+  min_uppercase: number;
+  allow_whitespace: boolean;
+  max_bytes: number;
+};
 
-  const digitCount = (passwordString.match(/\d/g) || []).length;
-  if (digitCount < 4) {
-    return "5 digits in password are required"; // in bank account too;
-  }
+const count = (s: string, re: RegExp) => (s.match(re) ?? []).length;
 
-  const whiteSpace = /\s+/.exec(passwordString);
-  if (whiteSpace !== null) {
-    return `Password mustn't have any whitespace characters`;
-  }
+export const CheckPassword = (pw: string, p: PasswordPolicy): string[] => {
+  const out: string[] = [];
+  const len = [...pw].length;
 
-  const uppercaseCount = (passwordString.match(/[A-Z]/g) || []).length;
-  if (uppercaseCount < 1) {
-    return "Password must have at least 2 UPPERCASE letters";
-  }
+  const blen = new TextEncoder().encode(pw).length;
 
-  const lowercaseCount = (passwordString.match(/([a-z])/g) || []).length;
-  if (lowercaseCount < 1) {
-    return "Password must have at least 2 lowercase letters";
+  if (blen > p.max_bytes) {
+    out.push(`mustn't be longer than ${p.max_bytes} bytes`);
   }
+  if (len < p.min_length)
+    out.push(`must contain at least ${p.min_length} characters`);
+  else if (len > p.max_length)
+    out.push(`mustn't be longer than ${p.max_length} characters`);
+  if (count(pw, /[0-9]/g) < p.min_digits)
+    out.push(`must contain at least ${p.min_digits} numbers`);
+  if (count(pw, /[a-z]/g) < p.min_lowercase)
+    out.push(`must contain at least ${p.min_lowercase} lowercase letters`);
+  if (count(pw, /[A-Z]/g) < p.min_uppercase)
+    out.push(`must contain at least ${p.min_uppercase} uppercase letters`);
+  if (!p.allow_whitespace && /\p{White_Space}/u.test(pw))
+    out.push("mustn't contain any type of whitespace");
 
-  return null;
+  return out;
 };

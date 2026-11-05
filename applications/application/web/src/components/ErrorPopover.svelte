@@ -26,7 +26,7 @@
 
   <Popover.Positioner>
     <Popover.Content
-      class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50"
+      class="bg-error-50-950 p-2 rounded-[4px] text-surface-950-50 whitespace-pre-line"
     >
       <Popover.Title tabindex={-1}>{message}</Popover.Title>
     </Popover.Content>
