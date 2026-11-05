@@ -1090,6 +1090,23 @@ func (c *chiService) GetRunningQuizzes(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	for i, q := range quizzes {
+		p, err := c.cfg.TurnToRel(q.Path)
+		if err != nil {
+			logger.Error("couldn't convert path to rel", slog.String("path", q.Path), slog.String("Error", err.Error()))
+			(&carefulness.JSONError{Err: "can't convert path to rel", Status: http.StatusInternalServerError}).Encode(w)
+			return
+		}
+
+		quizzes[i] = models.Quiz{
+			UUID:          q.UUID,
+			Checksum:      q.Checksum,
+			Path:          p,
+			Score:         q.Score,
+			CorrectAnswer: q.CorrectAnswer,
+		}
+	}
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.GetQuizzes{
 		Quizzes: quizzes,
