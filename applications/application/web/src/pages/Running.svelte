@@ -74,7 +74,6 @@
       })();
     }
   });
-  $inspect("cur", current);
 </script>
 
 <div>
@@ -121,6 +120,12 @@
                 : {};
             }}
           />
+        {:else}
+          <h1
+            class="row-start-3 row-end-11 col-start-1 col-end-13 p-8 rounded-2xl text-surface-50-950 bg-surface-900-100 font-bold flex items-center justify-center"
+          >
+            You can finish now
+          </h1>
         {/if}
       </div>
       <div
