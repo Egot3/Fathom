@@ -1,14 +1,46 @@
 package server
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/fs"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 )
 
-func SPAHandler(fsys fs.FS) http.Handler {
+func loadIndex(fsys fs.FS) ([]byte, error) {
+	raw, err := fs.ReadFile(fsys, "index.html")
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := map[string]string{}
+	if v := os.Getenv("PUBLIC_BASE_URL"); v != "" {
+		cfg["publicBaseUrl"] = strings.TrimRight(v, "/")
+	}
+	j, err := json.Marshal(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	tag := "<script>window.__CONFIG__=" + string(j) + "</script></head>"
+	return bytes.Replace(raw, []byte("</head>"), []byte(tag), 1), nil
+}
+
+func SPAHandler(fsys fs.FS) (http.Handler, error) {
+	index, err := loadIndex(fsys)
+	if err != nil {
+		return nil, err
+	}
 	files := http.FileServer(http.FS(fsys))
+
+	serveIndex := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Write(index)
+	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
@@ -17,8 +49,10 @@ func SPAHandler(fsys fs.FS) http.Handler {
 		}
 
 		p := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
-		if p == "" {
-			p = "index.html"
+
+		if p == "" || p == "index.html" {
+			serveIndex(w, r)
+			return
 		}
 
 		if f, err := fsys.Open(p); err == nil {
@@ -40,9 +74,6 @@ func SPAHandler(fsys fs.FS) http.Handler {
 			return
 		}
 
-		w.Header().Set("Cache-Control", "no-cache")
-		r2 := r.Clone(r.Context())
-		r2.URL.Path = "/"
-		files.ServeHTTP(w, r2)
-	})
+		serveIndex(w, r)
+	}), nil
 }
