@@ -3,13 +3,11 @@ package testrunner_test
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/egot3/fathom/internal/carefulness"
 	testrunner "github.com/egot3/fathom/internal/testRunner"
 	"github.com/egot3/fathom/internal/testutils"
@@ -33,6 +31,7 @@ func TestRunner_Start(t *testing.T) {
 	require.NoError(t, err)
 
 	i := do.New()
+	testutils.WithLogger(t, i)
 
 	t.Run("Valid start", func(t *testing.T) {
 		i := i.Scope("valid")
@@ -117,6 +116,7 @@ func TestRunner_Get(t *testing.T) {
 
 	i := do.New()
 	do.Provide(i, testrunner.NewManager)
+	testutils.WithLogger(t, i)
 
 	t.Run("Valid get", func(t *testing.T) {
 		i := i.Scope("valid")
@@ -165,6 +165,7 @@ func TestRunner_Stop(t *testing.T) {
 
 	i := do.New()
 	do.Provide(i, testrunner.NewManager)
+	testutils.WithLogger(t, i)
 
 	t.Run("Valid stop", func(t *testing.T) {
 		i := i.Scope("valid")
@@ -220,6 +221,7 @@ func TestRunner_Deadline(t *testing.T) {
 	require.NoError(t, err)
 
 	i := do.New()
+	testutils.WithLogger(t, i)
 
 	t.Run("Valid deadline", func(t *testing.T) {
 		i := i.Scope("valid")
@@ -250,6 +252,7 @@ func TestRunner_Extend(t *testing.T) {
 	require.NoError(t, err)
 
 	i := do.New()
+	testutils.WithLogger(t, i)
 
 	t.Run("Valid extension", func(t *testing.T) {
 		i := i.Scope("valid")
@@ -273,12 +276,13 @@ func TestRunner_Extend(t *testing.T) {
 func TestRunner_PauseResume(t *testing.T) {
 
 	i := do.New()
+	testutils.WithLogger(t, i)
 
 	t.Run("Valid pause resumance", func(t *testing.T) {
 
 		t.Run("By waiting", func(t *testing.T) {
 
-			i := i.Scope("wait")
+			i := i.Scope(t.Name())
 			do.Provide(i, testrunner.NewManager)
 
 			quizUUID := uuid.Must(uuid.NewV7())
@@ -369,7 +373,7 @@ func TestRunner_PauseResume(t *testing.T) {
 		t.Run("Pausing", func(t *testing.T) {
 
 			t.Run("Paused", func(t *testing.T) {
-				i := i.Scope("paused")
+				i := i.Scope(t.Name())
 				do.Provide(i, testrunner.NewManager)
 
 				quizUUID := uuid.Must(uuid.NewV7())
@@ -398,10 +402,11 @@ func TestRunner_PauseResume(t *testing.T) {
 
 		t.Run("Resuming", func(t *testing.T) {
 
-			i := do.New()
+			i := i.Scope(t.Name())
+			testutils.WithLogger(t, i)
 
 			t.Run("Running", func(t *testing.T) {
-				i := i.Scope("running")
+				i := i.Scope(t.Name())
 				do.Provide(i, testrunner.NewManager)
 
 				quizUUID := uuid.Must(uuid.NewV7())
@@ -434,7 +439,7 @@ func TestRunner_PauseResume(t *testing.T) {
 		t.Run("Expired", func(t *testing.T) {
 
 			t.Run("Expiration during pause", func(t *testing.T) {
-				i := i.Scope("ExpDuringPause")
+				i := i.Scope(t.Name())
 				do.Provide(i, testrunner.NewManager)
 
 				quizUUID := uuid.Must(uuid.NewV7())
@@ -469,7 +474,7 @@ func TestRunner_PauseResume(t *testing.T) {
 				require.WithinDuration(t, deadline, newDeadline, 6*time.Second)
 			})
 			t.Run("Manual expiration during pause", func(t *testing.T) {
-				i := do.New()
+				i := i.Scope(i.Name())
 				do.Provide(i, testrunner.NewManager)
 
 				quizUUID := uuid.Must(uuid.NewV7())
@@ -502,31 +507,31 @@ func TestRunner_PauseResume(t *testing.T) {
 }
 
 func TestManager_Shutdown(t *testing.T) {
-	i := do.New(testrunner.ManagerPackage)
-	logger := log.New(os.Stderr)
-	logger.SetLevel(log.DebugLevel)
-
-	do.ProvideValue(i, slog.New(logger))
+	i := do.New()
+	testutils.WithLogger(t, i)
 
 	t.Run("Alive runner", func(t *testing.T) {
-		i := i.Scope(t.Name())
+		i := i.Scope(t.Name(), testrunner.ManagerPackage)
 		m := do.MustInvoke[*testrunner.Manager](i)
 
 		_, err := m.Start(t.Context(), time.Hour, nil, nil, nil, uuid.Nil)
 		require.NoError(t, err) // we are niling it
 
-		ctx, _ := context.WithTimeout(t.Context(), 200*time.Millisecond)
+		ctx, c := context.WithTimeout(t.Context(), 200*time.Millisecond)
+		defer c()
+
 		require.NoError(t, m.Shutdown(ctx))
 	})
 
 	t.Run("Start after dead", func(t *testing.T) {
-		i := i.Scope(t.Name())
+		i := i.Scope(t.Name(), testrunner.ManagerPackage)
 		m := do.MustInvoke[*testrunner.Manager](i)
 
 		_, err := m.Start(t.Context(), time.Hour, nil, nil, nil, uuid.Nil)
 		require.NoError(t, err) // we are niling it
 
-		ctx, _ := context.WithTimeout(t.Context(), 200*time.Millisecond)
+		ctx, c := context.WithTimeout(t.Context(), 200*time.Millisecond)
+		defer c()
 		require.NoError(t, m.Shutdown(ctx))
 
 		_, err = m.Start(t.Context(), time.Hour, nil, nil, nil, uuid.Nil)
@@ -535,8 +540,7 @@ func TestManager_Shutdown(t *testing.T) {
 
 	t.Run("Concurrent start and shutdown", func(t *testing.T) {
 		for n := range 100 {
-			i := i.Scope(fmt.Sprintf("race-%d", n))
-			do.Provide(i, testrunner.NewManager)
+			i := i.Scope(fmt.Sprintf("race-%d", n), testrunner.ManagerPackage)
 			m := do.MustInvoke[*testrunner.Manager](i)
 
 			const starters = 16

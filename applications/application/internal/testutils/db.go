@@ -2,13 +2,10 @@ package testutils
 
 import (
 	"database/sql"
-	"log/slog"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/charmbracelet/log"
-	"github.com/egot3/fathom/internal/config"
 	"github.com/egot3/fathom/internal/models"
 	"github.com/samber/do/v2"
 	"github.com/stretchr/testify/require"
@@ -19,8 +16,6 @@ import (
 
 func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 	tb.Helper()
-
-	cfg := &config.Config{QuizPath: filepath.Join(tb.TempDir(), "quizzes")}
 
 	dsn := "file::memory:?cache=private&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=synchronous(NORMAL)&_pragma=foreign_keys(1)"
 
@@ -50,8 +45,8 @@ func NewTestInjector(tb testing.TB, packages ...func(do.Injector)) do.Injector {
 	logger := log.New(os.Stderr)
 	logger.SetLevel(log.DebugLevel)
 
-	do.ProvideValue(i, cfg)
-	do.ProvideValue(i, slog.New(logger))
+	WithConfig(tb, i)
+	WithLogger(tb, i)
 
 	do.Provide(i, func(i do.Injector) (*bun.DB, error) {
 		return db, nil
