@@ -484,6 +484,16 @@ func (c *chiService) ListUserAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := range userAnswers {
+		userAnswers[i].QuizName, err = c.cfg.TurnToRel(userAnswers[i].QuizName)
+		if err != nil {
+			logger.Error("unable to convert quiz path to relative", slog.String("Error", err.Error()), slog.String("quiz_path", userAnswers[i].QuizName))
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(&carefulness.JSONError{Err: "unable to convert quiz path to relative"})
+			return
+		}
+	}
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contracts.AnswersResponse{
 		Answers: userAnswers,
