@@ -44,9 +44,10 @@ func main() {
 	defer cancel()
 
 	report := i.ShutdownWithContext(shutdownCtx)
-	if err != nil {
-		logger.Warn("couldn't shutdown cleanly", slog.String("Error", report.Error()))
-		return
+	for svc, err := range report.Errors {
+		logger.Warn("couldn't shutdown cleanly", slog.String("Error", err.Error()),
+			slog.String("service", svc.Service), slog.String("scopeID", svc.ScopeID),
+			slog.String("scopeName", svc.ScopeName))
 	}
 
 	logger.Info("shutdown finished", slog.String("goodbye", "have a good one"))
